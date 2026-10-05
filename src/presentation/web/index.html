@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ordinace Na Vyhlídce – Demo správy uživatelů</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --primary-light: #e0f2fe;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --danger: #ef4444;
+      --danger-light: #fee2e2;
+      --warning: #f59e0b;
+      --warning-light: #fef3c7;
+      --role-admin: #8b5cf6;
+      --role-admin-light: #ede9fe;
+      --role-reception: #0ea5e9;
+      --role-reception-light: #e0f2fe;
+      --role-doctor: #059669;
+      --role-doctor-light: #d1fae5;
+      --radius: 10px;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      background: linear-gradient(135deg, #0284c7, #0d9488);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .api-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--primary-light);
+      color: var(--primary-hover);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      text-decoration: none;
+      font-weight: 500;
+      transition: background 0.2s;
+    }
+
+    .api-badge:hover {
+      background: #bae6fd;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      background: #f1f5f9;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: white;
+      border-color: var(--border);
+      color: var(--text-main);
+    }
+
+    .btn-secondary:hover {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+
+    .btn-danger {
+      background: var(--danger-light);
+      color: var(--danger);
+      border-color: #fecaca;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-sm {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+      border-radius: 6px;
+    }
+
+    main {
+      flex: 1;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* LOGIN SCREEN */
+    .login-container {
+      max-width: 440px;
+      margin: 3rem auto;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .login-header {
+      padding: 2rem 2rem 1.5rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+    }
+
+    .login-header h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-top: 0.5rem;
+    }
+
+    .login-header p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .login-body {
+      padding: 1.75rem 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 0.4rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      outline: none;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+
+    .demo-accounts {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px dashed var(--border);
+    }
+
+    .demo-accounts h4 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .demo-chips {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .chip-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.45rem 0.75rem;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s;
+    }
+
+    .chip-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      transform: translateX(2px);
+    }
+
+    /* DASHBOARD */
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .dashboard-title h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .dashboard-title p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .info-banner {
+      background: white;
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      padding: 1rem 1.25rem;
+      border-radius: var(--radius);
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .info-banner-text {
+      font-size: 0.875rem;
+    }
+
+    .info-banner-text strong {
+      color: var(--primary-hover);
+    }
+
+    /* CARD & TABLE */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .card-filter {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .filter-btn {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn.active {
+      background: var(--text-main);
+      color: white;
+      border-color: var(--text-main);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+
+    th {
+      background: #f8fafc;
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: #fafbfc;
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .role-ADMIN {
+      background: var(--role-admin-light);
+      color: var(--role-admin);
+    }
+
+    .role-RECEPTIONIST {
+      background: var(--role-reception-light);
+      color: var(--role-reception);
+    }
+
+    .role-DOCTOR {
+      background: var(--role-doctor-light);
+      color: var(--role-doctor);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .status-active .status-dot { background: var(--success); }
+    .status-active { color: var(--success); }
+    .status-inactive .status-dot { background: var(--text-muted); }
+    .status-inactive { color: var(--text-muted); }
+
+    .action-group {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-overlay.open {
+      display: flex;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal {
+      background: white;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 480px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius);
+      background: var(--text-main);
+      color: white;
+      font-size: 0.875rem;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      z-index: 100;
+      animation: slideUp 0.3s ease;
+    }
+
+    .toast.toast-success { background: var(--success); }
+    .toast.toast-error { background: var(--danger); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚕</div>
+      <div class="brand-text">
+        <h1>Ordinace Na Vyhlídce</h1>
+        <p>Rezervační a evidenční systém (PPRO Demo)</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="/docs" target="_blank" class="api-badge" title="Otevře Swagger OpenAPI dokumentaci">
+        <span>Swagger API</span> ↗
+      </a>
+      <div id="userHeaderInfo" class="user-pill" style="display: none;">
+        <span id="headerUserName">Uživatel</span>
+        <span id="headerUserRole" class="role-badge role-ADMIN">ADMIN</span>
+        <button class="btn btn-secondary btn-sm" onclick="logout()">Odhlásit</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- LOGIN VIEW -->
+    <div id="loginView" class="login-container">
+      <div class="login-header">
+        <div class="brand-icon" style="margin: 0 auto;">⚕</div>
+        <h2>Přihlášení do ordinace</h2>
+        <p>Zadejte své přístupové údaje pro vstup do systému</p>
+      </div>
+      <div class="login-body">
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label for="loginUsername">Uživatelské jméno</label>
+            <input type="text" id="loginUsername" class="form-control" required placeholder="např. admin">
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Heslo</label>
+            <input type="password" id="loginPassword" class="form-control" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+            Přihlásit se do systému
+          </button>
+        </form>
+
+        <div class="demo-accounts">
+          <h4>Rychlé zkušební přihlášení (Demo role)</h4>
+          <div class="demo-chips">
+            <button class="chip-btn" onclick="quickFill('admin', 'Admin123!')">
+              <div><strong>Administrátor</strong> (admin)</div>
+              <span class="role-badge role-ADMIN">ADMIN</span>
+            </button>
+            <button class="chip-btn" onclick="quickFill('vera', 'Vera123!')">
+              <div><strong>Věra Nováková</strong> (Recepce)</div>
+              <span class="role-badge role-RECEPTIONIST">RECEPCE</span>
+            </button>
+            <button class="chip-btn" onclick="quickFill('hruba', 'Hruba123!')">
+              <div><strong>MUDr. Jana Hrubá</strong> (Lékař)</div>
+              <span class="role-badge role-DOCTOR">LÉKAŘ</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboardView" style="display: none;">
+      <div class="dashboard-header">
+        <div class="dashboard-title">
+          <h2>Správa uživatelů a personálu</h2>
+          <p>Evidence zaměstnanců ordinace, lékařů a recepčních v třívrstvé architektuře</p>
+        </div>
+        <div>
+          <button id="btnNewUser" class="btn btn-primary" onclick="openUserModal()">
+            + Založit uživatele
+          </button>
+        </div>
+      </div>
+
+      <div class="info-banner">
+        <div class="info-banner-text">
+          Přihlášen: <strong id="bannerName">Administrátor</strong> | Role: <span id="bannerRoleBadge" class="role-badge role-ADMIN">ADMIN</span>.
+          <span id="bannerPermissions" style="margin-left: 0.5rem; color: var(--text-muted);">
+            Máte plná oprávnění ke správě uživatelů a rolí.
+          </span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          Aktivní session: <strong>JWT Bearer</strong>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-filter">
+          <div class="search-input-wrapper">
+            <input type="text" id="searchInput" class="form-control" placeholder="Hledat jméno, e-mail nebo login..." oninput="handleSearch()">
+          </div>
+          <div class="filter-tabs">
+            <button class="filter-btn active" onclick="setFilterRole('', this)">Všichni</button>
+            <button class="filter-btn" onclick="setFilterRole('ADMIN', this)">Administrátoři</button>
+            <button class="filter-btn" onclick="setFilterRole('RECEPTIONIST', this)">Recepce</button>
+            <button class="filter-btn" onclick="setFilterRole('DOCTOR', this)">Lékaři</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">ID</th>
+                <th>Celé jméno</th>
+                <th>Uživatelské jméno</th>
+                <th>E-mail</th>
+                <th>Role</th>
+                <th>Stav</th>
+                <th>Datum vytvoření</th>
+                <th style="width: 140px; text-align: right;">Akce</th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody">
+              <tr>
+                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                  Načítání uživatelů...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL FOR USER CREATE / EDIT -->
+  <div id="userModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Nový uživatel</h3>
+        <button class="close-btn" onclick="closeUserModal()">&times;</button>
+      </div>
+      <form id="userForm" onsubmit="saveUser(event)">
+        <div class="modal-body">
+          <input type="hidden" id="userId">
+          <div class="form-group">
+            <label for="fullName">Celé jméno a titul</label>
+            <input type="text" id="fullName" class="form-control" required placeholder="např. MUDr. Petr Svoboda">
+          </div>
+          <div class="form-group">
+            <label for="username">Uživatelské jméno</label>
+            <input type="text" id="username" class="form-control" required placeholder="např. svoboda">
+          </div>
+          <div class="form-group">
+            <label for="email">E-mailová adresa</label>
+            <input type="email" id="email" class="form-control" required placeholder="svoboda@ordinace.cz">
+          </div>
+          <div class="form-group">
+            <label for="role">Role v systému</label>
+            <select id="role" class="form-control">
+              <option value="RECEPTIONIST">Recepční (paní Věra / recepce)</option>
+              <option value="DOCTOR">Lékař (ordinující lékař)</option>
+              <option value="ADMIN">Administrátor (správa systému)</option>
+            </select>
+          </div>
+          <div class="form-group" id="passwordGroup">
+            <label for="password" id="passwordLabel">Heslo</label>
+            <input type="password" id="password" class="form-control" placeholder="Min. 6 znaků">
+            <small id="passwordHelp" style="display:none; color: var(--text-muted); font-size: 0.75rem;">
+              Ponechte prázdné, pokud heslo nechcete měnit.
+            </small>
+          </div>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+            <input type="checkbox" id="isActive" checked style="width: 16px; height: 16px;">
+            <label for="isActive" style="margin-bottom: 0; cursor: pointer;">Účet je aktivní</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Zrušit</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveUser">Uložit uživatele</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast">Zpráva</div>
+
+  <script>
+    let token = localStorage.getItem('token') || '';
+    let currentUser = null;
+    let usersList = [];
+    let currentRoleFilter = '';
+    let searchDebounce = null;
+
+    // Inicializace
+    window.addEventListener('DOMContentLoaded', () => {
+      if (token) {
+        verifySession();
+      } else {
+        showLogin();
+      }
+    });
+
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = 'toast ' + (isError ? 'toast-error' : 'toast-success');
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3500);
+    }
+
+    function quickFill(user, pass) {
+      document.getElementById('loginUsername').value = user;
+      document.getElementById('loginPassword').value = pass;
+      document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Přihlášení se nezdařilo.');
+        }
+
+        const data = await res.json();
+        token = data.access_token;
+        currentUser = data.user;
+        localStorage.setItem('token', token);
+        showToast('Úspěšně přihlášen!');
+        showDashboard();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function verifySession() {
+      try {
+        const res = await fetch('/api/v1/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          currentUser = await res.json();
+          showDashboard();
+        } else {
+          logout();
+        }
+      } catch (e) {
+        logout();
+      }
+    }
+
+    function logout() {
+      token = '';
+      currentUser = null;
+      localStorage.removeItem('token');
+      showLogin();
+      showToast('Byl jste odhlášen.');
+    }
+
+    function showLogin() {
+      document.getElementById('loginView').style.display = 'block';
+      document.getElementById('dashboardView').style.display = 'none';
+      document.getElementById('userHeaderInfo').style.display = 'none';
+    }
+
+    function showDashboard() {
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('dashboardView').style.display = 'block';
+      document.getElementById('userHeaderInfo').style.display = 'flex';
+
+      // Update Header & Banner
+      document.getElementById('headerUserName').textContent = currentUser.full_name;
+      const roleBadge = document.getElementById('headerUserRole');
+      roleBadge.textContent = currentUser.role;
+      roleBadge.className = `role-badge role-${currentUser.role}`;
+
+      document.getElementById('bannerName').textContent = currentUser.full_name;
+      const bannerBadge = document.getElementById('bannerRoleBadge');
+      bannerBadge.textContent = currentUser.role;
+      bannerBadge.className = `role-badge role-${currentUser.role}`;
+
+      const permEl = document.getElementById('bannerPermissions');
+      const btnNew = document.getElementById('btnNewUser');
+
+      if (currentUser.role === 'ADMIN') {
+        permEl.textContent = 'Máte plná oprávnění ke správě uživatelů a lékařů.';
+        btnNew.style.display = 'inline-flex';
+      } else {
+        permEl.textContent = 'Režim prohlížení: Nemáte oprávnění vytvářet ani měnit uživatele (vyžadována role ADMIN).';
+        btnNew.style.display = 'none';
+      }
+
+      loadUsers();
+    }
+
+    async function loadUsers() {
+      try {
+        let url = `/api/v1/users?limit=100`;
+        if (currentRoleFilter) url += `&role=${currentRoleFilter}`;
+        const search = document.getElementById('searchInput').value.trim();
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          throw new Error('Chyba při načítání uživatelů.');
+        }
+
+        const data = await res.json();
+        usersList = data.items;
+        renderUsers();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function renderUsers() {
+      const tbody = document.getElementById('userTableBody');
+      if (usersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenalezeni žádní uživatelé.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = usersList.map(u => {
+        const created = new Date(u.created_at).toLocaleDateString('cs-CZ', {
+          day: '2-digit', month: '2-digit', year: 'numeric'
+        });
+
+        const isAdmin = currentUser && currentUser.role === 'ADMIN';
+
+        return `
+          <tr>
+            <td><strong style="color: var(--text-muted);">#${u.id}</strong></td>
+            <td><strong>${escapeHtml(u.full_name)}</strong></td>
+            <td><code>${escapeHtml(u.username)}</code></td>
+            <td>${escapeHtml(u.email)}</td>
+            <td><span class="role-badge role-${u.role}">${u.role}</span></td>
+            <td>
+              <span class="status-badge ${u.is_active ? 'status-active' : 'status-inactive'}">
+                <span class="status-dot"></span>
+                ${u.is_active ? 'Aktivní' : 'Neaktivní'}
+              </span>
+            </td>
+            <td style="color: var(--text-muted); font-size: 0.8rem;">${created}</td>
+            <td style="text-align: right;">
+              <div class="action-group" style="justify-content: flex-end;">
+                ${isAdmin ? `
+                  <button class="btn btn-secondary btn-sm" onclick="editUser(${u.id})">Upravit</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id}, '${escapeHtml(u.username)}')">Smazat</button>
+                ` : `<span style="font-size: 0.75rem; color: var(--text-muted);">Pouze čtení</span>`}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function setFilterRole(role, btn) {
+      currentRoleFilter = role;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadUsers();
+    }
+
+    function handleSearch() {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(() => {
+        loadUsers();
+      }, 300);
+    }
+
+    function openUserModal(editUserObj = null) {
+      const modal = document.getElementById('userModal');
+      const title = document.getElementById('modalTitle');
+      const passHelp = document.getElementById('passwordHelp');
+      const passInput = document.getElementById('password');
+      const passLabel = document.getElementById('passwordLabel');
+      const userInput = document.getElementById('username');
+
+      document.getElementById('userForm').reset();
+
+      if (editUserObj) {
+        title.textContent = `Úprava uživatele: ${editUserObj.full_name}`;
+        document.getElementById('userId').value = editUserObj.id;
+        document.getElementById('fullName').value = editUserObj.full_name;
+        document.getElementById('username').value = editUserObj.username;
+        document.getElementById('username').disabled = true;
+        document.getElementById('email').value = editUserObj.email;
+        document.getElementById('role').value = editUserObj.role;
+        document.getElementById('isActive').checked = editUserObj.is_active;
+
+        passInput.required = false;
+        passHelp.style.display = 'block';
+        passLabel.textContent = 'Nové heslo (volitelné)';
+      } else {
+        title.textContent = 'Založení nového uživatele';
+        document.getElementById('userId').value = '';
+        userInput.disabled = false;
+        passInput.required = true;
+        passHelp.style.display = 'none';
+        passLabel.textContent = 'Heslo *';
+        document.getElementById('isActive').checked = true;
+      }
+
+      modal.classList.add('open');
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModal').classList.remove('open');
+    }
+
+    function editUser(userId) {
+      const user = usersList.find(u => u.id === userId);
+      if (user) openUserModal(user);
+    }
+
+    async function saveUser(e) {
+      e.preventDefault();
+      const userId = document.getElementById('userId').value;
+      const isEdit = Boolean(userId);
+
+      const payload = {
+        email: document.getElementById('email').value.trim(),
+        full_name: document.getElementById('fullName').value.trim(),
+        role: document.getElementById('role').value,
+        is_active: document.getElementById('isActive').checked,
+      };
+
+      const pass = document.getElementById('password').value;
+      if (pass) payload.password = pass;
+
+      if (!isEdit) {
+        payload.username = document.getElementById('username').value.trim();
+        if (!pass) {
+          showToast('Heslo je povinné!', true);
+          return;
+        }
+      }
+
+      try {
+        const url = isEdit ? `/api/v1/users/${userId}` : '/api/v1/users';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Operace se nezdařila.');
+        }
+
+        showToast(isEdit ? 'Uživatel upraven!' : 'Uživatel úspěšně vytvořen!');
+        closeUserModal();
+        loadUsers();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function deleteUser(userId, username) {
+      if (!confirm(`Opravdu chcete smazat uživatele "${username}"?`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/v1/users/${userId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Chyba při mazání uživatele.');
+        }
+
+        showToast(`Uživatel "${username}" byl smazán.`);
+        loadUsers();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
