@@ -1,0 +1,23 @@
+# OS and Editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.idea/
+.vscode/
+*.suo
+*.user
+
+# Environment and sensitive data
+.env
+.env.local
+*.log
+
+# Build outputs (general)
+bin/
+obj/
+dist/
+build/
+target/
+node_modules/

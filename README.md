@@ -110,3 +110,10 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
 
 ### 4.2 Průběžný protokol dohodnutých změn a rozhodnutí (Changelog rozhodnutí)
 - **2026-10-05:** Inicializace projektové dokumentace zadání A podle zadávacího dokumentu PPRO (verze 1). Založení struktury otevřených bodů k potvrzení vývojářem.
+- **2026-10-05:** **Volba technologického stacku a architektury:**
+  - Backend: **Python 3.12** a framework **FastAPI**.
+  - ORM a migrace: **SQLAlchemy 2.0** a **Alembic**.
+  - Databáze: **PostgreSQL 16** v Docker kontejneru.
+  - Architektura: Striktní **třívrstvá architektura** (`presentation`, `business`, `infrastructure`).
+  - Rozsah demo verze: Kontejnerizace přes `docker-compose.yml`, bezpečné přihlašování přes JWT a OAuth2 Password flow, kompletní správa uživatelů (CRUD), předdefinované role (`ADMIN`, `RECEPTIONIST`, `DOCTOR`), jednoduché webové rozhraní (HTML/CSS) a automatizované testy v `pytest`.
+
