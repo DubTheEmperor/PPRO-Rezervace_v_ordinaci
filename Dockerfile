@@ -20,8 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Zkopírování zdrojového kódu a konfigurace
 COPY . .
 
-# Oprávnění pro spouštěcí skript
-RUN chmod +x entrypoint.sh
+# Ošetření konců řádků a oprávnění pro spouštěcí skript
+RUN sed -i 's/\r$//' entrypoint.sh && chmod +x entrypoint.sh
 
 EXPOSE 8000
 
