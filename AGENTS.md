@@ -35,7 +35,7 @@ Aplikace řeší **rezervační a evidenční systém pro soukromou lékařskou 
   Před commitem musí být kód zkontrolován, zformátován a funkční.
 
 ### 2.3 Živá dokumentace a správa rozhodnutí
-- Při každé domluvě o otevřeném bodu, volbě technologie či změně požadavku od vyučujícího (klienta na cvičení) musí agent zaznamenat rozhodnutí do sekce **4. Otevřené body klienta a sekce Rozhodnutí** v [README.md](file:///u:/ING/1.%20semestr/PPRO/README.md).
+- Při každé domluvě o otevřeném bodu, volbě technologie či změně požadavku od vyučujícího (klienta na cvičení) musí agent zaznamenat rozhodnutí do sekce **4. Otevřené body klienta a sekce Rozhodnutí** v [README.md](\PPRO-Rezervace_v_ordinaci\README.md).
 - Zápis musí vždy obsahovat: co bylo rozhodnuto, proč a jaký to má dopad na architekturu.
 
 ### 2.4 Technické a architektonické hranice
