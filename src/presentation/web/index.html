@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -181,10 +182,10 @@
 
     main {
       flex: 1;
-      padding: 2rem;
-      max-width: 1200px;
+      padding: 1.5rem 1.75rem;
+      max-width: 1440px;
       margin: 0 auto;
-      width: 100%;
+      width: 98%;
     }
 
     /* LOGIN SCREEN */
@@ -474,7 +475,7 @@
 
     th {
       background: #f8fafc;
-      padding: 0.75rem 1rem;
+      padding: 0.75rem 0.65rem;
       font-weight: 600;
       color: var(--text-muted);
       border-bottom: 1px solid var(--border);
@@ -484,7 +485,7 @@
     }
 
     td {
-      padding: 0.85rem 1rem;
+      padding: 0.75rem 0.65rem;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
     }
@@ -534,10 +535,21 @@
       border-radius: 50%;
     }
 
-    .status-active .status-dot { background: var(--success); }
-    .status-active { color: var(--success); }
-    .status-inactive .status-dot { background: var(--text-muted); }
-    .status-inactive { color: var(--text-muted); }
+    .status-active .status-dot {
+      background: var(--success);
+    }
+
+    .status-active {
+      color: var(--success);
+    }
+
+    .status-inactive .status-dot {
+      background: var(--text-muted);
+    }
+
+    .status-inactive {
+      color: var(--text-muted);
+    }
 
     .action-group {
       display: flex;
@@ -623,20 +635,40 @@
       animation: slideUp 0.3s ease;
     }
 
-    .toast.toast-success { background: var(--success); }
-    .toast.toast-error { background: var(--danger); }
+    .toast.toast-success {
+      background: var(--success);
+    }
+
+    .toast.toast-error {
+      background: var(--danger);
+    }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.98); }
-      to { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     @keyframes slideUp {
-      from { transform: translateY(10px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      from {
+        transform: translateY(10px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- HEADER -->
@@ -717,7 +749,8 @@
 
       <div class="info-banner">
         <div class="info-banner-text">
-          Přihlášen: <strong id="bannerName">Administrátor</strong> | Role: <span id="bannerRoleBadge" class="role-badge role-ADMIN">ADMIN</span>.
+          Přihlášen: <strong id="bannerName">Administrátor</strong> | Role: <span id="bannerRoleBadge"
+            class="role-badge role-ADMIN">ADMIN</span>.
           <span id="bannerPermissions" style="margin-left: 0.5rem; color: var(--text-muted);">
             Vítejte v systému Ordinace Na Vyhlídce.
           </span>
@@ -743,7 +776,8 @@
         <div class="card">
           <div class="card-filter">
             <div class="search-input-wrapper" style="max-width: 420px;">
-              <input type="text" id="patientSearchInput" class="form-control" placeholder="Hledat podle příjmení, jména, telefonu nebo RČ..." oninput="handlePatientSearch()">
+              <input type="text" id="patientSearchInput" class="form-control"
+                placeholder="Hledat podle příjmení, jména, telefonu nebo RČ..." oninput="handlePatientSearch()">
             </div>
             <div class="filter-tabs">
               <button class="filter-btn active" onclick="setPatientFilterStatus('', this)">Všichni pacienti</button>
@@ -756,15 +790,15 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width: 45px;">ID</th>
-                  <th>Příjmení a jméno</th>
-                  <th style="width: 85px; white-space: nowrap;">Rok nar.</th>
-                  <th style="min-width: 175px; white-space: nowrap;">Telefon</th>
-                  <th style="white-space: nowrap;">Číslo pojištěnce (RČ)</th>
-                  <th>Pojišťovna</th>
-                  <th style="width: 75px; text-align: center;">Poznámka</th>
-                  <th>Stav</th>
-                  <th style="width: 170px; text-align: right;">Akce</th>
+                  <th style="width: 45px; text-align: center;">ID</th>
+                  <th style="white-space: nowrap;">Příjmení a jméno</th>
+                  <th style="width: 75px; text-align: center; white-space: nowrap;">Rok nar.</th>
+                  <th style="min-width: 165px; white-space: nowrap;">Telefon</th>
+                  <th style="white-space: nowrap;">Číslo pojištěnce</th>
+                  <th style="width: 95px; text-align: center;">Pojišťovna</th>
+                  <th style="width: 65px; text-align: center;">Poznámka</th>
+                  <th style="width: 85px; text-align: center;">Stav</th>
+                  <th style="width: 165px; text-align: right;">Akce</th>
                 </tr>
               </thead>
               <tbody id="patientTableBody">
@@ -796,7 +830,8 @@
         <div class="card">
           <div class="card-filter">
             <div class="search-input-wrapper">
-              <input type="text" id="searchInput" class="form-control" placeholder="Hledat jméno, e-mail nebo login..." oninput="handleSearch()">
+              <input type="text" id="searchInput" class="form-control" placeholder="Hledat jméno, e-mail nebo login..."
+                oninput="handleSearch()">
             </div>
             <div class="filter-tabs">
               <button class="filter-btn active" onclick="setFilterRole('', this)">Všichni</button>
@@ -907,17 +942,20 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
               <label for="patientBirthYear">Rok narození *</label>
-              <input type="number" id="patientBirthYear" class="form-control" required min="1900" max="2026" placeholder="např. 1980">
+              <input type="number" id="patientBirthYear" class="form-control" required min="1900" max="2026"
+                placeholder="např. 1980">
             </div>
             <div class="form-group">
               <label for="patientPhoneNumber">Telefonní číslo *</label>
-              <input type="tel" id="patientPhoneNumber" class="form-control" required placeholder="např. +420 777 123 456">
+              <input type="tel" id="patientPhoneNumber" class="form-control" required
+                placeholder="např. +420 777 123 456">
             </div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
               <label for="patientInsuranceNumber">Číslo pojištěnce (RČ) *</label>
-              <input type="text" id="patientInsuranceNumber" class="form-control" required placeholder="např. 8001011234">
+              <input type="text" id="patientInsuranceNumber" class="form-control" required
+                placeholder="např. 8001011234">
             </div>
             <div class="form-group">
               <label for="patientInsuranceCompany">Zdravotní pojišťovna *</label>
@@ -934,7 +972,8 @@
           </div>
           <div class="form-group">
             <label for="patientNotes">Interní poznámka k pacientovi</label>
-            <textarea id="patientNotes" class="form-control" rows="3" placeholder="např. alergie, preference ranních termínů..."></textarea>
+            <textarea id="patientNotes" class="form-control" rows="3"
+              placeholder="např. alergie, preference ranních termínů..."></textarea>
           </div>
           <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
             <input type="checkbox" id="patientIsActive" checked style="width: 16px; height: 16px;">
@@ -962,7 +1001,8 @@
         <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;" id="noteModalPatientName">
           Pacient: <strong>Jan Novák</strong>
         </div>
-        <div id="noteModalContent" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; background: #f8fafc; border: 1px solid var(--border); padding: 0.85rem; border-radius: 6px; color: var(--text-main); max-height: 250px; overflow-y: auto;">
+        <div id="noteModalContent"
+          style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; background: #f8fafc; border: 1px solid var(--border); padding: 0.85rem; border-radius: 6px; color: var(--text-main); max-height: 250px; overflow-y: auto;">
           Obsah poznámky...
         </div>
       </div>
@@ -1363,18 +1403,18 @@
 
         return `
           <tr>
-            <td style="white-space: nowrap;"><strong style="color: var(--text-muted);">#${p.id}</strong></td>
-            <td>
+            <td style="white-space: nowrap; text-align: center;"><strong style="color: var(--text-muted);">#${p.id}</strong></td>
+            <td style="white-space: nowrap;">
               <strong style="font-size: 0.95rem;">${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
             </td>
-            <td style="white-space: nowrap;">${p.birth_year}</td>
+            <td style="white-space: nowrap; text-align: center;">${p.birth_year}</td>
             <td style="white-space: nowrap;">
               <a href="tel:${escapeHtml(p.phone_number)}" class="phone-link" title="Zavolat pacientovi">
                 <span>📞</span> ${escapeHtml(formattedPhone)}
               </a>
             </td>
             <td style="white-space: nowrap;"><code>${escapeHtml(p.insurance_number)}</code></td>
-            <td><span class="ins-badge">${escapeHtml(insDisplay)}</span></td>
+            <td style="text-align: center;"><span class="ins-badge">${escapeHtml(insDisplay)}</span></td>
             <td style="text-align: center;">
               ${p.notes && p.notes.trim() ? `
                 <button type="button" class="btn-note-icon" onclick="showNoteModal(${p.id})" title="Zobrazit poznámku">
@@ -1382,7 +1422,7 @@
                 </button>
               ` : `<span style="color: var(--text-muted); font-size: 0.9rem;">—</span>`}
             </td>
-            <td>
+            <td style="text-align: center;">
               <span class="status-badge ${p.is_active ? 'status-active' : 'status-inactive'}">
                 <span class="status-dot"></span>
                 ${p.is_active ? 'Aktivní' : 'Archivován'}
@@ -1597,4 +1637,5 @@
     }
   </script>
 </body>
+
 </html>
