@@ -73,3 +73,14 @@ def receptionist_token(client):
     )
     assert response.status_code == 200
     return response.json()["access_token"]
+
+
+@pytest.fixture
+def doctor_token(client):
+    """Získá platný JWT token pro MUDr. Janu Hrubou."""
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "hruba", "password": "Hruba123!"}
+    )
+    assert response.status_code == 200
+    return response.json()["access_token"]

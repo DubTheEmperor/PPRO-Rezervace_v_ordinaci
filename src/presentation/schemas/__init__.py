@@ -7,6 +7,13 @@ from src.presentation.schemas.user_schemas import (
     UserResponse,
     UserListResponse,
 )
+from src.presentation.schemas.patient_schemas import (
+    PatientBase,
+    PatientCreate,
+    PatientUpdate,
+    PatientResponse,
+    PatientListResponse,
+)
 
 __all__ = [
     "LoginRequest",
@@ -16,4 +23,9 @@ __all__ = [
     "UserUpdate",
     "UserResponse",
     "UserListResponse",
+    "PatientBase",
+    "PatientCreate",
+    "PatientUpdate",
+    "PatientResponse",
+    "PatientListResponse",
 ]

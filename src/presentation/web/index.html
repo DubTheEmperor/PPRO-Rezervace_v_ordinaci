@@ -289,6 +289,70 @@
       transform: translateX(2px);
     }
 
+    /* MAIN NAVIGATION TABS */
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 1.5rem;
+    }
+
+    .nav-tab {
+      padding: 0.75rem 1.25rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .nav-tab:hover {
+      color: var(--primary);
+      background: #f1f5f9;
+    }
+
+    .nav-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: white;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+    }
+
+    .ins-badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .phone-link {
+      color: var(--text-main);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-weight: 500;
+    }
+
+    .phone-link:hover {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
     /* DASHBOARD */
     .dashboard-header {
       display: flex;
@@ -620,23 +684,21 @@
 
     <!-- DASHBOARD VIEW -->
     <div id="dashboardView" style="display: none;">
-      <div class="dashboard-header">
-        <div class="dashboard-title">
-          <h2>Správa uživatelů a personálu</h2>
-          <p>Evidence zaměstnanců ordinace, lékařů a recepčních v třívrstvé architektuře</p>
-        </div>
-        <div>
-          <button id="btnNewUser" class="btn btn-primary" onclick="openUserModal()">
-            + Založit uživatele
-          </button>
-        </div>
+      <!-- NAVIGATION TABS -->
+      <div class="nav-tabs">
+        <button id="tabBtnPatients" class="nav-tab active" onclick="switchDashboardTab('patients')">
+          <span>📋</span> Evidence pacientů
+        </button>
+        <button id="tabBtnUsers" class="nav-tab" onclick="switchDashboardTab('users')">
+          <span>👥</span> Správa personálu
+        </button>
       </div>
 
       <div class="info-banner">
         <div class="info-banner-text">
           Přihlášen: <strong id="bannerName">Administrátor</strong> | Role: <span id="bannerRoleBadge" class="role-badge role-ADMIN">ADMIN</span>.
           <span id="bannerPermissions" style="margin-left: 0.5rem; color: var(--text-muted);">
-            Máte plná oprávnění ke správě uživatelů a rolí.
+            Vítejte v systému Ordinace Na Vyhlídce.
           </span>
         </div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">
@@ -644,41 +706,109 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-filter">
-          <div class="search-input-wrapper">
-            <input type="text" id="searchInput" class="form-control" placeholder="Hledat jméno, e-mail nebo login..." oninput="handleSearch()">
+      <!-- SECTION: PATIENTS (Funkční požadavek 1) -->
+      <div id="sectionPatients">
+        <div class="dashboard-header">
+          <div class="dashboard-title">
+            <h2>Kartotéka a evidence pacientů</h2>
+            <p>Rychlé vyhledávání podle příjmení nebo telefonního čísla pro příjem hovorů a objednávky</p>
           </div>
-          <div class="filter-tabs">
-            <button class="filter-btn active" onclick="setFilterRole('', this)">Všichni</button>
-            <button class="filter-btn" onclick="setFilterRole('ADMIN', this)">Administrátoři</button>
-            <button class="filter-btn" onclick="setFilterRole('RECEPTIONIST', this)">Recepce</button>
-            <button class="filter-btn" onclick="setFilterRole('DOCTOR', this)">Lékaři</button>
+          <div>
+            <button id="btnNewPatient" class="btn btn-primary" onclick="openPatientModal()">
+              + Nový pacient
+            </button>
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 50px;">ID</th>
-                <th>Celé jméno</th>
-                <th>Uživatelské jméno</th>
-                <th>E-mail</th>
-                <th>Role</th>
-                <th>Stav</th>
-                <th>Datum vytvoření</th>
-                <th style="width: 140px; text-align: right;">Akce</th>
-              </tr>
-            </thead>
-            <tbody id="userTableBody">
-              <tr>
-                <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                  Načítání uživatelů...
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="card">
+          <div class="card-filter">
+            <div class="search-input-wrapper" style="max-width: 420px;">
+              <input type="text" id="patientSearchInput" class="form-control" placeholder="Hledat podle příjmení, jména, telefonu nebo RČ..." oninput="handlePatientSearch()">
+            </div>
+            <div class="filter-tabs">
+              <button class="filter-btn active" onclick="setPatientFilterStatus('', this)">Všichni pacienti</button>
+              <button class="filter-btn" onclick="setPatientFilterStatus('true', this)">Pouze aktivní</button>
+              <button class="filter-btn" onclick="setPatientFilterStatus('false', this)">Archivovaní</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>Příjmení a jméno</th>
+                  <th>Rok narození</th>
+                  <th>Telefon</th>
+                  <th>Číslo pojištěnce (RČ)</th>
+                  <th>Pojišťovna</th>
+                  <th>Poznámka</th>
+                  <th>Stav</th>
+                  <th style="width: 170px; text-align: right;">Akce</th>
+                </tr>
+              </thead>
+              <tbody id="patientTableBody">
+                <tr>
+                  <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    Načítání pacientů...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: USERS -->
+      <div id="sectionUsers" style="display: none;">
+        <div class="dashboard-header">
+          <div class="dashboard-title">
+            <h2>Správa uživatelů a personálu</h2>
+            <p>Evidence zaměstnanců ordinace, lékařů a recepčních v třívrstvé architektuře</p>
+          </div>
+          <div>
+            <button id="btnNewUser" class="btn btn-primary" onclick="openUserModal()">
+              + Založit uživatele
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-filter">
+            <div class="search-input-wrapper">
+              <input type="text" id="searchInput" class="form-control" placeholder="Hledat jméno, e-mail nebo login..." oninput="handleSearch()">
+            </div>
+            <div class="filter-tabs">
+              <button class="filter-btn active" onclick="setFilterRole('', this)">Všichni</button>
+              <button class="filter-btn" onclick="setFilterRole('ADMIN', this)">Administrátoři</button>
+              <button class="filter-btn" onclick="setFilterRole('RECEPTIONIST', this)">Recepce</button>
+              <button class="filter-btn" onclick="setFilterRole('DOCTOR', this)">Lékaři</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>Celé jméno</th>
+                  <th>Uživatelské jméno</th>
+                  <th>E-mail</th>
+                  <th>Role</th>
+                  <th>Stav</th>
+                  <th>Datum vytvoření</th>
+                  <th style="width: 140px; text-align: right;">Akce</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody">
+                <tr>
+                  <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    Načítání uživatelů...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -734,6 +864,71 @@
     </div>
   </div>
 
+  <!-- MODAL FOR PATIENT CREATE / EDIT -->
+  <div id="patientModal" class="modal-overlay">
+    <div class="modal" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 id="patientModalTitle">Nový pacient</h3>
+        <button class="close-btn" onclick="closePatientModal()">&times;</button>
+      </div>
+      <form id="patientForm" onsubmit="savePatient(event)">
+        <div class="modal-body">
+          <input type="hidden" id="patientId">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="patientFirstName">Jméno *</label>
+              <input type="text" id="patientFirstName" class="form-control" required placeholder="např. Jan">
+            </div>
+            <div class="form-group">
+              <label for="patientLastName">Příjmení *</label>
+              <input type="text" id="patientLastName" class="form-control" required placeholder="např. Novák">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="patientBirthYear">Rok narození *</label>
+              <input type="number" id="patientBirthYear" class="form-control" required min="1900" max="2026" placeholder="např. 1980">
+            </div>
+            <div class="form-group">
+              <label for="patientPhoneNumber">Telefonní číslo *</label>
+              <input type="tel" id="patientPhoneNumber" class="form-control" required placeholder="např. +420 777 123 456">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="patientInsuranceNumber">Číslo pojištěnce (RČ) *</label>
+              <input type="text" id="patientInsuranceNumber" class="form-control" required placeholder="např. 8001011234">
+            </div>
+            <div class="form-group">
+              <label for="patientInsuranceCompany">Zdravotní pojišťovna *</label>
+              <select id="patientInsuranceCompany" class="form-control" required>
+                <option value="111">111 – Všeobecná zdr. poj. (VZP)</option>
+                <option value="201">201 – Vojenská zdr. poj. (VoZP)</option>
+                <option value="205">205 – Česká průmyslová (ČPZP)</option>
+                <option value="207">207 – Oborová zdr. poj. (OZP)</option>
+                <option value="209">209 – Zaměstnanecká ŠKODA (ZPŠ)</option>
+                <option value="211">211 – Zdr. poj. min. vnitra (ZPMV)</option>
+                <option value="213">213 – Revírní bratrská pokladna (RBP)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="patientNotes">Interní poznámka k pacientovi</label>
+            <textarea id="patientNotes" class="form-control" rows="3" placeholder="např. alergie, preference ranních termínů..."></textarea>
+          </div>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+            <input type="checkbox" id="patientIsActive" checked style="width: 16px; height: 16px;">
+            <label for="patientIsActive" style="margin-bottom: 0; cursor: pointer;">Pacient je aktivní</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closePatientModal()">Zrušit</button>
+          <button type="submit" class="btn btn-primary" id="btnSavePatient">Uložit kartu pacienta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast">Zpráva</div>
 
@@ -743,6 +938,12 @@
     let usersList = [];
     let currentRoleFilter = '';
     let searchDebounce = null;
+
+    // Patients state
+    let activeDashboardTab = 'patients';
+    let patientsList = [];
+    let currentPatientStatusFilter = '';
+    let patientSearchDebounce = null;
 
     // Inicializace
     window.addEventListener('DOMContentLoaded', () => {
@@ -847,14 +1048,36 @@
       const btnNew = document.getElementById('btnNewUser');
 
       if (currentUser.role === 'ADMIN') {
-        permEl.textContent = 'Máte plná oprávnění ke správě uživatelů a lékařů.';
+        permEl.textContent = 'Máte plná oprávnění ke správě ordinace, personálu i evidence pacientů.';
         btnNew.style.display = 'inline-flex';
       } else {
-        permEl.textContent = 'Režim prohlížení: Nemáte oprávnění vytvářet ani měnit uživatele (vyžadována role ADMIN).';
+        permEl.textContent = `Přihlášena ${currentUser.full_name}. Evidence pacientů je připravena pro vyhledávání a objednávky.`;
         btnNew.style.display = 'none';
       }
 
-      loadUsers();
+      switchDashboardTab(activeDashboardTab || 'patients');
+    }
+
+    function switchDashboardTab(tab) {
+      activeDashboardTab = tab;
+      const tabPatients = document.getElementById('tabBtnPatients');
+      const tabUsers = document.getElementById('tabBtnUsers');
+      const secPatients = document.getElementById('sectionPatients');
+      const secUsers = document.getElementById('sectionUsers');
+
+      if (tab === 'patients') {
+        tabPatients.classList.add('active');
+        tabUsers.classList.remove('active');
+        secPatients.style.display = 'block';
+        secUsers.style.display = 'none';
+        loadPatients();
+      } else {
+        tabPatients.classList.remove('active');
+        tabUsers.classList.add('active');
+        secPatients.style.display = 'none';
+        secUsers.style.display = 'block';
+        loadUsers();
+      }
     }
 
     async function loadUsers() {
@@ -1047,6 +1270,248 @@
 
         showToast(`Uživatel "${username}" byl smazán.`);
         loadUsers();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    /* PATIENT HANDLERS */
+    async function loadPatients() {
+      try {
+        let url = `/api/v1/patients?limit=100`;
+        if (currentPatientStatusFilter) url += `&is_active=${currentPatientStatusFilter}`;
+        const search = document.getElementById('patientSearchInput').value.trim();
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          throw new Error('Chyba při načítání pacientů.');
+        }
+
+        const data = await res.json();
+        patientsList = data.items;
+        renderPatients();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function renderPatients() {
+      const tbody = document.getElementById('patientTableBody');
+      if (patientsList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Nenalezeni žádní pacienti. Pro přidání klikněte na <strong>+ Nový pacient</strong>.</td></tr>`;
+        return;
+      }
+
+      const isAdmin = currentUser && currentUser.role === 'ADMIN';
+
+      tbody.innerHTML = patientsList.map(p => {
+        const insNames = {
+          '111': 'VZP (111)',
+          '201': 'VoZP (201)',
+          '205': 'ČPZP (205)',
+          '207': 'OZP (207)',
+          '209': 'ZPŠ (209)',
+          '211': 'ZPMV (211)',
+          '213': 'RBP (213)',
+        };
+        const insDisplay = insNames[p.insurance_company_code] || p.insurance_company_code;
+
+        return `
+          <tr>
+            <td><strong style="color: var(--text-muted);">#${p.id}</strong></td>
+            <td>
+              <strong style="font-size: 0.95rem;">${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
+            </td>
+            <td>${p.birth_year}</td>
+            <td>
+              <a href="tel:${escapeHtml(p.phone_number)}" class="phone-link" title="Zavolat pacientovi">
+                <span>📞</span> ${escapeHtml(p.phone_number)}
+              </a>
+            </td>
+            <td><code>${escapeHtml(p.insurance_number)}</code></td>
+            <td><span class="ins-badge">${escapeHtml(insDisplay)}</span></td>
+            <td style="max-width: 220px; color: var(--text-muted); font-size: 0.8rem;" title="${escapeHtml(p.notes || '')}">
+              ${p.notes ? escapeHtml(p.notes) : '<em style="color: #94a3b8;">bez poznámky</em>'}
+            </td>
+            <td>
+              <span class="status-badge ${p.is_active ? 'status-active' : 'status-inactive'}">
+                <span class="status-dot"></span>
+                ${p.is_active ? 'Aktivní' : 'Archivován'}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <div class="action-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary btn-sm" onclick="editPatient(${p.id})">Upravit</button>
+                ${p.is_active ? `
+                  <button class="btn btn-warning btn-sm" onclick="deactivatePatient(${p.id}, '${escapeHtml(p.last_name)}')" title="Přesunout do archivu">Archivovat</button>
+                ` : `
+                  <button class="btn btn-secondary btn-sm" onclick="restorePatient(${p.id})">Obnovit</button>
+                `}
+                ${isAdmin ? `
+                  <button class="btn btn-danger btn-sm" onclick="deletePatientPermanent(${p.id}, '${escapeHtml(p.last_name)}')" title="Trvalé smazání z DB">Smazat</button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function handlePatientSearch() {
+      clearTimeout(patientSearchDebounce);
+      patientSearchDebounce = setTimeout(() => {
+        loadPatients();
+      }, 250);
+    }
+
+    function setPatientFilterStatus(status, btn) {
+      currentPatientStatusFilter = status;
+      btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadPatients();
+    }
+
+    function openPatientModal(patientObj = null) {
+      const modal = document.getElementById('patientModal');
+      const title = document.getElementById('patientModalTitle');
+      document.getElementById('patientForm').reset();
+
+      if (patientObj) {
+        title.textContent = `Úprava karty: ${patientObj.last_name} ${patientObj.first_name}`;
+        document.getElementById('patientId').value = patientObj.id;
+        document.getElementById('patientFirstName').value = patientObj.first_name;
+        document.getElementById('patientLastName').value = patientObj.last_name;
+        document.getElementById('patientBirthYear').value = patientObj.birth_year;
+        document.getElementById('patientPhoneNumber').value = patientObj.phone_number;
+        document.getElementById('patientInsuranceNumber').value = patientObj.insurance_number;
+        document.getElementById('patientInsuranceCompany').value = patientObj.insurance_company_code;
+        document.getElementById('patientNotes').value = patientObj.notes || '';
+        document.getElementById('patientIsActive').checked = patientObj.is_active;
+      } else {
+        title.textContent = 'Zaevidování nového pacienta';
+        document.getElementById('patientId').value = '';
+        document.getElementById('patientBirthYear').value = 1985;
+        document.getElementById('patientIsActive').checked = true;
+      }
+
+      modal.classList.add('open');
+    }
+
+    function closePatientModal() {
+      document.getElementById('patientModal').classList.remove('open');
+    }
+
+    function editPatient(patientId) {
+      const p = patientsList.find(x => x.id === patientId);
+      if (p) openPatientModal(p);
+    }
+
+    async function savePatient(e) {
+      e.preventDefault();
+      const patientId = document.getElementById('patientId').value;
+      const isEdit = Boolean(patientId);
+
+      const payload = {
+        first_name: document.getElementById('patientFirstName').value.trim(),
+        last_name: document.getElementById('patientLastName').value.trim(),
+        birth_year: parseInt(document.getElementById('patientBirthYear').value, 10),
+        phone_number: document.getElementById('patientPhoneNumber').value.trim(),
+        insurance_number: document.getElementById('patientInsuranceNumber').value.trim(),
+        insurance_company_code: document.getElementById('patientInsuranceCompany').value,
+        notes: document.getElementById('patientNotes').value.trim() || null,
+        is_active: document.getElementById('patientIsActive').checked,
+      };
+
+      try {
+        const url = isEdit ? `/api/v1/patients/${patientId}` : '/api/v1/patients';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          let msg = err.detail;
+          if (Array.isArray(msg)) {
+            msg = msg.map(m => m.msg).join(', ');
+          }
+          throw new Error(msg || 'Uložení pacienta se nezdařilo.');
+        }
+
+        showToast(isEdit ? 'Karta pacienta upravena!' : 'Pacient úspěšně zaevidován!');
+        closePatientModal();
+        loadPatients();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function deactivatePatient(patientId, lastName) {
+      if (!confirm(`Chcete přesunout pacienta "${lastName}" do archivu (deaktivovat)? Zdravotní historie zůstane zachována.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/v1/patients/${patientId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Chyba při archivaci.');
+        }
+        showToast(`Pacient "${lastName}" byl archivován.`);
+        loadPatients();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function restorePatient(patientId) {
+      try {
+        const res = await fetch(`/api/v1/patients/${patientId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ is_active: true })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Chyba při obnovení.');
+        }
+        showToast('Karta pacienta byla obnovena do aktivního stavu.');
+        loadPatients();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function deletePatientPermanent(patientId, lastName) {
+      if (!confirm(`VAROVÁNÍ: Opravdu chcete TRVALE smazat pacienta "${lastName}" z databáze? Tuto akci nelze vrátit!`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/v1/patients/${patientId}?permanent=true`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Chyba při trvalém mazání.');
+        }
+        showToast(`Pacient "${lastName}" byl trvale odstraněn.`);
+        loadPatients();
       } catch (err) {
         showToast(err.message, true);
       }

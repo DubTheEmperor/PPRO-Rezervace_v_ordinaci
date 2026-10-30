@@ -105,7 +105,7 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
 | **1** | **Délka jednoho termínu** | Mřížka po 15 minutách vs. dynamická délka termínu podle typu vyšetření. | *V diskuzi s vývojářem.* Návrh: Základní časový slot s pevnou délkou (např. 15 či 30 minut) nebo násobky slotů podle typu zákroku, aby se předešlo fragmentaci a kolizím v kalendáři. | K odsouhlasení |
 | **2** | **Kdo zakládá rezervaci** | Výhradně recepce vs. pacienti přes web. | Primární zaměření na recepční rozhraní (paní Věra). Backend navrhnout přes čisté servisní rozhraní / API tak, aby v budoucnu bylo možné napojit klientský portál bez přepisování byznys logiky. | K odsouhlasení |
 | **3** | **Co se zrušenou rezervací** | Zmizení z diáře vs. zachování pro statistiku nespolehlivých pacientů. | Stavový model rezervace (např. `STAV: PLANOVANA, USKUTECNENA, ZRUSA_PACIENTEM, ZRUSA_ORDINACI`). V kalendáři se zrušený termín uvolní pro novou rezervaci (neblokuje slot), ale záznam o zrušení zůstává trvale v historii pacienta pro statistiky. | K odsouhlasení |
-| **4** | **Jednoznačná totožnost pacienta** | Duplicity v diáři, nejasný primární identifikátor. | Jednoznačným klíčem v evidenci bude kombinace čísla pojištěnce (rodného čísla) a pojišťovny. Při zakládání nového pacienta systém provede deduplikační kontrolu (shoda telefonu, jména a data narození) a upozorní recepční na případnou existenci karty. | K odsouhlasení |
+| **4** | **Jednoznačná totožnost pacienta** | Duplicity v diáři, nejasný primární identifikátor. | Jednoznačným klíčem v evidenci bude kombinace čísla pojištěnce (rodného čísla) a pojišťovny. Při zakládání nového pacienta systém provede deduplikační kontrolu (shoda telefonu, jména a data narození) a upozorní recepční na případnou existenci karty. | Schváleno a realizováno |
 | **5** | **Výpadek / nemoc lékaře** | Hromadné zrušení, přesun k jinému lékaři, nebo jen označení a obvolání. | Vytvoření režimu mimořádné nedostupnosti lékaře: dotčené rezervace přejdou do stavu `K_PREOBJEDNANI` a recepční se vygeneruje přehledná pracovní fronta pro obvolání s možností rychlého přesunu na volné sloty kolegů. | K odsouhlasení |
 
 ### 4.2 Průběžný protokol dohodnutých změn a rozhodnutí (Changelog rozhodnutí)
@@ -116,4 +116,12 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
   - Databáze: **PostgreSQL 16** v Docker kontejneru.
   - Architektura: Striktní **třívrstvá architektura** (`presentation`, `business`, `infrastructure`).
   - Rozsah demo verze: Kontejnerizace přes `docker-compose.yml`, bezpečné přihlašování přes JWT a OAuth2 Password flow, kompletní správa uživatelů (CRUD), předdefinované role (`ADMIN`, `RECEPTIONIST`, `DOCTOR`), jednoduché webové rozhraní (HTML/CSS) a automatizované testy v `pytest`.
+- **2026-10-30:** **Realizace Funkčního požadavku 1 – Evidence pacientů:**
+  - **Co bylo rozhodnuto:** Vytvoření kompletního modulu evidence pacientů (jméno, příjmení, rok narození, telefonní číslo, číslo pojištěnce / rodné číslo, kód zdravotní pojišťovny, interní poznámka, stav aktivity).
+  - **Proč:** Splnění funkčního požadavku 1 a vyřešení otevřeného bodu 4. Zajištění rychlého vyhledávání podle příjmení i telefonu při telefonickém kontaktu recepční (paní Věry), validace formátů a číselníku pojišťoven v ČR. Zachování zdravotní historie pomocí měkké deaktivace (`is_active = False`).
+  - **Dopad na architekturu:**
+    - Datová vrstva: model `PatientModel`, migrace Alembic `002_create_patients_table`, databázové indexy na `last_name`, `phone_number` a unikátní index na `insurance_number`, repozitář `PatientRepository` a syntetický seed.
+    - Aplikační/byznys vrstva: Pydantic DTO validace (`patient_schemas.py`), byznys servis `PatientService` se striktní kontrolou duplicity a ochranou historie.
+    - Prezentační vrstva: REST API `patient_router.py` a responzivní záložka *Evidence pacientů* ve webovém rozhraní pro paní Věru.
+    - Testy: 8 nových automatizovaných testů v `tests/test_patients.py` (všechny testy v suite procházejí).
 
