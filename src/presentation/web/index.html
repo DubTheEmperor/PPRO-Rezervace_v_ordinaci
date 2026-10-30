@@ -346,6 +346,7 @@
       align-items: center;
       gap: 0.35rem;
       font-weight: 500;
+      white-space: nowrap;
     }
 
     .phone-link:hover {
@@ -755,13 +756,13 @@
             <table>
               <thead>
                 <tr>
-                  <th style="width: 50px;">ID</th>
+                  <th style="width: 45px;">ID</th>
                   <th>Příjmení a jméno</th>
-                  <th>Rok narození</th>
-                  <th>Telefon</th>
-                  <th>Číslo pojištěnce (RČ)</th>
+                  <th style="width: 85px; white-space: nowrap;">Rok nar.</th>
+                  <th style="min-width: 175px; white-space: nowrap;">Telefon</th>
+                  <th style="white-space: nowrap;">Číslo pojištěnce (RČ)</th>
                   <th>Pojišťovna</th>
-                  <th style="width: 90px; text-align: center;">Poznámka</th>
+                  <th style="width: 75px; text-align: center;">Poznámka</th>
                   <th>Stav</th>
                   <th style="width: 170px; text-align: right;">Akce</th>
                 </tr>
@@ -964,9 +965,6 @@
         <div id="noteModalContent" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; background: #f8fafc; border: 1px solid var(--border); padding: 0.85rem; border-radius: 6px; color: var(--text-main); max-height: 250px; overflow-y: auto;">
           Obsah poznámky...
         </div>
-      </div>
-      <div class="modal-footer" style="padding: 0.75rem 1.25rem;">
-        <button type="button" class="btn btn-primary btn-sm" onclick="closeNoteModal()">Zavřít</button>
       </div>
     </div>
   </div>
@@ -1365,17 +1363,17 @@
 
         return `
           <tr>
-            <td><strong style="color: var(--text-muted);">#${p.id}</strong></td>
+            <td style="white-space: nowrap;"><strong style="color: var(--text-muted);">#${p.id}</strong></td>
             <td>
               <strong style="font-size: 0.95rem;">${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
             </td>
-            <td>${p.birth_year}</td>
-            <td>
+            <td style="white-space: nowrap;">${p.birth_year}</td>
+            <td style="white-space: nowrap;">
               <a href="tel:${escapeHtml(p.phone_number)}" class="phone-link" title="Zavolat pacientovi">
                 <span>📞</span> ${escapeHtml(formattedPhone)}
               </a>
             </td>
-            <td><code>${escapeHtml(p.insurance_number)}</code></td>
+            <td style="white-space: nowrap;"><code>${escapeHtml(p.insurance_number)}</code></td>
             <td><span class="ins-badge">${escapeHtml(insDisplay)}</span></td>
             <td style="text-align: center;">
               ${p.notes && p.notes.trim() ? `
