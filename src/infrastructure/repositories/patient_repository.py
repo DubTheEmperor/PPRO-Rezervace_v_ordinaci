@@ -26,13 +26,20 @@ class PatientRepository:
         query = self.db.query(PatientModel)
 
         if search:
-            search_pattern = f"%{search.strip()}%"
+            stripped = search.strip()
+            search_pattern = f"%{stripped}%"
+            # Varianta bez mezer a lomítek pro pohodlné hledání telefonů a rodných čísel
+            clean_search = "".join(ch for ch in stripped if ch.isalnum() or ch == "+")
+            clean_pattern = f"%{clean_search}%" if clean_search else search_pattern
+
             query = query.filter(
                 or_(
                     PatientModel.last_name.ilike(search_pattern),
                     PatientModel.first_name.ilike(search_pattern),
                     PatientModel.phone_number.ilike(search_pattern),
+                    PatientModel.phone_number.ilike(clean_pattern),
                     PatientModel.insurance_number.ilike(search_pattern),
+                    PatientModel.insurance_number.ilike(clean_pattern),
                 )
             )
 

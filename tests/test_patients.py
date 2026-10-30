@@ -132,7 +132,7 @@ def test_search_patient_by_last_name_and_phone(client, receptionist_token):
     assert len(items) == 1
     assert items[0]["last_name"] == "Záhorská"
 
-    # Hledání podle telefonu
+    # Hledání podle telefonu (bez mezer)
     res_phone = client.get(
         "/api/v1/patients?search=998877",
         headers={"Authorization": f"Bearer {receptionist_token}"},
@@ -141,6 +141,16 @@ def test_search_patient_by_last_name_and_phone(client, receptionist_token):
     items = res_phone.json()["items"]
     assert len(items) == 1
     assert items[0]["last_name"] == "Kopecký"
+
+    # Hledání podle telefonu (s mezerami, např. "603 998")
+    res_phone_spaces = client.get(
+        "/api/v1/patients?search=603%20998%20877",
+        headers={"Authorization": f"Bearer {receptionist_token}"},
+    )
+    assert res_phone_spaces.status_code == 200
+    items_spaces = res_phone_spaces.json()["items"]
+    assert len(items_spaces) == 1
+    assert items_spaces[0]["last_name"] == "Kopecký"
 
 
 def test_get_patient_detail(client, doctor_token):
