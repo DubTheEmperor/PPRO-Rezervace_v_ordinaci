@@ -151,3 +151,17 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
     - Kontrola „trvale smazat pacienta smí jen administrátor“ je přesunuta z routeru do `PatientService`.
   - **Proč:** Požadavek technického minima PPRO a AGENTS.md (striktně jednosměrné závislosti, žádné dotazování DB z kontrolerů). Byznys logika je nezávislá na HTTP, takže ji lze testovat bez webu a později použít např. pro pacientský portál.
   - **Dopad na architekturu:** API kontrakt (endpointy, status kódy, texty chyb) zůstal beze změny – všech 54 původních testů prošlo bez úprav. Nové testy: `tests/test_architecture.py` (AST kontrola importů každé vrstvy – na stavu před refaktorem odhalí 27 porušení) a `tests/test_services.py` (unit testy servisů bez HTTP). Celkem 66 testů.
+- **2026-11-11:** **Realizace Funkčního požadavku 4 – Záznam o uskutečněné návštěvě:**
+  - **Co bylo rozhodnuto:**
+    - Centrální číselník výkonů `procedures` (kód, název, body, aktivita) spravuje administrátor; seed obsahuje 12 ilustrativních výkonů se syntetickými body.
+    - Záznam návštěvy `visits` je vázaný 1:1 na rezervaci. Výkony k návštěvě eviduje asociační entita `visit_procedures` (**relace M:N Návštěva ↔ Výkon**) s počtem provedení a **snapshotem bodů** v okamžiku zápisu.
+    - Životní cyklus **koncept (`DRAFT`) → uzavřeno (`CLOSED`)**: koncept lze průběžně ukládat, uzavřená návštěva je neměnná a rezervace přejde do stavu `COMPLETED`. Návštěvu nelze smazat (API mazání neposkytuje).
+    - Výkony zapisuje lékař, kterému návštěva patří, nebo administrátor; recepce vše vidí jen ke čtení.
+    - UI: nová záložka *Ordinace dnes* (fronta dne lékaře se stavy Čeká / K zápisu / Rozpracováno / Uzavřeno a panel se zápisem výkonů) a *Karta pacienta* s historií návštěv, výkonů a bodů.
+  - **Proč:** Splnění FP4 a obchodních pravidel *kauzální integrita výkonů* (koncept lze založit jen k rezervaci, jejíž začátek už nastal – výkony nelze předvyplňovat do budoucna) a *neměnnost historie*. Snapshot bodů zajišťuje, že pozdější změna číselníku nezmění historii ani budoucí měsíční výkaz (FP7), který bude počítat jen uzavřené návštěvy.
+  - **Dopad na architekturu:**
+    - Datová vrstva: modely `ProcedureModel`, `VisitModel`, `VisitProcedureModel`, migrace `005_visits_and_procedures`, repozitáře `ProcedureRepository`, `VisitRepository`; kalendář nově zobrazuje i uskutečněné rezervace (slot zůstává obsazený).
+    - Byznys vrstva: `ProcedureService`, `VisitService` (doménové výjimky), DTO `visit_dto.py`, seed číselníku a demo návštěv z minulého týdne.
+    - Prezentační vrstva: `procedure_router.py`, `visit_router.py` (`/doctors/{id}/agenda`, `/appointments/{id}/visit`, `/visits/{id}`, `/visits/{id}/close`), `GET /patients/{id}/history`.
+    - Testy: `tests/test_visits.py` (17 testů – kauzalita, oprávnění, M:N s počty, snapshot bodů, neměnnost, fronta dne, historie) a unit testy `VisitService`. Celkem 86 testů.
+
