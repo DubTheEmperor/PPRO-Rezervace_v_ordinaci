@@ -781,10 +781,6 @@
       color: var(--text-main);
     }
 
-    .cal-selection-info.hint {
-      font-weight: 400;
-      color: var(--text-muted);
-    }
 
     .cal-scroll {
       overflow-x: auto;
@@ -1509,7 +1505,6 @@
         <div class="dashboard-header">
           <div class="dashboard-title">
             <h2>Rezervace termínů</h2>
-            <p>Vyberte lékaře a klikněte na volné políčko (15 min), případně táhněte myší přes více políček.</p>
           </div>
         </div>
 
@@ -1539,7 +1534,7 @@
               <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #f1f5f9 0 4px, #e2e8f0 4px 8px);"></span> Lékař neordinuje</span>
               <span class="legend-item"><span class="legend-swatch" style="background: #eef1f5;"></span> Minulost</span>
             </div>
-            <span id="calSelectionInfo" class="cal-selection-info hint"></span>
+            <span id="calSelectionInfo" class="cal-selection-info"></span>
           </div>
 
           <div class="cal-scroll">
@@ -1553,7 +1548,6 @@
         <div class="dashboard-header">
           <div class="dashboard-title">
             <h2>Lékaři a ordinační hodiny</h2>
-            <p>Pravidelné týdenní ordinační hodiny. Mimo ně nelze termín rezervovat.</p>
           </div>
           <div>
             <button id="btnNewDoctor" class="btn btn-primary" onclick="openDoctorModal()" style="display: none;">
@@ -1623,7 +1617,6 @@
         <div class="dashboard-header">
           <div class="dashboard-title">
             <h2>Správa uživatelů a personálu</h2>
-            <p>Evidence zaměstnanců ordinace, lékařů a recepčních v třívrstvé architektuře</p>
           </div>
           <div>
             <button id="btnNewUser" class="btn btn-primary" onclick="openUserModal()">
@@ -1874,9 +1867,6 @@
         <button class="close-btn" onclick="closeModal('hoursModal')">&times;</button>
       </div>
       <div class="modal-body" style="max-height: 68vh; overflow-y: auto; padding-top: 0.5rem;">
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
-          Časy se zadávají po 15 minutách. Den bez bloku znamená, že lékař neordinuje.
-        </p>
         <div id="hoursEditor"></div>
       </div>
       <div class="modal-footer">
@@ -3095,10 +3085,8 @@
         el.className = 'cal-selection-info';
         el.textContent = `Vybráno: ${selectionLabel()} (${durationLabel(endM - startM)})`;
       } else {
-        el.className = 'cal-selection-info hint';
-        el.textContent = canBook()
-          ? 'Tip: klikněte na volné políčko, nebo táhněte myší přes více políček. Šipky ← → přepínají týdny.'
-          : 'Rezervace zakládá recepce. Kliknutím na červený blok zobrazíte detail.';
+        el.className = 'cal-selection-info';
+        el.textContent = '';
       }
     }
 
