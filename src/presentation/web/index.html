@@ -2968,15 +2968,18 @@
           const m = minM + c * SLOT_MIN;
           const slotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(m / 60), m % 60);
           const inHours = blocks.some(([bs, be]) => bs <= m && m + SLOT_MIN <= be);
-          const state = bookedMap[i][c] ? 'booked' : !inHours ? 'off' : slotDate < now ? 'past' : 'free';
+          // Priorita: obsazeno > minulost > mimo ordinační hodiny > volno
+          const state = bookedMap[i][c] ? 'booked' : slotDate < now ? 'past' : !inHours ? 'off' : 'free';
           calState[i][c] = state;
           if (state === 'booked') continue;
           const label = `${DAY_SHORT[i]} ${date.getDate()}. ${date.getMonth() + 1}. ${minToTime(m)}–${minToTime(m + SLOT_MIN)}`;
           const tip = state === 'free' ? `${label} · volno` : state === 'past' ? `${label} · již proběhlo` : `${label} · lékař neordinuje`;
           html += `<div class="cal-cell ${state} ${c % 4 === 0 ? 'hour-start' : ''}" data-day="${i}" data-col="${c}" style="grid-row: ${row}; grid-column: ${c + 2};" title="${tip}"></div>`;
         }
-        if (!blocks.length) {
-          html += `<div class="cal-off-label" style="grid-row: ${row}; grid-column: 2 / span ${calCols};">Lékař v tento den neordinuje</div>`;
+        // Štítek jen přes nebudoucí část dne – u dnů v minulosti se nezobrazuje
+        const firstOff = calState[i].indexOf('off');
+        if (!blocks.length && firstOff >= 0) {
+          html += `<div class="cal-off-label" style="grid-row: ${row}; grid-column: ${firstOff + 2} / span ${calCols - firstOff};">Lékař v tento den neordinuje</div>`;
         }
       });
 
