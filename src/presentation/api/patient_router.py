@@ -9,7 +9,12 @@ from src.presentation.schemas.patient_schemas import (
     PatientResponse,
     PatientListResponse,
 )
+from src.presentation.schemas.appointment_schemas import (
+    PatientAppointmentItem,
+    PatientAppointmentListResponse,
+)
 from src.business.services.patient_service import PatientService
+from src.business.services.appointment_service import AppointmentService
 from src.presentation.dependencies import get_current_user, require_roles
 
 router = APIRouter(prefix="/patients", tags=["Evidence pacientů"])
@@ -33,8 +38,14 @@ def list_patients(
     patients, total = patient_service.get_patients(
         skip=skip, limit=limit, search=search, is_active=is_active
     )
+    counts = patient_service.get_upcoming_appointment_counts([p.id for p in patients])
+    items = []
+    for p in patients:
+        item = PatientResponse.model_validate(p)
+        item.upcoming_appointments_count = counts.get(p.id, 0)
+        items.append(item)
     return PatientListResponse(
-        items=[PatientResponse.model_validate(p) for p in patients],
+        items=items,
         total=total,
         skip=skip,
         limit=limit,
@@ -54,6 +65,25 @@ def get_patient_detail(
     patient_service = PatientService(db)
     patient = patient_service.get_patient_by_id(patient_id)
     return PatientResponse.model_validate(patient)
+
+
+@router.get(
+    "/{patient_id}/appointments",
+    response_model=PatientAppointmentListResponse,
+    summary="Rezervace pacienta",
+    description="Vrátí rezervace pacienta; ve výchozím stavu pouze nadcházející aktivní termíny.",
+)
+def list_patient_appointments(
+    patient_id: int,
+    upcoming: bool = Query(True, description="Pouze nadcházející aktivní rezervace"),
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user),
+):
+    appointments = AppointmentService(db).list_patient_appointments(patient_id, upcoming_only=upcoming)
+    return PatientAppointmentListResponse(
+        items=[PatientAppointmentItem.model_validate(a) for a in appointments],
+        total=len(appointments),
+    )
 
 
 @router.post(

@@ -1,8 +1,10 @@
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from src.business.scheduling import local_now
 from src.infrastructure.models.patient_model import PatientModel
 from src.infrastructure.repositories.patient_repository import PatientRepository
+from src.infrastructure.repositories.appointment_repository import AppointmentRepository
 from src.presentation.schemas.patient_schemas import PatientCreate, PatientUpdate
 
 
@@ -29,6 +31,12 @@ class PatientService:
     ) -> Tuple[List[PatientModel], int]:
         return self.repo.get_all(
             skip=skip, limit=limit, search=search, is_active=is_active
+        )
+
+    def get_upcoming_appointment_counts(self, patient_ids: List[int]) -> Dict[int, int]:
+        """Počet nadcházejících aktivních rezervací pro každého z pacientů (jeden dotaz)."""
+        return AppointmentRepository(self.db).count_upcoming_by_patient_ids(
+            patient_ids, local_now()
         )
 
     def create_patient(self, patient_data: PatientCreate) -> PatientModel:
@@ -100,4 +108,9 @@ class PatientService:
     def delete_patient_permanent(self, patient_id: int) -> None:
         """Trvalé fyzické smazání pacienta (pouze administrátor pro čištění chybných záznamů)."""
         patient = self.get_patient_by_id(patient_id)
+        if AppointmentRepository(self.db).list_for_patient(patient_id):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Pacienta s historií rezervací nelze trvale smazat (auditovatelnost). Použijte archivaci.",
+            )
         self.repo.delete(patient)

@@ -1,4 +1,20 @@
 from src.infrastructure.models.user_model import UserModel, UserRole
 from src.infrastructure.models.patient_model import PatientModel
+from src.infrastructure.models.doctor_model import DoctorModel
+from src.infrastructure.models.office_hours_model import OfficeHoursModel
+from src.infrastructure.models.appointment_model import (
+    AppointmentModel,
+    AppointmentSlotModel,
+    AppointmentStatus,
+)
 
-__all__ = ["UserModel", "UserRole", "PatientModel"]
+__all__ = [
+    "UserModel",
+    "UserRole",
+    "PatientModel",
+    "DoctorModel",
+    "OfficeHoursModel",
+    "AppointmentModel",
+    "AppointmentSlotModel",
+    "AppointmentStatus",
+]

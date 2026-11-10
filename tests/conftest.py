@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 from src.main import app
 from src.infrastructure.database import Base, get_db
 from src.infrastructure.models.user_model import UserModel, UserRole
-from src.infrastructure.seed import seed_initial_users
+from src.infrastructure.seed import seed_initial_users, seed_doctors
 
 # In-memory SQLite databáze pro rychlé a izolované testy
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -31,6 +31,7 @@ def db_session():
     Base.metadata.create_all(bind=test_engine)
     session = TestingSessionLocal()
     seed_initial_users(session)
+    seed_doctors(session)
     try:
         yield session
     finally:
@@ -84,3 +85,25 @@ def doctor_token(client):
     )
     assert response.status_code == 200
     return response.json()["access_token"]
+
+
+@pytest.fixture
+def doctor2_token(client):
+    """Získá platný JWT token pro MUDr. Tomáše Malého."""
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"username": "maly", "password": "Maly123!"}
+    )
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def doctors_by_username(client, admin_token):
+    """Mapa uživatelské jméno lékaře -> profil lékaře (z API)."""
+    response = client.get(
+        "/api/v1/doctors", headers={"Authorization": f"Bearer {admin_token}"}
+    )
+    assert response.status_code == 200
+    names = {"MUDr. Jana Hrubá": "hruba", "MUDr. Tomáš Malý": "maly", "MUDr. Lucie Veselá": "vesela"}
+    return {names[d["full_name"]]: d for d in response.json()}

@@ -103,6 +103,7 @@ class PatientResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    upcoming_appointments_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
