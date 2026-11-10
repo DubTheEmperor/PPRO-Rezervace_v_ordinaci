@@ -1,14 +1,9 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
-from src.infrastructure.database import get_db
-from src.infrastructure.models.user_model import UserModel, UserRole
-from src.presentation.schemas.user_schemas import (
-    UserCreate,
-    UserUpdate,
-    UserResponse,
-    UserListResponse,
-)
+from src.business.domain import get_db, User, UserRole
+from src.business.dto import UserCreate, UserUpdate
+from src.presentation.schemas.user_schemas import UserResponse, UserListResponse
 from src.business.services.user_service import UserService
 from src.presentation.dependencies import get_current_user, require_roles
 
@@ -28,7 +23,7 @@ def list_users(
     role: Optional[UserRole] = Query(None, description="Filtrovat podle role"),
     is_active: Optional[bool] = Query(None, description="Filtrovat podle stavu aktivity"),
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     user_service = UserService(db)
     users, total = user_service.get_users(
@@ -50,7 +45,7 @@ def list_users(
 def get_user_detail(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     user_service = UserService(db)
     user = user_service.get_user_by_id(user_id)
@@ -67,7 +62,7 @@ def get_user_detail(
 def create_user(
     user_data: UserCreate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(require_roles(UserRole.ADMIN)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     user_service = UserService(db)
     new_user = user_service.create_user(user_data)
@@ -84,7 +79,7 @@ def update_user(
     user_id: int,
     user_data: UserUpdate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(require_roles(UserRole.ADMIN)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     user_service = UserService(db)
     updated_user = user_service.update_user(user_id, user_data)
@@ -100,7 +95,7 @@ def update_user(
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(require_roles(UserRole.ADMIN)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     user_service = UserService(db)
     user_service.delete_user(user_id)

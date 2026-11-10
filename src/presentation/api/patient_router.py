@@ -1,14 +1,9 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
-from src.infrastructure.database import get_db
-from src.infrastructure.models.user_model import UserModel, UserRole
-from src.presentation.schemas.patient_schemas import (
-    PatientCreate,
-    PatientUpdate,
-    PatientResponse,
-    PatientListResponse,
-)
+from src.business.domain import get_db, User, UserRole
+from src.business.dto import PatientCreate, PatientUpdate
+from src.presentation.schemas.patient_schemas import PatientResponse, PatientListResponse
 from src.presentation.schemas.appointment_schemas import (
     PatientAppointmentItem,
     PatientAppointmentListResponse,
@@ -32,7 +27,7 @@ def list_patients(
     search: Optional[str] = Query(None, description="Hledat podle příjmení, jména, telefonu nebo čísla pojištěnce"),
     is_active: Optional[bool] = Query(None, description="Filtrovat podle stavu aktivity"),
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     patient_service = PatientService(db)
     patients, total = patient_service.get_patients(
@@ -60,7 +55,7 @@ def list_patients(
 def get_patient_detail(
     patient_id: int,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     patient_service = PatientService(db)
     patient = patient_service.get_patient_by_id(patient_id)
@@ -77,7 +72,7 @@ def list_patient_appointments(
     patient_id: int,
     upcoming: bool = Query(True, description="Pouze nadcházející aktivní rezervace"),
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     appointments = AppointmentService(db).list_patient_appointments(patient_id, upcoming_only=upcoming)
     return PatientAppointmentListResponse(
@@ -96,7 +91,7 @@ def list_patient_appointments(
 def create_patient(
     patient_data: PatientCreate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(
+    current_user: User = Depends(
         require_roles(UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.ADMIN)
     ),
 ):
@@ -114,7 +109,7 @@ def update_patient(
     patient_id: int,
     patient_data: PatientUpdate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(
+    current_user: User = Depends(
         require_roles(UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.ADMIN)
     ),
 ):
@@ -133,17 +128,11 @@ def delete_patient(
     patient_id: int,
     permanent: bool = Query(False, description="Při true provede trvalé smazání (pouze ADMIN)"),
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     patient_service = PatientService(db)
     if permanent:
-        if current_user.role != UserRole.ADMIN:
-            from fastapi import HTTPException
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Trvalé fyzické smazání pacienta může provést pouze administrátor."
-            )
-        patient_service.delete_patient_permanent(patient_id)
+        patient_service.delete_patient_permanent(patient_id, current_user)
     else:
         patient_service.deactivate_patient(patient_id)
     return None

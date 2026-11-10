@@ -1,14 +1,14 @@
 from datetime import date, datetime, time, timedelta
 from typing import Optional, List, Dict
-from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from src.business.exceptions import BusinessRuleError, ConflictError, NotFoundError, PermissionDeniedError
 from src.business import scheduling
 from src.infrastructure.models.doctor_model import DoctorModel
 from src.infrastructure.models.user_model import UserModel, UserRole
 from src.infrastructure.repositories.doctor_repository import DoctorRepository
 from src.infrastructure.repositories.appointment_repository import AppointmentRepository
 from src.infrastructure.repositories.user_repository import UserRepository
-from src.presentation.schemas.doctor_schemas import (
+from src.business.dto.doctor_dto import (
     DoctorCreate,
     DoctorUpdate,
     OfficeHoursUpdate,
@@ -34,10 +34,7 @@ class DoctorService:
     def get_doctor(self, doctor_id: int) -> DoctorModel:
         doctor = self.repo.get_by_id(doctor_id)
         if not doctor:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Lékař s ID {doctor_id} nebyl nalezen.",
-            )
+            raise NotFoundError(f"Lékař s ID {doctor_id} nebyl nalezen.")
         return doctor
 
     def list_doctors(self, is_active: Optional[bool] = None) -> List[DoctorModel]:
@@ -48,17 +45,12 @@ class DoctorService:
     def _validate_user_link(self, user_id: int, doctor_id: Optional[int] = None) -> None:
         user = self.user_repo.get_by_id(user_id)
         if not user:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Uživatel s ID {user_id} neexistuje.")
+            raise BusinessRuleError(f"Uživatel s ID {user_id} neexistuje.")
         if user.role != UserRole.DOCTOR:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST, "Propojit lze pouze uživatelský účet s rolí DOCTOR."
-            )
+            raise BusinessRuleError("Propojit lze pouze uživatelský účet s rolí DOCTOR.")
         linked = self.repo.get_by_user_id(user_id)
         if linked and linked.id != doctor_id:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                f"Uživatelský účet je již propojen s lékařem '{linked.full_name}'.",
-            )
+            raise BusinessRuleError(f"Uživatelský účet je již propojen s lékařem '{linked.full_name}'.")
 
     def create_doctor(self, data: DoctorCreate) -> DoctorModel:
         if data.user_id is not None:
@@ -103,15 +95,12 @@ class DoctorService:
     ) -> DoctorModel:
         doctor = self.get_doctor(doctor_id)
         if not self.can_manage_hours(doctor, current_user):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Ordinační hodiny může měnit pouze administrátor nebo daný lékař.",
-            )
+            raise PermissionDeniedError("Ordinační hodiny může měnit pouze administrátor nebo daný lékař.")
 
         blocks = [(b.weekday, b.start_time, b.end_time) for b in data.blocks]
         errors = scheduling.validate_blocks(blocks)
         if errors:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=" ".join(errors))
+            raise BusinessRuleError(" ".join(errors))
 
         # Změna hodin nesmí „osiřet“ již naplánované budoucí rezervace
         new_by_day: Dict[int, List[scheduling.TimeBlock]] = {d: [] for d in range(7)}
@@ -124,12 +113,9 @@ class DoctorService:
         ]
         if conflicts:
             first = min(conflicts, key=lambda a: a.start_at)
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=(
-                    f"Nové ordinační hodiny nepokrývají {len(conflicts)} naplánovaných rezervací "
-                    f"(nejbližší {first.start_at:%d. %m. %Y %H:%M}). Nejprve je přeobjednejte."
-                ),
+            raise ConflictError(
+                f"Nové ordinační hodiny nepokrývají {len(conflicts)} naplánovaných rezervací "
+                f"(nejbližší {first.start_at:%d. %m. %Y %H:%M}). Nejprve je přeobjednejte."
             )
 
         return self.repo.replace_office_hours(doctor, sorted(blocks))
@@ -138,10 +124,7 @@ class DoctorService:
 
     def get_week_calendar(self, doctor_id: int, week_start: date) -> dict:
         if week_start.weekday() != 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Parametr week_start musí být pondělí.",
-            )
+            raise BusinessRuleError("Parametr week_start musí být pondělí.")
         doctor = self.get_doctor(doctor_id)
         by_day = blocks_by_weekday(doctor)
 

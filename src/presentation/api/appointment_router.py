@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from src.infrastructure.database import get_db
-from src.infrastructure.models.user_model import UserModel, UserRole
+from src.business.domain import get_db, User, UserRole
+from src.business.dto import AppointmentCreate
 from src.presentation.schemas.appointment_schemas import (
-    AppointmentCreate,
     AppointmentResponse,
     AppointmentDetailResponse,
 )
@@ -26,7 +25,7 @@ router = APIRouter(prefix="/appointments", tags=["Rezervace termínů"])
 def create_appointment(
     data: AppointmentCreate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(require_roles(UserRole.RECEPTIONIST, UserRole.ADMIN)),
+    current_user: User = Depends(require_roles(UserRole.RECEPTIONIST, UserRole.ADMIN)),
 ):
     appointment = AppointmentService(db).create_appointment(data, current_user)
     return AppointmentResponse.model_validate(appointment)
@@ -40,7 +39,7 @@ def create_appointment(
 def get_appointment_detail(
     appointment_id: int,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     appointment = AppointmentService(db).get_appointment(appointment_id)
     response = AppointmentDetailResponse.model_validate(appointment, from_attributes=True)

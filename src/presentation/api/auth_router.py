@@ -1,8 +1,7 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from src.infrastructure.database import get_db
-from src.infrastructure.models.user_model import UserModel
+from src.business.domain import get_db, User
 from src.presentation.schemas.auth_schemas import LoginRequest, TokenResponse
 from src.presentation.schemas.user_schemas import UserResponse
 from src.business.services.auth_service import AuthService
@@ -58,6 +57,6 @@ def login_json(
     description="Vrátí detail právě přihlášeného uživatele na základě předaného Bearer tokenu.",
 )
 def get_current_user_profile(
-    current_user: UserModel = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     return UserResponse.model_validate(current_user)

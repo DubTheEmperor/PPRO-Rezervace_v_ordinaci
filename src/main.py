@@ -5,12 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from src.config import settings
 from src.infrastructure.database import engine, Base, SessionLocal
-from src.infrastructure.seed import (
+from src.business.seed import (
     seed_initial_users,
     seed_initial_patients,
     seed_doctors,
     seed_demo_appointments,
 )
+from src.presentation.error_handlers import register_error_handlers
 from src.presentation.api.auth_router import router as auth_router
 from src.presentation.api.user_router import router as user_router
 from src.presentation.api.patient_router import router as patient_router
@@ -50,6 +51,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Převod doménových výjimek byznys vrstvy na HTTP odpovědi
+register_error_handlers(app)
 
 # Registrace API routerů
 app.include_router(auth_router, prefix=settings.API_V1_PREFIX)

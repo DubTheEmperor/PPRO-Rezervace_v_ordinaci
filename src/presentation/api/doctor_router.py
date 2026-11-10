@@ -2,15 +2,9 @@ from datetime import date
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
-from src.infrastructure.database import get_db
-from src.infrastructure.models.user_model import UserModel, UserRole
-from src.presentation.schemas.doctor_schemas import (
-    DoctorCreate,
-    DoctorUpdate,
-    DoctorResponse,
-    OfficeHoursUpdate,
-    WeekCalendarResponse,
-)
+from src.business.domain import get_db, User, UserRole
+from src.business.dto import DoctorCreate, DoctorUpdate, OfficeHoursUpdate
+from src.presentation.schemas.doctor_schemas import DoctorResponse, WeekCalendarResponse
 from src.business.services.doctor_service import DoctorService
 from src.presentation.dependencies import get_current_user, require_roles
 
@@ -26,7 +20,7 @@ router = APIRouter(prefix="/doctors", tags=["Lékaři a ordinační hodiny"])
 def list_doctors(
     is_active: Optional[bool] = Query(None, description="Filtrovat podle stavu aktivity"),
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     doctors = DoctorService(db).list_doctors(is_active=is_active)
     return [DoctorResponse.model_validate(d) for d in doctors]
@@ -36,7 +30,7 @@ def list_doctors(
 def get_doctor(
     doctor_id: int,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     return DoctorResponse.model_validate(DoctorService(db).get_doctor(doctor_id))
 
@@ -51,7 +45,7 @@ def get_doctor(
 def create_doctor(
     data: DoctorCreate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(require_roles(UserRole.ADMIN)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     return DoctorResponse.model_validate(DoctorService(db).create_doctor(data))
 
@@ -66,7 +60,7 @@ def update_doctor(
     doctor_id: int,
     data: DoctorUpdate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(require_roles(UserRole.ADMIN)),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     return DoctorResponse.model_validate(DoctorService(db).update_doctor(doctor_id, data))
 
@@ -84,7 +78,7 @@ def replace_office_hours(
     doctor_id: int,
     data: OfficeHoursUpdate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     doctor = DoctorService(db).replace_office_hours(doctor_id, data, current_user)
     return DoctorResponse.model_validate(doctor)
@@ -100,6 +94,6 @@ def get_week_calendar(
     doctor_id: int,
     week_start: date = Query(..., description="Pondělí zobrazovaného týdne (YYYY-MM-DD)"),
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ):
     return DoctorService(db).get_week_calendar(doctor_id, week_start)

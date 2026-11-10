@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 from src.main import app
 from src.infrastructure.database import Base, get_db
 from src.infrastructure.models.user_model import UserModel, UserRole
-from src.infrastructure.seed import seed_initial_users, seed_doctors
+from src.business.seed import seed_initial_users, seed_doctors
 
 # In-memory SQLite databáze pro rychlé a izolované testy
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

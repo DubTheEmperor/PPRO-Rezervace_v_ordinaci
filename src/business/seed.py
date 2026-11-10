@@ -1,3 +1,8 @@
+"""Inicializační (demo) data – syntetické účty, pacienti, lékaři a rezervace.
+
+Seed patří do byznys vrstvy: používá byznys pravidla (hashování hesel,
+rozpad termínu na sloty) a přes repozitáře zapisuje do datové vrstvy.
+"""
 import logging
 from datetime import datetime, time, timedelta
 from sqlalchemy.orm import Session

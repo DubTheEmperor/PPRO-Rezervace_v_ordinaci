@@ -1,11 +1,12 @@
 from typing import Optional, List, Tuple, Dict
-from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from src.business.exceptions import BusinessRuleError, NotFoundError, PermissionDeniedError
 from src.business.scheduling import local_now
 from src.infrastructure.models.patient_model import PatientModel
+from src.infrastructure.models.user_model import UserModel, UserRole
 from src.infrastructure.repositories.patient_repository import PatientRepository
 from src.infrastructure.repositories.appointment_repository import AppointmentRepository
-from src.presentation.schemas.patient_schemas import PatientCreate, PatientUpdate
+from src.business.dto.patient_dto import PatientCreate, PatientUpdate
 
 
 class PatientService:
@@ -16,10 +17,7 @@ class PatientService:
     def get_patient_by_id(self, patient_id: int) -> PatientModel:
         patient = self.repo.get_by_id(patient_id)
         if not patient:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Pacient s ID {patient_id} nebyl nalezen."
-            )
+            raise NotFoundError(f"Pacient s ID {patient_id} nebyl nalezen.")
         return patient
 
     def get_patients(
@@ -43,12 +41,9 @@ class PatientService:
         # Kontrola unikátnosti čísla pojištěnce
         existing = self.repo.get_by_insurance_number(patient_data.insurance_number)
         if existing:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=(
-                    f"Pacient s číslem pojištěnce '{patient_data.insurance_number}' již v evidenci existuje "
-                    f"({existing.first_name} {existing.last_name}, ID: {existing.id})."
-                ),
+            raise BusinessRuleError(
+                f"Pacient s číslem pojištěnce '{patient_data.insurance_number}' již v evidenci existuje "
+                f"({existing.first_name} {existing.last_name}, ID: {existing.id})."
             )
 
         new_patient = PatientModel(
@@ -70,10 +65,7 @@ class PatientService:
         if patient_data.insurance_number and patient_data.insurance_number != patient.insurance_number:
             existing = self.repo.get_by_insurance_number(patient_data.insurance_number)
             if existing and existing.id != patient_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Číslo pojištěnce '{patient_data.insurance_number}' je již přiřazeno jinému pacientovi."
-                )
+                raise BusinessRuleError(f"Číslo pojištěnce '{patient_data.insurance_number}' je již přiřazeno jinému pacientovi.")
             patient.insurance_number = patient_data.insurance_number
 
         if patient_data.first_name is not None:
@@ -105,12 +97,13 @@ class PatientService:
         patient.is_active = False
         return self.repo.update(patient)
 
-    def delete_patient_permanent(self, patient_id: int) -> None:
+    def delete_patient_permanent(self, patient_id: int, current_user: UserModel) -> None:
         """Trvalé fyzické smazání pacienta (pouze administrátor pro čištění chybných záznamů)."""
+        if current_user.role != UserRole.ADMIN:
+            raise PermissionDeniedError("Trvalé fyzické smazání pacienta může provést pouze administrátor.")
         patient = self.get_patient_by_id(patient_id)
         if AppointmentRepository(self.db).list_for_patient(patient_id):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Pacienta s historií rezervací nelze trvale smazat (auditovatelnost). Použijte archivaci.",
+            raise BusinessRuleError(
+                "Pacienta s historií rezervací nelze trvale smazat (auditovatelnost). Použijte archivaci."
             )
         self.repo.delete(patient)
