@@ -10,7 +10,7 @@ Jedná se o semestrální projekt v předmětu **Pokročilé programování (PPR
 Aplikace řeší **rezervační a evidenční systém pro soukromou lékařskou praxi (Varianta A – Ordinace Na Vyhlídce)**.
 
 > Veškeré detailní informace o zadání, funkčních požadavcích, obchodních pravidlech, technickém minimu a evidenci rozhodnutí jsou soustředěny v technické dokumentaci:  
-> 📄 **[README.md](file:///u:/ING/1.%20semestr/PPRO/README.md)**  
+> 📄 **[README.md]**  
 > *(Informace se zde neduplikují, směrodatný je vždy dokument README.md).*
 
 ---
