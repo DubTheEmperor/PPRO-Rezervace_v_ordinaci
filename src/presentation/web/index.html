@@ -666,6 +666,736 @@
         opacity: 1;
       }
     }
+
+    /* ===== REZERVAČNÍ KALENDÁŘ ===== */
+    .cal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cal-doctor-select {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .cal-doctor-select select {
+      min-width: 300px;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.65rem 0.85rem;
+      cursor: pointer;
+    }
+
+    .doctor-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.06);
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .cal-nav-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .cal-nav-btn:hover {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .cal-title {
+      text-align: center;
+      min-width: 230px;
+    }
+
+    .cal-title h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .cal-title span {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .cal-legend {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem 1.25rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding: 0.65rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: #fcfdfe;
+    }
+
+    .legend-items {
+      display: flex;
+      gap: 1.1rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .cal-selection-info {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .cal-selection-info.hint {
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .cal-scroll {
+      overflow-x: auto;
+      padding: 0.75rem 1rem 1rem 0;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: 96px repeat(var(--cols, 40), minmax(24px, 1fr));
+      grid-template-rows: 30px repeat(7, 50px);
+      min-width: calc(96px + var(--cols, 40) * 24px);
+      user-select: none;
+      -webkit-user-select: none;
+      transition: opacity 0.15s;
+    }
+
+    .cal-grid.loading {
+      opacity: 0.55;
+    }
+
+    .cal-empty {
+      grid-column: 1 / -1;
+      padding: 2.5rem;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .cal-corner,
+    .cal-day {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: white;
+    }
+
+    .cal-hour {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding-left: 4px;
+      border-left: 1px solid #cbd5e1;
+      display: flex;
+      align-items: flex-end;
+      padding-bottom: 4px;
+    }
+
+    .cal-day {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0 0.6rem 0 1rem;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid #cbd5e1;
+    }
+
+    .cal-day-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      width: 22px;
+    }
+
+    .cal-day-num {
+      font-size: 1.15rem;
+      font-weight: 700;
+      min-width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cal-day.weekend .cal-day-name,
+    .cal-day.weekend .cal-day-num {
+      color: #94a3b8;
+    }
+
+    .cal-day.today {
+      background: #f0f9ff;
+    }
+
+    .cal-day.today .cal-day-name {
+      color: var(--primary);
+    }
+
+    .cal-day.today .cal-day-num {
+      background: var(--primary);
+      color: white;
+    }
+
+    .cal-cell {
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid #f1f5f9;
+      background: white;
+      transition: background 0.08s;
+    }
+
+    .cal-cell.hour-start {
+      border-left: 1px solid #cbd5e1;
+    }
+
+    .cal-cell.free {
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .cal-cell.free:hover {
+      background: var(--primary-light);
+    }
+
+    .cal-grid.readonly .cal-cell.free {
+      cursor: default;
+      touch-action: auto;
+    }
+
+    .cal-grid.readonly .cal-cell.free:hover {
+      background: white;
+    }
+
+    .cal-cell.off {
+      background: repeating-linear-gradient(135deg, #f1f5f9 0 6px, #e8edf3 6px 12px);
+    }
+
+    .cal-cell.past {
+      background: #eef1f5;
+    }
+
+    .cal-cell.selected,
+    .cal-cell.selected:hover {
+      background: var(--primary);
+      border-right-color: var(--primary);
+      box-shadow: inset 0 2px 0 #0369a1, inset 0 -2px 0 #0369a1;
+    }
+
+    .cal-off-label {
+      align-self: center;
+      justify-self: start;
+      margin-left: 1rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #94a3b8;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .cal-appt {
+      margin: 4px 1px;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #f87171, #ef4444);
+      border: 1px solid #dc2626;
+      color: white;
+      padding: 2px 4px;
+      overflow: hidden;
+      cursor: pointer;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      line-height: 1.15;
+      box-shadow: 0 1px 2px rgba(220, 38, 38, 0.25);
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .cal-appt:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+    }
+
+    .cal-appt.is-past {
+      opacity: 0.6;
+    }
+
+    .cal-appt-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+    }
+
+    .cal-appt-time {
+      font-size: 0.68rem;
+      opacity: 0.9;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    /* Rezervační a detailní modál */
+    .booking-summary {
+      display: flex;
+      gap: 0.85rem;
+      align-items: center;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: var(--radius);
+      padding: 0.85rem 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .booking-summary-icon {
+      font-size: 1.6rem;
+    }
+
+    .booking-summary-main {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .booking-summary-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.15rem;
+    }
+
+    .patient-results {
+      margin-top: 0.4rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-height: 230px;
+      overflow-y: auto;
+    }
+
+    .patient-result {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      width: 100%;
+      text-align: left;
+      padding: 0.65rem 0.85rem;
+      background: white;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .patient-result:last-child {
+      border-bottom: none;
+    }
+
+    .patient-result:hover {
+      background: var(--primary-light);
+    }
+
+    .patient-result span {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .search-hint {
+      padding: 0.75rem 0.85rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .selected-patient {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.9rem;
+      border: 1px solid #86efac;
+      background: #f0fdf4;
+      border-radius: var(--radius);
+    }
+
+    .selected-patient small {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 0.1rem;
+    }
+
+    .appt-detail-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .appt-detail-date {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .appt-detail-hours {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .appt-detail-hours span {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .appt-status {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #fee2e2;
+      color: #b91c1c;
+      white-space: nowrap;
+    }
+
+    .detail-list {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 0.6rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .detail-list dt {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding-top: 0.1rem;
+    }
+
+    .detail-list dd {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .detail-reason {
+      white-space: pre-wrap;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.6rem 0.75rem;
+      line-height: 1.45;
+    }
+
+    /* ===== LÉKAŘI A ORDINAČNÍ HODINY ===== */
+    .doctor-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .doctor-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--doc-color, var(--primary));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .doctor-card-head {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .doctor-card-head h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .doctor-card-head p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .doctor-card-head .role-badge,
+    .doctor-card-head .status-badge {
+      margin-left: auto;
+    }
+
+    .doctor-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--doc-color, var(--primary));
+      color: white;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .doctor-card-body {
+      padding: 0.6rem 1.25rem;
+      flex: 1;
+    }
+
+    .hours-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px dashed #eef2f7;
+      font-size: 0.88rem;
+    }
+
+    .hours-row:last-child {
+      border-bottom: none;
+    }
+
+    .hours-day {
+      width: 72px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .hours-row.off .hours-day {
+      color: #94a3b8;
+    }
+
+    .hours-blocks {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .hours-pill {
+      padding: 0.15rem 0.55rem;
+      border-radius: 20px;
+      background: var(--primary-light);
+      color: var(--primary-hover);
+      font-weight: 600;
+      font-size: 0.8rem;
+    }
+
+    .hours-none {
+      color: #94a3b8;
+      font-size: 0.82rem;
+      font-style: italic;
+    }
+
+    .doctor-card-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+
+    .hours-total {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .hours-edit-row {
+      display: grid;
+      grid-template-columns: 80px 1fr auto;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hours-edit-day {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .hours-edit-blocks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .hours-edit-block {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .hours-edit-block .form-control {
+      width: 120px;
+      padding: 0.45rem 0.6rem;
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid #fecaca;
+      background: var(--danger-light);
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .icon-btn:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    /* Rezervace v evidenci pacientů */
+    .appt-count-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 20px;
+      border: 1px solid #fecaca;
+      background: #fef2f2;
+      color: #b91c1c;
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .appt-count-btn:hover {
+      background: #fee2e2;
+      transform: scale(1.05);
+    }
+
+    .patient-appt-item {
+      display: flex;
+      gap: 0.9rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .patient-appt-item:last-child {
+      border-bottom: none;
+    }
+
+    .patient-appt-date {
+      width: 64px;
+      flex-shrink: 0;
+      text-align: center;
+      border-radius: 8px;
+      background: #f1f5f9;
+      padding: 0.35rem 0;
+    }
+
+    .patient-appt-date strong {
+      display: block;
+      font-size: 1.2rem;
+    }
+
+    .patient-appt-date span {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .patient-appt-info {
+      font-size: 0.88rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .patient-appt-info .muted {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    @media (max-width: 768px) {
+      main {
+        padding: 1rem 0.75rem;
+        width: 100%;
+      }
+
+      .cal-doctor-select,
+      .cal-doctor-select select {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .cal-nav {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .cal-title {
+        min-width: 0;
+      }
+
+      .detail-list {
+        grid-template-columns: 1fr;
+        gap: 0.2rem;
+      }
+
+      .detail-list dd {
+        margin-bottom: 0.5rem;
+      }
+    }
   </style>
 </head>
 
@@ -730,6 +1460,14 @@
               <div><strong>MUDr. Jana Hrubá</strong> (Lékař)</div>
               <span class="role-badge role-DOCTOR">LÉKAŘ</span>
             </button>
+            <button class="chip-btn" onclick="quickFill('maly', 'Maly123!')">
+              <div><strong>MUDr. Tomáš Malý</strong> (Lékař)</div>
+              <span class="role-badge role-DOCTOR">LÉKAŘ</span>
+            </button>
+            <button class="chip-btn" onclick="quickFill('vesela', 'Vesela123!')">
+              <div><strong>MUDr. Lucie Veselá</strong> (Lékař)</div>
+              <span class="role-badge role-DOCTOR">LÉKAŘ</span>
+            </button>
           </div>
         </div>
       </div>
@@ -739,8 +1477,14 @@
     <div id="dashboardView" style="display: none;">
       <!-- NAVIGATION TABS -->
       <div class="nav-tabs">
-        <button id="tabBtnPatients" class="nav-tab active" onclick="switchDashboardTab('patients')">
+        <button id="tabBtnReservations" class="nav-tab active" onclick="switchDashboardTab('reservations')">
+          <span>📅</span> Rezervace
+        </button>
+        <button id="tabBtnPatients" class="nav-tab" onclick="switchDashboardTab('patients')">
           <span>📋</span> Evidence pacientů
+        </button>
+        <button id="tabBtnDoctors" class="nav-tab" onclick="switchDashboardTab('doctors')">
+          <span>🩺</span> Lékaři a ordinační hodiny
         </button>
         <button id="tabBtnUsers" class="nav-tab" onclick="switchDashboardTab('users')">
           <span>👥</span> Správa personálu
@@ -760,8 +1504,68 @@
         </div>
       </div>
 
+      <!-- SECTION: RESERVATIONS (Funkční požadavek 3) -->
+      <div id="sectionReservations" style="display: none;">
+        <div class="dashboard-header">
+          <div class="dashboard-title">
+            <h2>Rezervace termínů</h2>
+            <p>Vyberte lékaře a klikněte na volné políčko (15 min), případně táhněte myší přes více políček.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="cal-toolbar">
+            <div class="cal-doctor-select">
+              <span id="calDoctorDot" class="doctor-dot"></span>
+              <select id="calDoctorSelect" class="form-control" onchange="onCalDoctorChange()"
+                aria-label="Vybrat lékaře"></select>
+            </div>
+            <div class="cal-nav">
+              <button class="cal-nav-btn" onclick="shiftWeek(-1)" title="Předchozí týden (šipka vlevo)">‹</button>
+              <div class="cal-title">
+                <h3 id="calMonthTitle">—</h3>
+                <span id="calRangeTitle"></span>
+              </div>
+              <button class="cal-nav-btn" onclick="shiftWeek(1)" title="Další týden (šipka vpravo)">›</button>
+              <button class="btn btn-secondary btn-sm" onclick="goToToday()">Dnes</button>
+            </div>
+          </div>
+
+          <div class="cal-legend">
+            <div class="legend-items">
+              <span class="legend-item"><span class="legend-swatch" style="background: white;"></span> Volno</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--primary);"></span> Vybráno</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: #ef4444; border-color: #dc2626;"></span> Obsazeno</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #f1f5f9 0 4px, #e2e8f0 4px 8px);"></span> Lékař neordinuje</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: #eef1f5;"></span> Minulost</span>
+            </div>
+            <span id="calSelectionInfo" class="cal-selection-info hint"></span>
+          </div>
+
+          <div class="cal-scroll">
+            <div id="calGrid" class="cal-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: DOCTORS (Funkční požadavek 2) -->
+      <div id="sectionDoctors" style="display: none;">
+        <div class="dashboard-header">
+          <div class="dashboard-title">
+            <h2>Lékaři a ordinační hodiny</h2>
+            <p>Pravidelné týdenní ordinační hodiny. Mimo ně nelze termín rezervovat.</p>
+          </div>
+          <div>
+            <button id="btnNewDoctor" class="btn btn-primary" onclick="openDoctorModal()" style="display: none;">
+              + Nový lékař
+            </button>
+          </div>
+        </div>
+        <div id="doctorCards" class="doctor-cards"></div>
+      </div>
+
       <!-- SECTION: PATIENTS (Funkční požadavek 1) -->
-      <div id="sectionPatients">
+      <div id="sectionPatients" style="display: none;">
         <div class="dashboard-header">
           <div class="dashboard-title">
             <h2>Kartotéka a evidence pacientů</h2>
@@ -796,6 +1600,7 @@
                   <th style="min-width: 165px; white-space: nowrap;">Telefon</th>
                   <th style="white-space: nowrap;">Číslo pojištěnce</th>
                   <th style="width: 95px; text-align: center;">Pojišťovna</th>
+                  <th style="width: 90px; text-align: center;">Rezervace</th>
                   <th style="width: 65px; text-align: center;">Poznámka</th>
                   <th style="width: 85px; text-align: center;">Stav</th>
                   <th style="width: 165px; text-align: right;">Akce</th>
@@ -803,7 +1608,7 @@
               </thead>
               <tbody id="patientTableBody">
                 <tr>
-                  <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                  <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                     Načítání pacientů...
                   </td>
                 </tr>
@@ -1009,6 +1814,131 @@
     </div>
   </div>
 
+  <!-- MODAL: NEW RESERVATION -->
+  <div id="bookingModal" class="modal-overlay">
+    <div class="modal" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3>Nová rezervace termínu</h3>
+        <button class="close-btn" onclick="closeBookingModal()">&times;</button>
+      </div>
+      <form id="bookingForm" onsubmit="saveBooking(event)">
+        <div class="modal-body">
+          <div class="booking-summary">
+            <div class="booking-summary-icon">🗓️</div>
+            <div>
+              <div class="booking-summary-main" id="bookingSummaryMain">—</div>
+              <div class="booking-summary-sub" id="bookingSummarySub">—</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bookingPatientSearch">Pacient *</label>
+            <div id="bookingPatientPicker">
+              <input type="text" id="bookingPatientSearch" class="form-control" autocomplete="off"
+                placeholder="Hledat podle příjmení nebo telefonu..." oninput="onBookingSearch()">
+              <div id="bookingPatientResults" class="patient-results"></div>
+            </div>
+            <div id="bookingPatientSelected" style="display: none;"></div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="bookingReason">Důvod návštěvy *</label>
+            <textarea id="bookingReason" class="form-control" rows="3" required minlength="3" maxlength="1000"
+              placeholder="např. kontrola tlaku, bolest zad, vystavení receptu..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeBookingModal()">Zrušit</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveBooking">Rezervovat termín</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: RESERVATION DETAIL -->
+  <div id="appointmentDetailModal" class="modal-overlay">
+    <div class="modal" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3>Detail rezervace</h3>
+        <button class="close-btn" onclick="closeModal('appointmentDetailModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="appointmentDetailBody"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: OFFICE HOURS EDITOR -->
+  <div id="hoursModal" class="modal-overlay">
+    <div class="modal" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 id="hoursModalTitle">Ordinační hodiny</h3>
+        <button class="close-btn" onclick="closeModal('hoursModal')">&times;</button>
+      </div>
+      <div class="modal-body" style="max-height: 68vh; overflow-y: auto; padding-top: 0.5rem;">
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Časy se zadávají po 15 minutách. Den bez bloku znamená, že lékař neordinuje.
+        </p>
+        <div id="hoursEditor"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('hoursModal')">Zrušit</button>
+        <button type="button" class="btn btn-primary" id="btnSaveHours" onclick="saveHours()">Uložit ordinační hodiny</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DOCTOR CREATE / EDIT (ADMIN) -->
+  <div id="doctorModal" class="modal-overlay">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="doctorModalTitle">Nový lékař</h3>
+        <button class="close-btn" onclick="closeModal('doctorModal')">&times;</button>
+      </div>
+      <form id="doctorForm" onsubmit="saveDoctor(event)">
+        <div class="modal-body">
+          <input type="hidden" id="doctorId">
+          <div class="form-group">
+            <label for="doctorFullName">Celé jméno a titul *</label>
+            <input type="text" id="doctorFullName" class="form-control" required minlength="2"
+              placeholder="např. MUDr. Karel Novotný">
+          </div>
+          <div class="form-group">
+            <label for="doctorSpecialization">Specializace</label>
+            <input type="text" id="doctorSpecialization" class="form-control" placeholder="např. Praktický lékař">
+          </div>
+          <div style="display: grid; grid-template-columns: 110px 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="doctorColor">Barva</label>
+              <input type="color" id="doctorColor" class="form-control" value="#0284c7" style="height: 42px; padding: 0.2rem;">
+            </div>
+            <div class="form-group">
+              <label for="doctorUserId">Přihlašovací účet lékaře</label>
+              <select id="doctorUserId" class="form-control"></select>
+            </div>
+          </div>
+          <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+            <input type="checkbox" id="doctorIsActive" checked style="width: 16px; height: 16px;">
+            <label for="doctorIsActive" style="margin-bottom: 0; cursor: pointer;">Lékař je aktivní (lze k němu objednávat)</label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('doctorModal')">Zrušit</button>
+          <button type="submit" class="btn btn-primary">Uložit lékaře</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PATIENT UPCOMING RESERVATIONS -->
+  <div id="patientAppointmentsModal" class="modal-overlay">
+    <div class="modal" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="patientAppointmentsTitle">Nadcházející rezervace</h3>
+        <button class="close-btn" onclick="closeModal('patientAppointmentsModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="patientAppointmentsBody" style="max-height: 65vh; overflow-y: auto; padding-top: 0.5rem;"></div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast">Zpráva</div>
 
@@ -1020,7 +1950,7 @@
     let searchDebounce = null;
 
     // Patients state
-    let activeDashboardTab = 'patients';
+    let activeDashboardTab = 'reservations';
     let patientsList = [];
     let currentPatientStatusFilter = '';
     let patientSearchDebounce = null;
@@ -1097,6 +2027,8 @@
     function logout() {
       token = '';
       currentUser = null;
+      doctorsList = [];
+      calDoctorId = null;
       localStorage.removeItem('token');
       showLogin();
       showToast('Byl jste odhlášen.');
@@ -1135,29 +2067,24 @@
         btnNew.style.display = 'none';
       }
 
-      switchDashboardTab(activeDashboardTab || 'patients');
+      switchDashboardTab(activeDashboardTab || 'reservations');
     }
 
-    function switchDashboardTab(tab) {
-      activeDashboardTab = tab;
-      const tabPatients = document.getElementById('tabBtnPatients');
-      const tabUsers = document.getElementById('tabBtnUsers');
-      const secPatients = document.getElementById('sectionPatients');
-      const secUsers = document.getElementById('sectionUsers');
+    const DASHBOARD_TABS = {
+      reservations: { btn: 'tabBtnReservations', section: 'sectionReservations', load: () => initReservations() },
+      patients: { btn: 'tabBtnPatients', section: 'sectionPatients', load: () => loadPatients() },
+      doctors: { btn: 'tabBtnDoctors', section: 'sectionDoctors', load: () => loadDoctorsSection() },
+      users: { btn: 'tabBtnUsers', section: 'sectionUsers', load: () => loadUsers() },
+    };
 
-      if (tab === 'patients') {
-        tabPatients.classList.add('active');
-        tabUsers.classList.remove('active');
-        secPatients.style.display = 'block';
-        secUsers.style.display = 'none';
-        loadPatients();
-      } else {
-        tabPatients.classList.remove('active');
-        tabUsers.classList.add('active');
-        secPatients.style.display = 'none';
-        secUsers.style.display = 'block';
-        loadUsers();
-      }
+    function switchDashboardTab(tab) {
+      if (!DASHBOARD_TABS[tab]) tab = 'reservations';
+      activeDashboardTab = tab;
+      Object.entries(DASHBOARD_TABS).forEach(([key, cfg]) => {
+        document.getElementById(cfg.btn).classList.toggle('active', key === tab);
+        document.getElementById(cfg.section).style.display = key === tab ? 'block' : 'none';
+      });
+      DASHBOARD_TABS[tab].load();
     }
 
     async function loadUsers() {
@@ -1382,23 +2309,14 @@
     function renderPatients() {
       const tbody = document.getElementById('patientTableBody');
       if (patientsList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Nenalezeni žádní pacienti. Pro přidání klikněte na <strong>+ Nový pacient</strong>.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Nenalezeni žádní pacienti. Pro přidání klikněte na <strong>+ Nový pacient</strong>.</td></tr>`;
         return;
       }
 
       const isAdmin = currentUser && currentUser.role === 'ADMIN';
 
       tbody.innerHTML = patientsList.map(p => {
-        const insNames = {
-          '111': 'VZP (111)',
-          '201': 'VoZP (201)',
-          '205': 'ČPZP (205)',
-          '207': 'OZP (207)',
-          '209': 'ZPŠ (209)',
-          '211': 'ZPMV (211)',
-          '213': 'RBP (213)',
-        };
-        const insDisplay = insNames[p.insurance_company_code] || p.insurance_company_code;
+        const insDisplay = INS_NAMES[p.insurance_company_code] || p.insurance_company_code;
         const formattedPhone = formatPhoneNumber(p.phone_number);
 
         return `
@@ -1415,6 +2333,13 @@
             </td>
             <td style="white-space: nowrap;"><code>${escapeHtml(p.insurance_number)}</code></td>
             <td style="text-align: center;"><span class="ins-badge">${escapeHtml(insDisplay)}</span></td>
+            <td style="text-align: center;">
+              ${p.upcoming_appointments_count > 0 ? `
+                <button type="button" class="appt-count-btn" onclick="showPatientAppointments(${p.id})" title="Zobrazit nadcházející rezervace">
+                  📅 ${p.upcoming_appointments_count}
+                </button>
+              ` : `<span style="color: var(--text-muted); font-size: 0.9rem;">—</span>`}
+            </td>
             <td style="text-align: center;">
               ${p.notes && p.notes.trim() ? `
                 <button type="button" class="btn-note-icon" onclick="showNoteModal(${p.id})" title="Zobrazit poznámku">
@@ -1625,6 +2550,769 @@
         showToast(err.message, true);
       }
     }
+
+    /* ===== SPOLEČNÉ POMOCNÉ FUNKCE ===== */
+    const INS_NAMES = {
+      '111': 'VZP (111)',
+      '201': 'VoZP (201)',
+      '205': 'ČPZP (205)',
+      '207': 'OZP (207)',
+      '209': 'ZPŠ (209)',
+      '211': 'ZPMV (211)',
+      '213': 'RBP (213)',
+    };
+    const STATUS_LABELS = {
+      PLANNED: 'Naplánováno',
+      COMPLETED: 'Uskutečněno',
+      CANCELLED_BY_PATIENT: 'Zrušeno pacientem',
+      CANCELLED_BY_OFFICE: 'Zrušeno ordinací',
+      NO_SHOW: 'Nedostavil se',
+    };
+    const DAY_SHORT = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+    const DAY_LONG = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
+    const SLOT_MIN = 15;
+    const MAX_SLOTS = 16;
+
+    async function apiFetch(url, { method = 'GET', body } = {}) {
+      const headers = { 'Authorization': `Bearer ${token}` };
+      if (body !== undefined) headers['Content-Type'] = 'application/json';
+      const res = await fetch(url, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+      if (res.status === 204) return null;
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        let msg = data && data.detail;
+        if (Array.isArray(msg)) msg = msg.map(m => m.msg).join(', ');
+        const err = new Error(msg || 'Operace se nezdařila.');
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+    }
+
+    const pad = n => String(n).padStart(2, '0');
+    const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const parseLocal = s => new Date(s); // naivní ISO čas ze serveru = lokální čas ordinace
+    const timeToMin = t => { const [h, m] = t.split(':'); return Number(h) * 60 + Number(m); };
+    const minToTime = m => `${Math.floor(m / 60)}:${pad(m % 60)}`;
+    const minToIso = m => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+    const shortTime = t => t.slice(0, 5).replace(/^0/, '');
+    const fmtTime = d => `${d.getHours()}:${pad(d.getMinutes())}`;
+    const fmtDate = d => `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`;
+    const weekdayIdx = d => (d.getDay() + 6) % 7;
+    const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
+    const monthName = d => capitalize(d.toLocaleDateString('cs-CZ', { month: 'long' }));
+
+    function mondayOf(d) {
+      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      x.setDate(x.getDate() - weekdayIdx(x));
+      return x;
+    }
+
+    function addDays(d, n) {
+      const x = new Date(d);
+      x.setDate(x.getDate() + n);
+      return x;
+    }
+
+    function durationLabel(minutes) {
+      const h = Math.floor(minutes / 60), m = minutes % 60;
+      if (!h) return `${m} min`;
+      return m ? `${h} h ${m} min` : `${h} h`;
+    }
+
+    function canBook() {
+      return currentUser && (currentUser.role === 'RECEPTIONIST' || currentUser.role === 'ADMIN');
+    }
+
+    /* ===== LÉKAŘI ===== */
+    let doctorsList = [];
+
+    async function loadDoctors() {
+      doctorsList = await apiFetch('/api/v1/doctors');
+      return doctorsList;
+    }
+
+    async function loadDoctorsSection() {
+      try {
+        await loadDoctors();
+        renderDoctorCards();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function canEditHours(d) {
+      return currentUser.role === 'ADMIN' || (currentUser.role === 'DOCTOR' && d.user_id === currentUser.id);
+    }
+
+    function doctorInitials(name) {
+      return name.replace(/^(MUDr\.|MDDr\.|Mgr\.|Bc\.|prof\.|doc\.)\s*/gi, '')
+        .split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+    }
+
+    function renderDoctorCards() {
+      const isAdmin = currentUser.role === 'ADMIN';
+      document.getElementById('btnNewDoctor').style.display = isAdmin ? 'inline-flex' : 'none';
+      const box = document.getElementById('doctorCards');
+      if (!doctorsList.length) {
+        box.innerHTML = `<div class="card" style="padding: 2rem; text-align: center; color: var(--text-muted);">Zatím nejsou evidováni žádní lékaři.</div>`;
+        return;
+      }
+      box.innerHTML = doctorsList.map(d => {
+        let totalMin = 0;
+        const rows = DAY_LONG.map((name, i) => {
+          const blocks = d.office_hours.filter(b => b.weekday === i);
+          blocks.forEach(b => { totalMin += timeToMin(b.end_time) - timeToMin(b.start_time); });
+          return `
+            <div class="hours-row ${blocks.length ? '' : 'off'}">
+              <span class="hours-day">${name}</span>
+              <span class="hours-blocks">
+                ${blocks.length
+                  ? blocks.map(b => `<span class="hours-pill">${shortTime(b.start_time)}–${shortTime(b.end_time)}</span>`).join('')
+                  : '<span class="hours-none">neordinuje</span>'}
+              </span>
+            </div>`;
+        }).join('');
+        const isOwn = d.user_id && d.user_id === currentUser.id;
+        return `
+          <div class="doctor-card" style="--doc-color: ${escapeHtml(d.color)};">
+            <div class="doctor-card-head">
+              <div class="doctor-avatar">${escapeHtml(doctorInitials(d.full_name))}</div>
+              <div>
+                <h3>${escapeHtml(d.full_name)}</h3>
+                <p>${escapeHtml(d.specialization || 'Bez specializace')}</p>
+              </div>
+              ${!d.is_active ? `<span class="status-badge status-inactive"><span class="status-dot"></span>Neaktivní</span>`
+                : isOwn ? '<span class="role-badge role-DOCTOR">Můj profil</span>' : ''}
+            </div>
+            <div class="doctor-card-body">${rows}</div>
+            <div class="doctor-card-foot">
+              <span class="hours-total">Celkem ${durationLabel(totalMin)} týdně</span>
+              <div class="action-group">
+                ${isAdmin ? `<button class="btn btn-secondary btn-sm" onclick="openDoctorModal(${d.id})">Údaje</button>` : ''}
+                ${canEditHours(d) ? `<button class="btn btn-primary btn-sm" onclick="openHoursModal(${d.id})">Upravit hodiny</button>` : ''}
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // --- Editor ordinačních hodin ---
+    let hoursEditDoctorId = null;
+    let hoursDraft = [];
+
+    function openHoursModal(doctorId) {
+      const d = doctorsList.find(x => x.id === doctorId);
+      if (!d) return;
+      hoursEditDoctorId = doctorId;
+      hoursDraft = DAY_LONG.map((_, i) => d.office_hours
+        .filter(b => b.weekday === i)
+        .map(b => ({ start: b.start_time.slice(0, 5), end: b.end_time.slice(0, 5) })));
+      document.getElementById('hoursModalTitle').textContent = `Ordinační hodiny – ${d.full_name}`;
+      renderHoursEditor();
+      document.getElementById('hoursModal').classList.add('open');
+    }
+
+    function renderHoursEditor() {
+      document.getElementById('hoursEditor').innerHTML = DAY_LONG.map((name, i) => `
+        <div class="hours-edit-row">
+          <div class="hours-edit-day">${name}</div>
+          <div class="hours-edit-blocks">
+            ${hoursDraft[i].length ? hoursDraft[i].map((b, j) => `
+              <div class="hours-edit-block">
+                <input type="time" step="900" class="form-control" value="${b.start}"
+                  onchange="hoursDraft[${i}][${j}].start = this.value" aria-label="${name} začátek">
+                <span>–</span>
+                <input type="time" step="900" class="form-control" value="${b.end}"
+                  onchange="hoursDraft[${i}][${j}].end = this.value" aria-label="${name} konec">
+                <button type="button" class="icon-btn" title="Odebrat blok" onclick="removeHoursBlock(${i}, ${j})">×</button>
+              </div>`).join('') : '<span class="hours-none">neordinuje</span>'}
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addHoursBlock(${i})">+ blok</button>
+        </div>`).join('');
+    }
+
+    function addHoursBlock(day) {
+      const last = hoursDraft[day][hoursDraft[day].length - 1];
+      if (last) {
+        const start = Math.min(timeToMin(last.end) + 60, 22 * 60);
+        hoursDraft[day].push({ start: minToIso(start), end: minToIso(Math.min(start + 120, 23 * 60 + 45)) });
+      } else {
+        hoursDraft[day].push({ start: '08:00', end: '12:00' });
+      }
+      renderHoursEditor();
+    }
+
+    function removeHoursBlock(day, idx) {
+      hoursDraft[day].splice(idx, 1);
+      renderHoursEditor();
+    }
+
+    async function saveHours() {
+      const blocks = [];
+      for (let i = 0; i < 7; i++) {
+        for (const b of hoursDraft[i]) {
+          if (!b.start || !b.end) {
+            showToast(`${DAY_LONG[i]}: vyplňte začátek i konec bloku.`, true);
+            return;
+          }
+          if (timeToMin(b.start) >= timeToMin(b.end)) {
+            showToast(`${DAY_LONG[i]}: blok ${b.start}–${b.end} musí začínat dříve, než končí.`, true);
+            return;
+          }
+          blocks.push({ weekday: i, start_time: b.start, end_time: b.end });
+        }
+      }
+      const btn = document.getElementById('btnSaveHours');
+      btn.disabled = true;
+      try {
+        await apiFetch(`/api/v1/doctors/${hoursEditDoctorId}/office-hours`, { method: 'PUT', body: { blocks } });
+        showToast('Ordinační hodiny byly uloženy.');
+        closeModal('hoursModal');
+        await loadDoctors();
+        renderDoctorCards();
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // --- Správa lékařů (ADMIN) ---
+    async function openDoctorModal(doctorId = null) {
+      const d = doctorId ? doctorsList.find(x => x.id === doctorId) : null;
+      document.getElementById('doctorForm').reset();
+      document.getElementById('doctorModalTitle').textContent = d ? `Úprava lékaře: ${d.full_name}` : 'Nový lékař';
+      document.getElementById('doctorId').value = d ? d.id : '';
+      document.getElementById('doctorFullName').value = d ? d.full_name : '';
+      document.getElementById('doctorSpecialization').value = d ? (d.specialization || '') : '';
+      document.getElementById('doctorColor').value = d ? d.color : '#0284c7';
+      document.getElementById('doctorIsActive').checked = d ? d.is_active : true;
+
+      const select = document.getElementById('doctorUserId');
+      select.innerHTML = '<option value="">— bez přihlašovacího účtu —</option>';
+      try {
+        const users = await apiFetch('/api/v1/users?role=DOCTOR&limit=100');
+        const linked = new Set(doctorsList.filter(x => x.user_id && x.id !== doctorId).map(x => x.user_id));
+        select.innerHTML += users.items
+          .filter(u => !linked.has(u.id))
+          .map(u => `<option value="${u.id}">${escapeHtml(u.full_name)} (${escapeHtml(u.username)})</option>`).join('');
+        select.value = d && d.user_id ? d.user_id : '';
+      } catch (err) {
+        showToast(err.message, true);
+      }
+      document.getElementById('doctorModal').classList.add('open');
+    }
+
+    async function saveDoctor(e) {
+      e.preventDefault();
+      const doctorId = document.getElementById('doctorId').value;
+      const userId = document.getElementById('doctorUserId').value;
+      const payload = {
+        full_name: document.getElementById('doctorFullName').value.trim(),
+        specialization: document.getElementById('doctorSpecialization').value.trim() || null,
+        color: document.getElementById('doctorColor').value,
+        user_id: userId ? Number(userId) : null,
+        is_active: document.getElementById('doctorIsActive').checked,
+      };
+      try {
+        await apiFetch(doctorId ? `/api/v1/doctors/${doctorId}` : '/api/v1/doctors', {
+          method: doctorId ? 'PUT' : 'POST', body: payload,
+        });
+        showToast(doctorId ? 'Údaje lékaře byly upraveny.' : 'Lékař byl založen. Nastavte mu ordinační hodiny.');
+        closeModal('doctorModal');
+        await loadDoctors();
+        renderDoctorCards();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    /* ===== REZERVAČNÍ KALENDÁŘ ===== */
+    let calDoctorId = null;
+    let calWeekStart = mondayOf(new Date());
+    let calData = null;
+    let calState = [];      // [den][sloupec] -> 'free' | 'off' | 'past' | 'booked'
+    let calCells = [];      // [den][sloupec] -> element buňky
+    let calStartMin = 0;    // minuty od půlnoci pro první sloupec
+    let calCols = 0;
+    let calDrag = null;     // { day, anchor }
+    let calSelection = null; // { day, from, to } – indexy sloupců včetně
+    let calListenersReady = false;
+
+    async function initReservations() {
+      setupCalendarListeners();
+      try {
+        await loadDoctors();
+        const active = doctorsList.filter(d => d.is_active);
+        const select = document.getElementById('calDoctorSelect');
+        select.innerHTML = active.map(d =>
+          `<option value="${d.id}">${escapeHtml(d.full_name)}${d.specialization ? ' – ' + escapeHtml(d.specialization) : ''}</option>`
+        ).join('');
+        if (!active.some(d => d.id === calDoctorId)) {
+          const own = currentUser.role === 'DOCTOR' ? active.find(d => d.user_id === currentUser.id) : null;
+          calDoctorId = (own || active[0] || {}).id || null;
+        }
+        if (calDoctorId) select.value = calDoctorId;
+        updateDoctorDot();
+        await loadCalendar();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function updateDoctorDot() {
+      const d = doctorsList.find(x => x.id === calDoctorId);
+      document.getElementById('calDoctorDot').style.background = d ? d.color : 'transparent';
+    }
+
+    function onCalDoctorChange() {
+      calDoctorId = Number(document.getElementById('calDoctorSelect').value);
+      updateDoctorDot();
+      loadCalendar();
+    }
+
+    function shiftWeek(delta) {
+      calWeekStart = addDays(calWeekStart, 7 * delta);
+      loadCalendar();
+    }
+
+    function goToToday() {
+      calWeekStart = mondayOf(new Date());
+      loadCalendar();
+    }
+
+    function renderCalendarHeader() {
+      const mon = calWeekStart, sun = addDays(mon, 6);
+      let title;
+      if (mon.getMonth() === sun.getMonth()) title = `${monthName(mon)} ${mon.getFullYear()}`;
+      else if (mon.getFullYear() === sun.getFullYear()) title = `${monthName(mon)} – ${monthName(sun)} ${sun.getFullYear()}`;
+      else title = `${monthName(mon)} ${mon.getFullYear()} – ${monthName(sun)} ${sun.getFullYear()}`;
+      document.getElementById('calMonthTitle').textContent = title;
+
+      const range = mon.getMonth() === sun.getMonth()
+        ? `${mon.getDate()}.–${sun.getDate()}. ${sun.getMonth() + 1}. ${sun.getFullYear()}`
+        : `${mon.getDate()}. ${mon.getMonth() + 1}. – ${sun.getDate()}. ${sun.getMonth() + 1}. ${sun.getFullYear()}`;
+      document.getElementById('calRangeTitle').textContent = range;
+    }
+
+    async function loadCalendar() {
+      const grid = document.getElementById('calGrid');
+      renderCalendarHeader();
+      if (!calDoctorId) {
+        grid.innerHTML = '<div class="cal-empty">V systému není žádný aktivní lékař.</div>';
+        return;
+      }
+      const reqWeek = isoDate(calWeekStart), reqDoctor = calDoctorId;
+      grid.classList.add('loading');
+      try {
+        const data = await apiFetch(`/api/v1/doctors/${reqDoctor}/calendar?week_start=${reqWeek}`);
+        // Při rychlém proklikávání týdnů ignorujeme opožděné odpovědi
+        if (reqWeek !== isoDate(calWeekStart) || reqDoctor !== calDoctorId) return;
+        calData = data;
+        renderCalendar();
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        grid.classList.remove('loading');
+      }
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calGrid');
+      const days = calData.days;
+      const now = parseLocal(calData.now);
+
+      // Rozsah sloupců podle ordinačních hodin (zaokrouhleno na celé hodiny)
+      let minM = Infinity, maxM = -Infinity;
+      days.forEach(d => d.blocks.forEach(b => {
+        minM = Math.min(minM, timeToMin(b.start_time));
+        maxM = Math.max(maxM, timeToMin(b.end_time));
+      }));
+      calData.appointments.forEach(a => {
+        const s = parseLocal(a.start_at), e = parseLocal(a.end_at);
+        minM = Math.min(minM, s.getHours() * 60 + s.getMinutes());
+        maxM = Math.max(maxM, e.getHours() * 60 + e.getMinutes());
+      });
+      if (!isFinite(minM)) { minM = 7 * 60; maxM = 17 * 60; }
+      minM = Math.floor(minM / 60) * 60;
+      maxM = Math.ceil(maxM / 60) * 60;
+      calStartMin = minM;
+      calCols = (maxM - minM) / SLOT_MIN;
+
+      // Obsazené sloty
+      const bookedMap = days.map(() => new Array(calCols).fill(false));
+      const appts = [];
+      calData.appointments.forEach(a => {
+        const s = parseLocal(a.start_at), e = parseLocal(a.end_at);
+        const dayIdx = days.findIndex(d => d.date === isoDate(s));
+        if (dayIdx < 0) return;
+        const from = Math.max(0, (s.getHours() * 60 + s.getMinutes() - minM) / SLOT_MIN);
+        const to = Math.min(calCols, (e.getHours() * 60 + e.getMinutes() - minM) / SLOT_MIN);
+        for (let c = from; c < to; c++) bookedMap[dayIdx][c] = true;
+        appts.push({ ...a, dayIdx, from, to, s, e });
+      });
+
+      const todayIso = isoDate(now);
+      let html = '<div class="cal-corner" style="grid-row: 1; grid-column: 1;"></div>';
+      for (let m = minM; m < maxM; m += 60) {
+        html += `<div class="cal-hour" style="grid-row: 1; grid-column: ${2 + (m - minM) / SLOT_MIN} / span 4;">${m / 60}:00</div>`;
+      }
+
+      calState = [];
+      days.forEach((day, i) => {
+        const row = i + 2;
+        const date = new Date(day.date + 'T00:00:00');
+        const blocks = day.blocks.map(b => [timeToMin(b.start_time), timeToMin(b.end_time)]);
+        html += `
+          <div class="cal-day ${day.date === todayIso ? 'today' : ''} ${i >= 5 ? 'weekend' : ''}" style="grid-row: ${row}; grid-column: 1;">
+            <span class="cal-day-name">${DAY_SHORT[i]}</span>
+            <span class="cal-day-num">${date.getDate()}.</span>
+          </div>`;
+        calState[i] = [];
+        for (let c = 0; c < calCols; c++) {
+          const m = minM + c * SLOT_MIN;
+          const slotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(m / 60), m % 60);
+          const inHours = blocks.some(([bs, be]) => bs <= m && m + SLOT_MIN <= be);
+          const state = bookedMap[i][c] ? 'booked' : !inHours ? 'off' : slotDate < now ? 'past' : 'free';
+          calState[i][c] = state;
+          if (state === 'booked') continue;
+          const label = `${DAY_SHORT[i]} ${date.getDate()}. ${date.getMonth() + 1}. ${minToTime(m)}–${minToTime(m + SLOT_MIN)}`;
+          const tip = state === 'free' ? `${label} · volno` : state === 'past' ? `${label} · již proběhlo` : `${label} · lékař neordinuje`;
+          html += `<div class="cal-cell ${state} ${c % 4 === 0 ? 'hour-start' : ''}" data-day="${i}" data-col="${c}" style="grid-row: ${row}; grid-column: ${c + 2};" title="${tip}"></div>`;
+        }
+        if (!blocks.length) {
+          html += `<div class="cal-off-label" style="grid-row: ${row}; grid-column: 2 / span ${calCols};">Lékař v tento den neordinuje</div>`;
+        }
+      });
+
+      appts.forEach(a => {
+        const time = `${fmtTime(a.s)}–${fmtTime(a.e)}`;
+        const tip = `${a.patient_name} · ${time}\n${a.reason}`;
+        html += `
+          <div class="cal-appt ${a.e <= now ? 'is-past' : ''}" style="grid-row: ${a.dayIdx + 2}; grid-column: ${a.from + 2} / ${a.to + 2};"
+            title="${escapeHtml(tip)}" onclick="openAppointmentDetail(${a.id})">
+            <span class="cal-appt-name">${escapeHtml(a.to - a.from >= 3 ? a.patient_name : a.patient_name.split(' ')[0])}</span>
+            ${a.to - a.from >= 3 ? `<span class="cal-appt-time">${time}</span>` : ''}
+          </div>`;
+      });
+
+      grid.style.setProperty('--cols', calCols);
+      grid.classList.toggle('readonly', !canBook());
+      grid.innerHTML = html;
+
+      calCells = days.map(() => []);
+      grid.querySelectorAll('.cal-cell').forEach(el => {
+        calCells[Number(el.dataset.day)][Number(el.dataset.col)] = el;
+      });
+      calSelection = null;
+      updateSelectionInfo();
+    }
+
+    // --- Výběr termínu kliknutím / tažením (myš i dotyk přes Pointer Events) ---
+    function setupCalendarListeners() {
+      if (calListenersReady) return;
+      calListenersReady = true;
+      document.getElementById('calGrid').addEventListener('pointerdown', calPointerDown);
+      document.addEventListener('pointermove', calPointerMove);
+      document.addEventListener('pointerup', calPointerUp);
+      document.addEventListener('pointercancel', () => { calDrag = null; clearSelection(); });
+    }
+
+    function calPointerDown(e) {
+      if (e.button !== 0) return;
+      const cell = e.target.closest('.cal-cell');
+      if (!cell || !cell.classList.contains('free')) return;
+      if (!canBook()) return;
+      e.preventDefault();
+      if (cell.hasPointerCapture(e.pointerId)) cell.releasePointerCapture(e.pointerId);
+      const day = Number(cell.dataset.day), col = Number(cell.dataset.col);
+      calDrag = { day, anchor: col };
+      setSelection(day, col, col);
+    }
+
+    function calPointerMove(e) {
+      if (!calDrag) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const cell = el && el.closest ? el.closest('.cal-cell') : null;
+      if (!cell || Number(cell.dataset.day) !== calDrag.day) return;
+      const target = Number(cell.dataset.col), anchor = calDrag.anchor;
+      const dir = Math.sign(target - anchor);
+      let end = anchor;
+      // Výběr se rozšiřuje jen přes souvislá volná políčka (zastaví se o obsazené / šedé)
+      while (end !== target) {
+        const next = end + dir;
+        if (calState[calDrag.day][next] !== 'free' || Math.abs(next - anchor) + 1 > MAX_SLOTS) break;
+        end = next;
+      }
+      setSelection(calDrag.day, Math.min(anchor, end), Math.max(anchor, end));
+    }
+
+    function calPointerUp() {
+      if (!calDrag) return;
+      calDrag = null;
+      if (calSelection) openBookingModal();
+    }
+
+    function setSelection(day, from, to) {
+      clearSelection(false);
+      calSelection = { day, from, to };
+      for (let c = from; c <= to; c++) calCells[day][c].classList.add('selected');
+      updateSelectionInfo();
+    }
+
+    function clearSelection(updateInfo = true) {
+      if (calSelection) {
+        const { day, from, to } = calSelection;
+        for (let c = from; c <= to; c++) {
+          if (calCells[day] && calCells[day][c]) calCells[day][c].classList.remove('selected');
+        }
+      }
+      calSelection = null;
+      if (updateInfo) updateSelectionInfo();
+    }
+
+    function selectionRange() {
+      const day = calData.days[calSelection.day];
+      const startM = calStartMin + calSelection.from * SLOT_MIN;
+      const endM = calStartMin + (calSelection.to + 1) * SLOT_MIN;
+      return { day, date: new Date(day.date + 'T00:00:00'), startM, endM };
+    }
+
+    function selectionLabel() {
+      const { date, startM, endM } = selectionRange();
+      return `${DAY_SHORT[weekdayIdx(date)]} ${fmtDate(date)}, ${minToTime(startM)}–${minToTime(endM)}`;
+    }
+
+    function updateSelectionInfo() {
+      const el = document.getElementById('calSelectionInfo');
+      if (calSelection) {
+        const { startM, endM } = selectionRange();
+        el.className = 'cal-selection-info';
+        el.textContent = `Vybráno: ${selectionLabel()} (${durationLabel(endM - startM)})`;
+      } else {
+        el.className = 'cal-selection-info hint';
+        el.textContent = canBook()
+          ? 'Tip: klikněte na volné políčko, nebo táhněte myší přes více políček. Šipky ← → přepínají týdny.'
+          : 'Rezervace zakládá recepce. Kliknutím na červený blok zobrazíte detail.';
+      }
+    }
+
+    // --- Rezervační modál ---
+    let bookingPatient = null;
+    let bookingResults = [];
+    let bookingSearchDebounce = null;
+
+    function openBookingModal() {
+      const { startM, endM } = selectionRange();
+      const doctor = doctorsList.find(d => d.id === calDoctorId);
+      document.getElementById('bookingForm').reset();
+      document.getElementById('bookingSummaryMain').textContent = selectionLabel();
+      document.getElementById('bookingSummarySub').innerHTML = `
+        <span class="doctor-dot" style="background: ${escapeHtml(doctor.color)}; width: 10px; height: 10px;"></span>
+        ${escapeHtml(doctor.full_name)} · ${durationLabel(endM - startM)}`;
+      clearBookingPatient(false);
+      document.getElementById('bookingModal').classList.add('open');
+      setTimeout(() => document.getElementById('bookingPatientSearch').focus(), 50);
+    }
+
+    function closeBookingModal() {
+      closeModal('bookingModal');
+      clearSelection();
+    }
+
+    function onBookingSearch() {
+      clearTimeout(bookingSearchDebounce);
+      bookingSearchDebounce = setTimeout(searchBookingPatients, 200);
+    }
+
+    async function searchBookingPatients() {
+      const q = document.getElementById('bookingPatientSearch').value.trim();
+      const box = document.getElementById('bookingPatientResults');
+      if (q.length < 2) {
+        box.innerHTML = '<div class="search-hint">Zadejte alespoň 2 znaky příjmení nebo telefonního čísla.</div>';
+        return;
+      }
+      try {
+        const data = await apiFetch(`/api/v1/patients?is_active=true&limit=8&search=${encodeURIComponent(q)}`);
+        bookingResults = data.items;
+        box.innerHTML = bookingResults.length
+          ? bookingResults.map(p => `
+              <button type="button" class="patient-result" onclick="selectBookingPatient(${p.id})">
+                <strong>${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
+                <span>nar. ${p.birth_year} · ${escapeHtml(formatPhoneNumber(p.phone_number))}</span>
+              </button>`).join('')
+          : '<div class="search-hint">Hledání neodpovídá žádný aktivní pacient. Nového pacienta založíte v záložce Evidence pacientů.</div>';
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function selectBookingPatient(patientId) {
+      bookingPatient = bookingResults.find(p => p.id === patientId);
+      if (!bookingPatient) return;
+      document.getElementById('bookingPatientPicker').style.display = 'none';
+      const box = document.getElementById('bookingPatientSelected');
+      box.style.display = 'block';
+      box.innerHTML = `
+        <div class="selected-patient">
+          <div>
+            <strong>${escapeHtml(bookingPatient.last_name)} ${escapeHtml(bookingPatient.first_name)}</strong>
+            <small>nar. ${bookingPatient.birth_year} · ${escapeHtml(formatPhoneNumber(bookingPatient.phone_number))} · ${escapeHtml(INS_NAMES[bookingPatient.insurance_company_code] || bookingPatient.insurance_company_code)}</small>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="clearBookingPatient()">Změnit</button>
+        </div>`;
+      document.getElementById('bookingReason').focus();
+    }
+
+    function clearBookingPatient(focus = true) {
+      bookingPatient = null;
+      bookingResults = [];
+      document.getElementById('bookingPatientPicker').style.display = 'block';
+      document.getElementById('bookingPatientSelected').style.display = 'none';
+      document.getElementById('bookingPatientSearch').value = '';
+      document.getElementById('bookingPatientResults').innerHTML =
+        '<div class="search-hint">Zadejte alespoň 2 znaky příjmení nebo telefonního čísla.</div>';
+      if (focus) document.getElementById('bookingPatientSearch').focus();
+    }
+
+    async function saveBooking(e) {
+      e.preventDefault();
+      if (!bookingPatient) {
+        showToast('Vyberte pacienta.', true);
+        return;
+      }
+      const reason = document.getElementById('bookingReason').value.trim();
+      if (reason.length < 3) {
+        showToast('Vyplňte důvod návštěvy (alespoň 3 znaky).', true);
+        return;
+      }
+      const { day, startM, endM } = selectionRange();
+      const label = selectionLabel();
+      const btn = document.getElementById('btnSaveBooking');
+      btn.disabled = true;
+      try {
+        await apiFetch('/api/v1/appointments', {
+          method: 'POST',
+          body: {
+            doctor_id: calDoctorId,
+            patient_id: bookingPatient.id,
+            start_at: `${day.date}T${minToIso(startM)}:00`,
+            end_at: `${day.date}T${minToIso(endM)}:00`,
+            reason,
+          },
+        });
+        showToast(`Rezervováno: ${bookingPatient.last_name} ${bookingPatient.first_name}, ${label}`);
+        closeBookingModal();
+        loadCalendar();
+      } catch (err) {
+        showToast(err.message, true);
+        if (err.status === 409 || err.status === 400) {
+          // Termín mezitím obsadil někdo jiný nebo se změnily hodiny – kalendář obnovíme
+          closeBookingModal();
+          loadCalendar();
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // --- Detail rezervace ---
+    async function openAppointmentDetail(appointmentId) {
+      const body = document.getElementById('appointmentDetailBody');
+      body.innerHTML = '<div class="search-hint">Načítání rezervace…</div>';
+      document.getElementById('appointmentDetailModal').classList.add('open');
+      try {
+        const a = await apiFetch(`/api/v1/appointments/${appointmentId}`);
+        const s = parseLocal(a.start_at), e = parseLocal(a.end_at);
+        const p = a.patient;
+        const created = new Date(a.created_at).toLocaleString('cs-CZ', {
+          day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+        });
+        body.innerHTML = `
+          <div class="appt-detail-head">
+            <div>
+              <div class="appt-detail-date">${DAY_LONG[weekdayIdx(s)]} ${fmtDate(s)}</div>
+              <div class="appt-detail-hours">${fmtTime(s)} – ${fmtTime(e)} <span>(${durationLabel((e - s) / 60000)})</span></div>
+            </div>
+            <span class="appt-status">${STATUS_LABELS[a.status] || a.status}</span>
+          </div>
+          <dl class="detail-list">
+            <dt>Pacient</dt>
+            <dd><strong>${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
+              <span style="color: var(--text-muted);">(nar. ${p.birth_year})</span></dd>
+            <dt>Telefon</dt>
+            <dd><a href="tel:${escapeHtml(p.phone_number)}" class="phone-link"><span>📞</span> ${escapeHtml(formatPhoneNumber(p.phone_number))}</a></dd>
+            <dt>Číslo pojištěnce</dt>
+            <dd><code>${escapeHtml(p.insurance_number)}</code>
+              <span class="ins-badge">${escapeHtml(INS_NAMES[p.insurance_company_code] || p.insurance_company_code)}</span></dd>
+            <dt>Lékař</dt>
+            <dd><span class="doctor-dot" style="background: ${escapeHtml(a.doctor.color)}; width: 10px; height: 10px;"></span>
+              ${escapeHtml(a.doctor.full_name)}</dd>
+            <dt>Důvod návštěvy</dt>
+            <dd><div class="detail-reason" style="width: 100%;">${escapeHtml(a.reason)}</div></dd>
+            ${p.notes ? `<dt>Poznámka k pacientovi</dt><dd style="color: var(--text-muted);">${escapeHtml(p.notes)}</dd>` : ''}
+            <dt>Založeno</dt>
+            <dd style="color: var(--text-muted); font-size: 0.85rem;">${escapeHtml(a.created_by_name || '—')}, ${created}</dd>
+          </dl>`;
+      } catch (err) {
+        body.innerHTML = `<div class="search-hint" style="color: var(--danger);">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    /* ===== REZERVACE V EVIDENCI PACIENTŮ ===== */
+    async function showPatientAppointments(patientId) {
+      const p = patientsList.find(x => x.id === patientId);
+      document.getElementById('patientAppointmentsTitle').textContent =
+        p ? `Nadcházející rezervace – ${p.last_name} ${p.first_name}` : 'Nadcházející rezervace';
+      const body = document.getElementById('patientAppointmentsBody');
+      body.innerHTML = '<div class="search-hint">Načítání…</div>';
+      document.getElementById('patientAppointmentsModal').classList.add('open');
+      try {
+        const data = await apiFetch(`/api/v1/patients/${patientId}/appointments?upcoming=true`);
+        if (!data.items.length) {
+          body.innerHTML = '<div class="search-hint">Pacient nemá žádné nadcházející rezervace.</div>';
+          return;
+        }
+        body.innerHTML = data.items.map(a => {
+          const s = parseLocal(a.start_at), e = parseLocal(a.end_at);
+          return `
+            <div class="patient-appt-item">
+              <div class="patient-appt-date">
+                <span>${DAY_SHORT[weekdayIdx(s)]}</span>
+                <strong>${s.getDate()}.</strong>
+                <span>${s.toLocaleDateString('cs-CZ', { month: 'short' })}</span>
+              </div>
+              <div class="patient-appt-info">
+                <strong>${fmtDate(s)}, ${fmtTime(s)}–${fmtTime(e)}</strong>
+                <span class="muted"><span class="doctor-dot" style="background: ${escapeHtml(a.doctor.color)}; width: 9px; height: 9px;"></span>${escapeHtml(a.doctor.full_name)}</span>
+                <span>${escapeHtml(a.reason)}</span>
+              </div>
+            </div>`;
+        }).join('');
+      } catch (err) {
+        body.innerHTML = `<div class="search-hint" style="color: var(--danger);">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    /* ===== KLÁVESOVÉ ZKRATKY ===== */
+    document.addEventListener('keydown', (e) => {
+      const openModal = document.querySelector('.modal-overlay.open');
+      if (e.key === 'Escape' && openModal) {
+        if (openModal.id === 'bookingModal') closeBookingModal();
+        else openModal.classList.remove('open');
+        return;
+      }
+      if (openModal || activeDashboardTab !== 'reservations' || !currentUser) return;
+      const tag = (document.activeElement && document.activeElement.tagName) || '';
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+      if (e.key === 'ArrowLeft') shiftWeek(-1);
+      if (e.key === 'ArrowRight') shiftWeek(1);
+    });
 
     function escapeHtml(str) {
       if (!str) return '';
