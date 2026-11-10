@@ -1362,6 +1362,339 @@
       gap: 0.35rem;
     }
 
+    /* ===== ORDINACE DNES (FP4) ===== */
+    .clinic-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      min-height: 520px;
+    }
+
+    .clinic-queue {
+      border-right: 1px solid var(--border);
+      background: #fcfdfe;
+      overflow-y: auto;
+      max-height: 75vh;
+    }
+
+    .clinic-empty {
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .queue-item {
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 0.6rem;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+      padding: 0.85rem 1rem;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      border-left: 4px solid transparent;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .queue-item:hover {
+      background: #f1f5f9;
+    }
+
+    .queue-item.active {
+      background: var(--primary-light);
+      border-left-color: var(--primary);
+    }
+
+    .queue-time {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .queue-time small {
+      display: block;
+      font-weight: 500;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .queue-name {
+      font-weight: 600;
+      font-size: 0.92rem;
+    }
+
+    .queue-reason {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 170px;
+    }
+
+    .state-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .state-WAITING { background: #f1f5f9; color: #64748b; }
+    .state-TO_RECORD { background: var(--warning-light); color: #b45309; }
+    .state-DRAFT { background: var(--primary-light); color: var(--primary-hover); }
+    .state-CLOSED { background: var(--success-light); color: #047857; }
+    .state-PLANNED { background: #fee2e2; color: #b91c1c; }
+    .state-CANCELLED { background: #f1f5f9; color: #64748b; text-decoration: line-through; }
+
+    .clinic-panel {
+      padding: 1.25rem 1.5rem;
+      min-width: 0;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .panel-head h3 {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .panel-meta {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.9rem;
+      margin-top: 0.3rem;
+      align-items: center;
+    }
+
+    .panel-reason {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      font-size: 0.9rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .panel-reason strong {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: block;
+      margin-bottom: 0.15rem;
+    }
+
+    .panel-message {
+      padding: 2rem 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: var(--radius);
+    }
+
+    .panel-message .big {
+      font-size: 2rem;
+      display: block;
+      margin-bottom: 0.4rem;
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #334155;
+      margin: 1.1rem 0 0.45rem;
+    }
+
+    .proc-search {
+      position: relative;
+    }
+
+    .proc-search .patient-results {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      z-index: 20;
+      background: white;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .proc-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-weight: 700;
+      color: var(--primary-hover);
+    }
+
+    .items-table td,
+    .items-table th {
+      padding: 0.55rem 0.6rem;
+    }
+
+    .items-table tr:hover td {
+      background: transparent;
+    }
+
+    .qty-control {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .qty-control button {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: #f8fafc;
+      font-size: 1.05rem;
+      cursor: pointer;
+    }
+
+    .qty-control button:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .qty-control span {
+      min-width: 34px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .items-total td {
+      font-weight: 700;
+      font-size: 1rem;
+      border-top: 2px solid var(--border);
+    }
+
+    .panel-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .dirty-flag {
+      font-size: 0.8rem;
+      color: #b45309;
+      font-weight: 600;
+    }
+
+    .closed-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--success-light);
+      color: #047857;
+      border-radius: 8px;
+      padding: 0.6rem 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: var(--text-main);
+      text-align: left;
+    }
+
+    .link-btn:hover strong {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    /* Karta pacienta */
+    .history-item {
+      display: flex;
+      gap: 0.9rem;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .history-body {
+      flex: 1;
+      min-width: 0;
+      font-size: 0.88rem;
+    }
+
+    .history-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .history-procs {
+      margin-top: 0.45rem;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.7rem;
+    }
+
+    .history-proc {
+      display: grid;
+      grid-template-columns: 56px 1fr auto auto;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      padding: 0.15rem 0;
+    }
+
+    .history-proc .muted {
+      color: var(--text-muted);
+    }
+
+    .history-sum {
+      text-align: right;
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 0.3rem;
+    }
+
+    @media (max-width: 900px) {
+      .clinic-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .clinic-queue {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        max-height: 300px;
+      }
+    }
+
     @media (max-width: 768px) {
       main {
         padding: 1rem 0.75rem;
@@ -1476,6 +1809,9 @@
         <button id="tabBtnReservations" class="nav-tab active" onclick="switchDashboardTab('reservations')">
           <span>📅</span> Rezervace
         </button>
+        <button id="tabBtnClinic" class="nav-tab" onclick="switchDashboardTab('clinic')">
+          <span>🏥</span> Ordinace dnes
+        </button>
         <button id="tabBtnPatients" class="nav-tab" onclick="switchDashboardTab('patients')">
           <span>📋</span> Evidence pacientů
         </button>
@@ -1539,6 +1875,38 @@
 
           <div class="cal-scroll">
             <div id="calGrid" class="cal-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION: CLINIC – ORDINACE DNES (Funkční požadavek 4) -->
+      <div id="sectionClinic" style="display: none;">
+        <div class="dashboard-header">
+          <div class="dashboard-title">
+            <h2>Ordinace dnes</h2>
+          </div>
+        </div>
+
+        <div class="card" style="overflow: visible;">
+          <div class="cal-toolbar">
+            <div class="cal-doctor-select">
+              <span id="clinicDoctorDot" class="doctor-dot"></span>
+              <select id="clinicDoctorSelect" class="form-control" onchange="onClinicDoctorChange()"
+                aria-label="Vybrat lékaře"></select>
+            </div>
+            <div class="cal-nav">
+              <button class="cal-nav-btn" onclick="shiftClinicDay(-1)" title="Předchozí den (šipka vlevo)">‹</button>
+              <div class="cal-title">
+                <h3 id="clinicDayTitle">—</h3>
+                <span id="clinicDaySub"></span>
+              </div>
+              <button class="cal-nav-btn" onclick="shiftClinicDay(1)" title="Další den (šipka vpravo)">›</button>
+              <button class="btn btn-secondary btn-sm" onclick="clinicToday()">Dnes</button>
+            </div>
+          </div>
+          <div class="clinic-layout">
+            <div id="clinicQueue" class="clinic-queue"></div>
+            <div id="clinicPanel" class="clinic-panel"></div>
           </div>
         </div>
       </div>
@@ -1929,6 +2297,17 @@
     </div>
   </div>
 
+  <!-- MODAL: PATIENT CARD (historie návštěv, jen ke čtení) -->
+  <div id="patientCardModal" class="modal-overlay">
+    <div class="modal" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3 id="patientCardTitle">Karta pacienta</h3>
+        <button class="close-btn" onclick="closeModal('patientCardModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="patientCardBody" style="max-height: 75vh; overflow-y: auto; padding-top: 0.75rem;"></div>
+    </div>
+  </div>
+
   <!-- TOAST NOTIFICATION -->
   <div id="toast" class="toast">Zpráva</div>
 
@@ -2062,6 +2441,7 @@
 
     const DASHBOARD_TABS = {
       reservations: { btn: 'tabBtnReservations', section: 'sectionReservations', load: () => initReservations() },
+      clinic: { btn: 'tabBtnClinic', section: 'sectionClinic', load: () => initClinic() },
       patients: { btn: 'tabBtnPatients', section: 'sectionPatients', load: () => loadPatients() },
       doctors: { btn: 'tabBtnDoctors', section: 'sectionDoctors', load: () => loadDoctorsSection() },
       users: { btn: 'tabBtnUsers', section: 'sectionUsers', load: () => loadUsers() },
@@ -2069,6 +2449,9 @@
 
     function switchDashboardTab(tab) {
       if (!DASHBOARD_TABS[tab]) tab = 'reservations';
+      // Neuložený koncept návštěvy nechceme ztratit přepnutím záložky
+      if (activeDashboardTab === 'clinic' && tab !== 'clinic' && !confirmDiscard()) return;
+      if (tab !== 'clinic') clinicDirty = false;
       activeDashboardTab = tab;
       Object.entries(DASHBOARD_TABS).forEach(([key, cfg]) => {
         document.getElementById(cfg.btn).classList.toggle('active', key === tab);
@@ -2313,7 +2696,9 @@
           <tr>
             <td style="white-space: nowrap; text-align: center;"><strong style="color: var(--text-muted);">#${p.id}</strong></td>
             <td style="white-space: nowrap;">
-              <strong style="font-size: 0.95rem;">${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
+              <button type="button" class="link-btn" onclick="openPatientCard(${p.id})" title="Otevřít kartu pacienta">
+                <strong style="font-size: 0.95rem;">${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
+              </button>
             </td>
             <td style="white-space: nowrap; text-align: center;">${p.birth_year}</td>
             <td style="white-space: nowrap;">
@@ -2606,6 +2991,12 @@
       const x = new Date(d);
       x.setDate(x.getDate() + n);
       return x;
+    }
+
+    // České skloňování podle počtu: plural(2, 'výkon', 'výkony', 'výkonů') → „2 výkony“
+    function plural(n, one, few, many) {
+      const word = n === 1 ? one : (n >= 2 && n <= 4 ? few : many);
+      return `${n} ${word}`;
     }
 
     function durationLabel(minutes) {
@@ -2989,7 +3380,7 @@
         html += `
           <div class="cal-appt ${a.e <= now ? 'is-past' : ''}" style="grid-row: ${a.dayIdx + 2}; grid-column: ${a.from + 2} / ${a.to + 2};"
             title="${escapeHtml(tip)}" onclick="openAppointmentDetail(${a.id})">
-            <span class="cal-appt-name">${escapeHtml(a.to - a.from >= 3 ? a.patient_name : a.patient_name.split(' ')[0])}</span>
+            <span class="cal-appt-name">${a.status === 'COMPLETED' ? '✔ ' : ''}${escapeHtml(a.to - a.from >= 3 ? a.patient_name : a.patient_name.split(' ')[0])}</span>
             ${a.to - a.from >= 3 ? `<span class="cal-appt-time">${time}</span>` : ''}
           </div>`;
       });
@@ -3249,7 +3640,13 @@
             ${p.notes ? `<dt>Poznámka k pacientovi</dt><dd style="color: var(--text-muted);">${escapeHtml(p.notes)}</dd>` : ''}
             <dt>Založeno</dt>
             <dd style="color: var(--text-muted); font-size: 0.85rem;">${escapeHtml(a.created_by_name || '—')}, ${created}</dd>
-          </dl>`;
+          </dl>
+          ${s <= new Date() ? `
+            <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+              <button class="btn btn-primary" onclick="goToClinic(${a.doctor.id}, '${isoDate(s)}', ${a.id})">
+                ${a.status === 'PLANNED' && canRecordFor(a.doctor.id) ? '✎ Zapsat návštěvu' : '🏥 Otevřít v Ordinaci dnes'}
+              </button>
+            </div>` : ''}`;
       } catch (err) {
         body.innerHTML = `<div class="search-hint" style="color: var(--danger);">${escapeHtml(err.message)}</div>`;
       }
@@ -3290,6 +3687,505 @@
       }
     }
 
+    /* ===== ORDINACE DNES – ZÁZNAM O NÁVŠTĚVĚ (FP4) ===== */
+    const AGENDA_LABELS = {
+      WAITING: '○ Čeká',
+      TO_RECORD: '● K zápisu',
+      DRAFT: '✎ Rozpracováno',
+      CLOSED: '✔ Uzavřeno',
+    };
+    let clinicDoctorId = null;
+    let clinicDate = new Date();
+    let clinicAgenda = null;
+    let clinicSelectedApptId = null;
+    let clinicVisit = null;      // načtený záznam návštěvy (VisitResponse)
+    let clinicDraft = null;      // { note, items: [{procedure_id, code, name, points_per_unit, quantity}] }
+    let clinicDirty = false;
+    let procSearchDebounce = null;
+    let procResults = [];
+
+    function canRecordFor(doctorId) {
+      if (!currentUser) return false;
+      if (currentUser.role === 'ADMIN') return true;
+      const d = doctorsList.find(x => x.id === doctorId);
+      return currentUser.role === 'DOCTOR' && !!d && d.user_id === currentUser.id;
+    }
+
+    function confirmDiscard() {
+      return !clinicDirty || confirm('Máte neuložené změny v záznamu návštěvy. Opravdu je chcete zahodit?');
+    }
+
+    async function initClinic() {
+      try {
+        if (!doctorsList.length) await loadDoctors();
+        const active = doctorsList.filter(d => d.is_active);
+        const select = document.getElementById('clinicDoctorSelect');
+        select.innerHTML = active.map(d =>
+          `<option value="${d.id}">${escapeHtml(d.full_name)}${d.specialization ? ' – ' + escapeHtml(d.specialization) : ''}</option>`
+        ).join('');
+        if (!active.some(d => d.id === clinicDoctorId)) {
+          const own = currentUser.role === 'DOCTOR' ? active.find(d => d.user_id === currentUser.id) : null;
+          clinicDoctorId = (own || active.find(d => d.id === calDoctorId) || active[0] || {}).id || null;
+        }
+        if (clinicDoctorId) select.value = clinicDoctorId;
+        updateClinicDot();
+        await loadAgenda();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function updateClinicDot() {
+      const d = doctorsList.find(x => x.id === clinicDoctorId);
+      document.getElementById('clinicDoctorDot').style.background = d ? d.color : 'transparent';
+    }
+
+    function onClinicDoctorChange() {
+      const select = document.getElementById('clinicDoctorSelect');
+      if (!confirmDiscard()) { select.value = clinicDoctorId; return; }
+      clinicDoctorId = Number(select.value);
+      clinicSelectedApptId = null;
+      updateClinicDot();
+      loadAgenda();
+    }
+
+    function shiftClinicDay(delta) {
+      if (!confirmDiscard()) return;
+      clinicDate = addDays(clinicDate, delta);
+      clinicSelectedApptId = null;
+      loadAgenda();
+    }
+
+    function clinicToday() {
+      if (!confirmDiscard()) return;
+      clinicDate = new Date();
+      clinicSelectedApptId = null;
+      loadAgenda();
+    }
+
+    function goToClinic(doctorId, dateIso, appointmentId) {
+      closeModal('appointmentDetailModal');
+      clinicDoctorId = doctorId;
+      clinicDate = new Date(dateIso + 'T00:00:00');
+      clinicSelectedApptId = appointmentId;
+      clinicDirty = false;
+      switchDashboardTab('clinic');
+    }
+
+    function renderClinicHeader() {
+      const d = clinicDate;
+      document.getElementById('clinicDayTitle').textContent = `${DAY_LONG[weekdayIdx(d)]} ${d.getDate()}. ${d.getMonth() + 1}.`;
+      const isToday = isoDate(d) === isoDate(new Date());
+      document.getElementById('clinicDaySub').textContent = isToday ? `dnes · ${d.getFullYear()}` : String(d.getFullYear());
+    }
+
+    async function loadAgenda() {
+      renderClinicHeader();
+      const queue = document.getElementById('clinicQueue');
+      if (!clinicDoctorId) {
+        queue.innerHTML = '<div class="clinic-empty">V systému není žádný aktivní lékař.</div>';
+        document.getElementById('clinicPanel').innerHTML = '';
+        return;
+      }
+      const reqDate = isoDate(clinicDate), reqDoctor = clinicDoctorId;
+      try {
+        const data = await apiFetch(`/api/v1/doctors/${reqDoctor}/agenda?date=${reqDate}`);
+        if (reqDate !== isoDate(clinicDate) || reqDoctor !== clinicDoctorId) return;
+        clinicAgenda = data;
+        if (!data.items.some(i => i.appointment_id === clinicSelectedApptId)) {
+          // Automaticky vybereme první návštěvu, která čeká na zápis
+          const next = data.items.find(i => i.state === 'TO_RECORD' || i.state === 'DRAFT') || data.items[0];
+          clinicSelectedApptId = next ? next.appointment_id : null;
+        }
+        renderQueue();
+        await loadClinicPanel();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function renderQueue() {
+      const queue = document.getElementById('clinicQueue');
+      if (!clinicAgenda.items.length) {
+        queue.innerHTML = '<div class="clinic-empty">📭<br>Na tento den nejsou žádné rezervace.</div>';
+        return;
+      }
+      queue.innerHTML = clinicAgenda.items.map(i => {
+        const s = parseLocal(i.start_at), e = parseLocal(i.end_at);
+        return `
+          <button type="button" class="queue-item ${i.appointment_id === clinicSelectedApptId ? 'active' : ''}"
+            onclick="selectClinicItem(${i.appointment_id})">
+            <span class="queue-time">${fmtTime(s)}<small>–${fmtTime(e)}</small></span>
+            <span style="min-width: 0;">
+              <span class="queue-name">${escapeHtml(i.patient.last_name)} ${escapeHtml(i.patient.first_name)}</span>
+              <span class="queue-reason" style="display: block;">${escapeHtml(i.reason)}</span>
+            </span>
+            <span class="state-pill state-${i.state}">${AGENDA_LABELS[i.state]}</span>
+          </button>`;
+      }).join('');
+    }
+
+    function selectClinicItem(appointmentId) {
+      if (appointmentId === clinicSelectedApptId) return;
+      if (!confirmDiscard()) return;
+      clinicSelectedApptId = appointmentId;
+      renderQueue();
+      loadClinicPanel();
+    }
+
+    function selectedAgendaItem() {
+      return clinicAgenda ? clinicAgenda.items.find(i => i.appointment_id === clinicSelectedApptId) : null;
+    }
+
+    async function loadClinicPanel() {
+      clinicDirty = false;
+      clinicVisit = null;
+      clinicDraft = null;
+      const item = selectedAgendaItem();
+      const panel = document.getElementById('clinicPanel');
+      if (!item) {
+        panel.innerHTML = '<div class="panel-message"><span class="big">👈</span>Vyberte pacienta ze seznamu.</div>';
+        return;
+      }
+      if (item.visit_id) {
+        try {
+          clinicVisit = await apiFetch(`/api/v1/visits/${item.visit_id}`);
+          clinicDraft = {
+            note: clinicVisit.clinical_note || '',
+            items: clinicVisit.items.map(x => ({ ...x })),
+          };
+        } catch (err) {
+          showToast(err.message, true);
+        }
+      }
+      renderClinicPanel();
+    }
+
+    function renderClinicPanel() {
+      const item = selectedAgendaItem();
+      const p = item.patient;
+      const s = parseLocal(item.start_at), e = parseLocal(item.end_at);
+      const editable = clinicAgenda.can_record && clinicVisit && clinicVisit.status === 'DRAFT';
+
+      let body;
+      if (item.state === 'WAITING') {
+        body = `<div class="panel-message"><span class="big">⏳</span>Návštěva ještě neproběhla – výkony lze zapsat až po jejím začátku.</div>`;
+      } else if (item.state === 'TO_RECORD') {
+        body = clinicAgenda.can_record
+          ? `<div class="panel-message"><span class="big">📝</span>Záznam o této návštěvě zatím neexistuje.<br><br>
+               <button class="btn btn-primary" onclick="startVisit()">Zapsat výkony</button></div>`
+          : `<div class="panel-message"><span class="big">📝</span>Návštěva čeká na zápis výkonů lékařem.</div>`;
+      } else if (editable) {
+        body = `
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="visitNote">Klinická poznámka</label>
+            <textarea id="visitNote" class="form-control" rows="2" maxlength="5000"
+              placeholder="nepovinné – nález, doporučení…" oninput="clinicDraft.note = this.value; markDirty()">${escapeHtml(clinicDraft.note)}</textarea>
+          </div>
+          <div class="section-label">Provedené výkony</div>
+          <div class="proc-search">
+            <input type="text" id="procSearch" class="form-control" autocomplete="off"
+              placeholder="Přidat výkon – hledat podle kódu nebo názvu…" oninput="onProcSearch()"
+              onkeydown="if (event.key === 'Enter') { event.preventDefault(); if (procResults[0]) addProcedure(procResults[0].id); }">
+            <div id="procResults" class="patient-results" style="display: none;"></div>
+          </div>
+          <div id="visitItems" style="margin-top: 0.75rem;"></div>
+          <div class="panel-actions">
+            <span id="dirtyFlag" class="dirty-flag"></span>
+            <div class="action-group">
+              <button class="btn btn-secondary" id="btnSaveVisit" onclick="saveVisitDraft()">Uložit koncept</button>
+              <button class="btn btn-primary" id="btnCloseVisit" onclick="closeVisit()">✔ Uzavřít návštěvu</button>
+            </div>
+          </div>`;
+      } else {
+        // Uzavřená návštěva nebo koncept bez oprávnění k zápisu – jen ke čtení
+        body = `
+          ${clinicVisit && clinicVisit.clinical_note ? `
+            <div class="section-label">Klinická poznámka</div>
+            <div class="detail-reason">${escapeHtml(clinicVisit.clinical_note)}</div>` : ''}
+          <div class="section-label">Provedené výkony</div>
+          <div id="visitItems"></div>
+          ${clinicVisit && clinicVisit.status === 'CLOSED'
+            ? `<div class="closed-banner">🔒 Uzavřel(a) ${escapeHtml(clinicVisit.closed_by_name || '—')}
+                 ${new Date(clinicVisit.closed_at).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · záznam je neměnný</div>`
+            : `<div class="closed-banner" style="background: var(--primary-light); color: var(--primary-hover);">✎ Rozpracovaný koncept – zapisuje lékař</div>`}`;
+      }
+
+      document.getElementById('clinicPanel').innerHTML = `
+        <div class="panel-head">
+          <div>
+            <h3>${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</h3>
+            <div class="panel-meta">
+              <span>nar. ${p.birth_year}</span>
+              <span class="ins-badge">${escapeHtml(INS_NAMES[p.insurance_company_code] || p.insurance_company_code)}</span>
+              <a href="tel:${escapeHtml(p.phone_number)}" class="phone-link">📞 ${escapeHtml(formatPhoneNumber(p.phone_number))}</a>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="openPatientCard(${p.id})">Karta pacienta</button>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 1.2rem; font-weight: 700;">${fmtTime(s)}–${fmtTime(e)}</div>
+            <span class="state-pill state-${item.state}">${AGENDA_LABELS[item.state]}</span>
+          </div>
+        </div>
+        <div class="panel-reason"><strong>Důvod návštěvy</strong>${escapeHtml(item.reason)}</div>
+        ${body}`;
+      if (document.getElementById('visitItems')) renderVisitItems(editable);
+      updateDirtyFlag();
+    }
+
+    function markDirty() {
+      clinicDirty = true;
+      updateDirtyFlag();
+    }
+
+    function updateDirtyFlag() {
+      const el = document.getElementById('dirtyFlag');
+      if (el) el.textContent = clinicDirty ? '● Neuložené změny' : '';
+    }
+
+    function renderVisitItems(editable) {
+      const items = clinicDraft ? clinicDraft.items : [];
+      const box = document.getElementById('visitItems');
+      if (!items.length) {
+        box.innerHTML = `<div class="search-hint" style="border: 1px dashed #cbd5e1; border-radius: 8px; text-align: center;">
+          ${editable ? 'Zatím žádný výkon – přidejte ho vyhledáním výše.' : 'Bez zapsaných výkonů.'}</div>`;
+        return;
+      }
+      const total = items.reduce((sum, x) => sum + x.quantity * x.points_per_unit, 0);
+      box.innerHTML = `
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th style="width: 70px;">Kód</th>
+              <th>Výkon</th>
+              <th style="width: 120px; text-align: center;">Počet</th>
+              <th style="width: 80px; text-align: right;">Body</th>
+              ${editable ? '<th style="width: 40px;"></th>' : ''}
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map((x, idx) => `
+              <tr>
+                <td><span class="proc-code">${escapeHtml(x.code)}</span></td>
+                <td>${escapeHtml(x.name)}<div style="font-size: 0.75rem; color: var(--text-muted);">${x.points_per_unit} b / ks</div></td>
+                <td style="text-align: center;">
+                  ${editable ? `
+                    <span class="qty-control">
+                      <button type="button" onclick="changeQty(${idx}, -1)" aria-label="Snížit počet">−</button>
+                      <span>${x.quantity}</span>
+                      <button type="button" onclick="changeQty(${idx}, 1)" aria-label="Zvýšit počet">+</button>
+                    </span>` : `<strong>${x.quantity}×</strong>`}
+                </td>
+                <td style="text-align: right; font-weight: 600;">${x.quantity * x.points_per_unit}</td>
+                ${editable ? `<td><button type="button" class="icon-btn" title="Odebrat výkon" onclick="removeItem(${idx})">×</button></td>` : ''}
+              </tr>`).join('')}
+            <tr class="items-total">
+              <td colspan="3" style="text-align: right;">Celkem</td>
+              <td style="text-align: right;">${total} b</td>
+              ${editable ? '<td></td>' : ''}
+            </tr>
+          </tbody>
+        </table>`;
+    }
+
+    function onProcSearch() {
+      clearTimeout(procSearchDebounce);
+      procSearchDebounce = setTimeout(searchProcedures, 180);
+    }
+
+    async function searchProcedures() {
+      const input = document.getElementById('procSearch');
+      const box = document.getElementById('procResults');
+      const q = input.value.trim();
+      if (!q) { box.style.display = 'none'; procResults = []; return; }
+      try {
+        procResults = await apiFetch(`/api/v1/procedures?limit=8&search=${encodeURIComponent(q)}`);
+        box.style.display = 'block';
+        box.innerHTML = procResults.length
+          ? procResults.map(pr => `
+              <button type="button" class="patient-result" onclick="addProcedure(${pr.id})">
+                <span style="color: var(--text-main); font-size: 0.9rem;"><span class="proc-code">${escapeHtml(pr.code)}</span> ${escapeHtml(pr.name)}</span>
+                <span>${pr.points} b</span>
+              </button>`).join('')
+          : '<div class="search-hint">Žádný aktivní výkon neodpovídá hledání.</div>';
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function addProcedure(procedureId) {
+      const pr = procResults.find(x => x.id === procedureId);
+      if (!pr) return;
+      const existing = clinicDraft.items.find(x => x.procedure_id === pr.id);
+      if (existing) {
+        existing.quantity = Math.min(existing.quantity + 1, 99);
+      } else {
+        clinicDraft.items.push({ procedure_id: pr.id, code: pr.code, name: pr.name, points_per_unit: pr.points, quantity: 1 });
+      }
+      const input = document.getElementById('procSearch');
+      input.value = '';
+      document.getElementById('procResults').style.display = 'none';
+      procResults = [];
+      input.focus();
+      markDirty();
+      renderVisitItems(true);
+    }
+
+    function changeQty(idx, delta) {
+      const item = clinicDraft.items[idx];
+      item.quantity = Math.max(1, Math.min(99, item.quantity + delta));
+      markDirty();
+      renderVisitItems(true);
+    }
+
+    function removeItem(idx) {
+      clinicDraft.items.splice(idx, 1);
+      markDirty();
+      renderVisitItems(true);
+    }
+
+    async function startVisit() {
+      try {
+        clinicVisit = await apiFetch(`/api/v1/appointments/${clinicSelectedApptId}/visit`, { method: 'POST' });
+        await loadAgenda();
+        setTimeout(() => { const el = document.getElementById('procSearch'); if (el) el.focus(); }, 50);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    async function persistDraft() {
+      clinicVisit = await apiFetch(`/api/v1/visits/${clinicVisit.id}`, {
+        method: 'PUT',
+        body: {
+          clinical_note: clinicDraft.note || null,
+          items: clinicDraft.items.map(x => ({ procedure_id: x.procedure_id, quantity: x.quantity })),
+        },
+      });
+      clinicDraft.items = clinicVisit.items.map(x => ({ ...x }));
+      clinicDirty = false;
+    }
+
+    async function saveVisitDraft() {
+      const btn = document.getElementById('btnSaveVisit');
+      btn.disabled = true;
+      try {
+        await persistDraft();
+        showToast('Koncept návštěvy byl uložen.');
+        renderVisitItems(true);
+        updateDirtyFlag();
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function closeVisit() {
+      if (!clinicDraft.items.length) {
+        showToast('Před uzavřením zapište alespoň jeden výkon.', true);
+        return;
+      }
+      const total = clinicDraft.items.reduce((sum, x) => sum + x.quantity * x.points_per_unit, 0);
+      if (!confirm(`Uzavřít návštěvu (${plural(clinicDraft.items.length, 'výkon', 'výkony', 'výkonů')}, ${plural(total, 'bod', 'body', 'bodů')})?\nPo uzavření již nelze záznam měnit.`)) return;
+      const btn = document.getElementById('btnCloseVisit');
+      btn.disabled = true;
+      try {
+        if (clinicDirty) await persistDraft();
+        await apiFetch(`/api/v1/visits/${clinicVisit.id}/close`, { method: 'POST' });
+        showToast('Návštěva byla uzavřena.');
+        clinicDirty = false;
+        await loadAgenda();
+      } catch (err) {
+        showToast(err.message, true);
+        btn.disabled = false;
+      }
+    }
+
+    /* ===== KARTA PACIENTA (historie, jen ke čtení) ===== */
+    async function openPatientCard(patientId) {
+      const body = document.getElementById('patientCardBody');
+      body.innerHTML = '<div class="search-hint">Načítání karty pacienta…</div>';
+      document.getElementById('patientCardModal').classList.add('open');
+      try {
+        const [p, history] = await Promise.all([
+          apiFetch(`/api/v1/patients/${patientId}`),
+          apiFetch(`/api/v1/patients/${patientId}/history`),
+        ]);
+        document.getElementById('patientCardTitle').textContent = `Karta pacienta – ${p.last_name} ${p.first_name}`;
+        const now = new Date();
+        const closedVisits = history.items.filter(h => h.visit && h.visit.status === 'CLOSED');
+        const totalPoints = closedVisits.reduce((sum, h) => sum + h.visit.total_points, 0);
+
+        const timeline = history.items.map(h => {
+          const s = parseLocal(h.start_at), e = parseLocal(h.end_at);
+          let state, label;
+          if (h.visit && h.visit.status === 'CLOSED') { state = 'CLOSED'; label = '✔ Uskutečněno'; }
+          else if (h.visit) { state = 'DRAFT'; label = '✎ Rozpracováno'; }
+          else if (h.appointment_status !== 'PLANNED') { state = 'CANCELLED'; label = STATUS_LABELS[h.appointment_status] || h.appointment_status; }
+          else if (s > now) { state = 'PLANNED'; label = '○ Naplánováno'; }
+          else { state = 'TO_RECORD'; label = '● Čeká na zápis'; }
+          const visit = h.visit;
+          return `
+            <div class="history-item">
+              <div class="patient-appt-date">
+                <span>${DAY_SHORT[weekdayIdx(s)]}</span>
+                <strong>${s.getDate()}.</strong>
+                <span>${s.toLocaleDateString('cs-CZ', { month: 'short' })} ${String(s.getFullYear()).slice(2)}</span>
+              </div>
+              <div class="history-body">
+                <div class="history-top">
+                  <strong>${fmtDate(s)}, ${fmtTime(s)}–${fmtTime(e)}</strong>
+                  <span class="state-pill state-${state}">${label}</span>
+                </div>
+                <div class="patient-appt-info" style="margin-top: 0.15rem;">
+                  <span class="muted"><span class="doctor-dot" style="background: ${escapeHtml(h.doctor.color)}; width: 9px; height: 9px;"></span>${escapeHtml(h.doctor.full_name)}</span>
+                  <span>${escapeHtml(h.reason)}</span>
+                </div>
+                ${visit && visit.items.length ? `
+                  <div class="history-procs">
+                    ${visit.items.map(x => `
+                      <div class="history-proc">
+                        <span class="proc-code">${escapeHtml(x.code)}</span>
+                        <span>${escapeHtml(x.name)}</span>
+                        <span class="muted">${x.quantity}×</span>
+                        <strong>${x.total_points} b</strong>
+                      </div>`).join('')}
+                    <div class="history-sum">Celkem ${visit.total_points} b</div>
+                  </div>` : ''}
+                ${visit && visit.clinical_note ? `<div style="margin-top: 0.4rem; color: var(--text-muted); font-size: 0.82rem;">📝 ${escapeHtml(visit.clinical_note)}</div>` : ''}
+              </div>
+            </div>`;
+        }).join('');
+
+        body.innerHTML = `
+          <div class="panel-head" style="margin-bottom: 0.25rem;">
+            <div>
+              <div class="panel-meta" style="margin-top: 0;">
+                <span>nar. ${p.birth_year}</span>
+                <code>${escapeHtml(p.insurance_number)}</code>
+                <span class="ins-badge">${escapeHtml(INS_NAMES[p.insurance_company_code] || p.insurance_company_code)}</span>
+                <a href="tel:${escapeHtml(p.phone_number)}" class="phone-link">📞 ${escapeHtml(formatPhoneNumber(p.phone_number))}</a>
+              </div>
+              ${p.notes ? `<div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">📝 ${escapeHtml(p.notes)}</div>` : ''}
+            </div>
+            <div style="text-align: right; font-size: 0.82rem; color: var(--text-muted);">
+              <div>${plural(closedVisits.length, 'uskutečněná návštěva', 'uskutečněné návštěvy', 'uskutečněných návštěv')}</div>
+              <div>${plural(totalPoints, 'vykázaný bod', 'vykázané body', 'vykázaných bodů')}</div>
+            </div>
+          </div>
+          ${timeline || '<div class="search-hint">Pacient zatím nemá žádné rezervace ani návštěvy.</div>'}`;
+      } catch (err) {
+        body.innerHTML = `<div class="search-hint" style="color: var(--danger);">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    // Kliknutí mimo našeptávač výkonů ho zavře
+    document.addEventListener('click', (e) => {
+      const box = document.getElementById('procResults');
+      if (box && !e.target.closest('.proc-search')) box.style.display = 'none';
+    });
+
     /* ===== KLÁVESOVÉ ZKRATKY ===== */
     document.addEventListener('keydown', (e) => {
       const openModal = document.querySelector('.modal-overlay.open');
@@ -3298,11 +4194,12 @@
         else openModal.classList.remove('open');
         return;
       }
-      if (openModal || activeDashboardTab !== 'reservations' || !currentUser) return;
+      if (openModal || !currentUser || !['reservations', 'clinic'].includes(activeDashboardTab)) return;
       const tag = (document.activeElement && document.activeElement.tagName) || '';
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
-      if (e.key === 'ArrowLeft') shiftWeek(-1);
-      if (e.key === 'ArrowRight') shiftWeek(1);
+      const shift = activeDashboardTab === 'clinic' ? shiftClinicDay : shiftWeek;
+      if (e.key === 'ArrowLeft') shift(-1);
+      if (e.key === 'ArrowRight') shift(1);
     });
 
     function escapeHtml(str) {
