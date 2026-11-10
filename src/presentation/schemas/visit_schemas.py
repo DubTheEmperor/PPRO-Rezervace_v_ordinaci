@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, ConfigDict
 from src.business.domain import AppointmentStatus, VisitStatus
@@ -39,14 +39,14 @@ class VisitResponse(BaseModel):
     updated_at: datetime
 
 
-def visit_to_response(visit) -> VisitResponse:
+def visit_to_response(visit, include_clinical_note: bool = True) -> VisitResponse:
     return VisitResponse(
         id=visit.id,
         appointment_id=visit.appointment_id,
         doctor_id=visit.doctor_id,
         patient_id=visit.patient_id,
         status=visit.status,
-        clinical_note=visit.clinical_note,
+        clinical_note=visit.clinical_note if include_clinical_note else None,
         items=[
             VisitItemResponse(
                 procedure_id=item.procedure_id,
@@ -75,12 +75,26 @@ class AgendaItem(BaseModel):
     visit_id: Optional[int]
 
 
-class DayAgendaResponse(BaseModel):
+class QueueCounts(BaseModel):
+    pending: int
+    today: int
+    draft: int
+    closed: int
+    all: int
+
+
+class VisitQueueResponse(BaseModel):
     doctor: DoctorSummary
-    date: date
     now: datetime
+    filter: str
     can_record: bool
+    counts: QueueCounts
+    has_more: bool
     items: List[AgendaItem]
+
+
+class PendingCountResponse(BaseModel):
+    pending: int
 
 
 class PatientHistoryItem(BaseModel):

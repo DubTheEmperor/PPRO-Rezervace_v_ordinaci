@@ -99,7 +99,10 @@ def get_patient_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    appointments = VisitService(db).get_patient_history(patient_id)
+    visit_service = VisitService(db)
+    appointments = visit_service.get_patient_history(patient_id)
+    # Klinické poznámky recepce nevidí (rozhoduje byznys vrstva)
+    show_notes = visit_service.can_view_clinical_notes(current_user)
     return PatientHistoryResponse(
         patient_id=patient_id,
         items=[
@@ -110,7 +113,7 @@ def get_patient_history(
                 reason=a.reason,
                 appointment_status=a.status,
                 doctor=DoctorSummary.model_validate(a.doctor),
-                visit=visit_to_response(a.visit) if a.visit else None,
+                visit=visit_to_response(a.visit, include_clinical_note=show_notes) if a.visit else None,
             )
             for a in appointments
         ],

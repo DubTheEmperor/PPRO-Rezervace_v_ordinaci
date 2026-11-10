@@ -1,13 +1,13 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Iterable, Sequence
-from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload, selectinload
+from typing import Optional, List, Dict, Iterable, Sequence, Tuple
+from sqlalchemy import and_, case, func, or_
+from sqlalchemy.orm import Session, contains_eager, joinedload
 from src.infrastructure.models.appointment_model import (
     AppointmentModel,
     AppointmentSlotModel,
     AppointmentStatus,
 )
-from src.infrastructure.models.visit_model import VisitModel, VisitProcedureModel
+from src.infrastructure.models.visit_model import VisitModel, VisitProcedureModel, VisitStatus
 
 ACTIVE_STATUSES = (AppointmentStatus.PLANNED,)
 # Stavy, které v kalendáři obsazují termín (proběhlá návštěva slot neuvolňuje)
@@ -131,22 +131,79 @@ class AppointmentRepository:
         )
         return {patient_id: count for patient_id, count in rows}
 
-    def list_for_doctor_day(
-        self, doctor_id: int, date_from: datetime, date_to: datetime
-    ) -> List[AppointmentModel]:
-        """Rezervace lékaře v daném dni včetně pacienta a případného záznamu návštěvy."""
-        return (
-            self.db.query(AppointmentModel)
-            .options(joinedload(AppointmentModel.patient), joinedload(AppointmentModel.visit))
-            .filter(
-                AppointmentModel.doctor_id == doctor_id,
-                AppointmentModel.start_at >= date_from,
-                AppointmentModel.start_at < date_to,
-                AppointmentModel.status.in_(OCCUPYING_STATUSES),
-            )
-            .order_by(AppointmentModel.start_at.asc())
-            .all()
+    # --- Fronta návštěv lékaře (FP4) ----------------------------------------------------------
+
+    QUEUE_FILTERS = ("pending", "today", "draft", "closed", "all")
+
+    @staticmethod
+    def _queue_conditions(now: datetime, day_start: datetime, day_end: datetime) -> Dict[str, object]:
+        """SQL podmínky jednotlivých filtrů fronty (nad outer joinem appointments ⟕ visits)."""
+        to_record = and_(
+            AppointmentModel.status == AppointmentStatus.PLANNED,
+            AppointmentModel.start_at <= now,
+            VisitModel.id.is_(None),
         )
+        draft = VisitModel.status == VisitStatus.DRAFT
+        return {
+            "pending": or_(to_record, draft),
+            "today": and_(AppointmentModel.start_at >= day_start, AppointmentModel.start_at < day_end),
+            "draft": draft,
+            "closed": VisitModel.status == VisitStatus.CLOSED,
+            # Vše od dnešního dne do minulosti – budoucí dny řeší kalendář rezervací
+            "all": AppointmentModel.start_at < day_end,
+        }
+
+    def _queue_base(self, doctor_id: Optional[int]):
+        query = (
+            self.db.query(AppointmentModel)
+            .outerjoin(VisitModel, VisitModel.appointment_id == AppointmentModel.id)
+            .filter(AppointmentModel.status.in_(OCCUPYING_STATUSES))
+        )
+        if doctor_id is not None:
+            query = query.filter(AppointmentModel.doctor_id == doctor_id)
+        return query
+
+    def list_visit_queue(
+        self,
+        doctor_id: int,
+        queue_filter: str,
+        now: datetime,
+        day_start: datetime,
+        day_end: datetime,
+        before: Optional[datetime] = None,
+        limit: int = 50,
+    ) -> Tuple[List[AppointmentModel], bool]:
+        """Položky fronty od nejnovější do minulosti; vrací (položky, has_more)."""
+        condition = self._queue_conditions(now, day_start, day_end)[queue_filter]
+        query = (
+            self._queue_base(doctor_id)
+            .filter(condition)
+            .options(joinedload(AppointmentModel.patient), contains_eager(AppointmentModel.visit))
+        )
+        if before is not None:
+            query = query.filter(AppointmentModel.start_at < before)
+        rows = query.order_by(AppointmentModel.start_at.desc()).limit(limit + 1).all()
+        return rows[:limit], len(rows) > limit
+
+    def count_visit_queue(
+        self, doctor_id: Optional[int], now: datetime, day_start: datetime, day_end: datetime
+    ) -> Dict[str, int]:
+        """Počty položek pro všechny filtry jedním dotazem (doctor_id=None = všichni lékaři)."""
+        conditions = self._queue_conditions(now, day_start, day_end)
+        columns = [
+            func.coalesce(func.sum(case((conditions[name], 1), else_=0)), 0).label(name)
+            for name in self.QUEUE_FILTERS
+        ]
+        query = (
+            self.db.query(*columns)
+            .select_from(AppointmentModel)
+            .outerjoin(VisitModel, VisitModel.appointment_id == AppointmentModel.id)
+            .filter(AppointmentModel.status.in_(OCCUPYING_STATUSES))
+        )
+        if doctor_id is not None:
+            query = query.filter(AppointmentModel.doctor_id == doctor_id)
+        row = query.one()
+        return {name: int(getattr(row, name)) for name in self.QUEUE_FILTERS}
 
     def list_history_for_patient(self, patient_id: int) -> List[AppointmentModel]:
         """Všechny rezervace pacienta (nejnovější první) včetně návštěv a vykázaných výkonů."""

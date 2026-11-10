@@ -159,43 +159,137 @@ def test_visit_cannot_be_deleted(client, admin_token, past_appt):
     assert client.delete(f"/api/v1/visits/{visit['id']}", headers=auth(admin_token)).status_code == 405
 
 
-# --- Fronta dne a historie pacienta -------------------------------------------------------------
+# --- Fronta návštěv s filtry -------------------------------------------------------------------
 
-def test_day_agenda_states(client, db_session, doctor_token, receptionist_token, hruba_id, patient, procedures):
+def queue(client, token, doctor_id, queue_filter="pending", **params):
+    return client.get(
+        f"/api/v1/doctors/{doctor_id}/visit-queue",
+        params={"filter": queue_filter, **params},
+        headers=auth(token),
+    )
+
+
+@pytest.fixture
+def three_states(client, db_session, doctor_token, receptionist_token, hruba_id, patient, procedures):
+    """Tři proběhlé návštěvy minulého pondělí: uzavřená (8:00), koncept (8:15), k zápisu (8:30)."""
     p2 = create_patient(client, receptionist_token, insurance_number="9104041234", last_name="Druhý")
     p3 = create_patient(client, receptionist_token, insurance_number="9105051234", last_name="Třetí")
     a1 = make_past_appointment(db_session, hruba_id, patient["id"], "08:00", "08:15")
     a2 = make_past_appointment(db_session, hruba_id, p2["id"], "08:15", "08:30")
-    make_past_appointment(db_session, hruba_id, p3["id"], "08:30", "08:45")
+    a3 = make_past_appointment(db_session, hruba_id, p3["id"], "08:30", "08:45")
     v1 = open_visit(client, doctor_token, a1.id).json()
     save(client, doctor_token, v1["id"], [{"procedure_id": procedures["01025"]["id"], "quantity": 1}])
     client.post(f"/api/v1/visits/{v1['id']}/close", headers=auth(doctor_token))
     open_visit(client, doctor_token, a2.id)
-
-    agenda = client.get(
-        f"/api/v1/doctors/{hruba_id}/agenda",
-        params={"date": last_week_monday().isoformat()},
-        headers=auth(receptionist_token),
-    ).json()
-    assert [i["state"] for i in agenda["items"]] == ["CLOSED", "DRAFT", "TO_RECORD"]
-    assert agenda["can_record"] is False  # recepce jen čte
-
-    own = client.get(
-        f"/api/v1/doctors/{hruba_id}/agenda",
-        params={"date": last_week_monday().isoformat()},
-        headers=auth(doctor_token),
-    ).json()
-    assert own["can_record"] is True
+    return a1, a2, a3
 
 
-def test_future_appointment_in_agenda_is_waiting(client, receptionist_token, hruba_id, patient):
-    book(client, receptionist_token, hruba_id, patient["id"], next_week_monday(), "09:00", "09:15")
-    agenda = client.get(
-        f"/api/v1/doctors/{hruba_id}/agenda",
-        params={"date": next_week_monday().isoformat()},
-        headers=auth(receptionist_token),
-    ).json()
-    assert [i["state"] for i in agenda["items"]] == ["WAITING"]
+def test_pending_queue_finds_old_unrecorded_visits_without_knowing_the_date(
+    client, doctor_token, hruba_id, three_states
+):
+    _, a2, a3 = three_states
+    data = queue(client, doctor_token, hruba_id).json()
+    # nejnovější nahoře: k zápisu (8:30), koncept (8:15)
+    assert [(i["appointment_id"], i["state"]) for i in data["items"]] == [(a3.id, "TO_RECORD"), (a2.id, "DRAFT")]
+    assert data["counts"]["pending"] == 2
+    assert data["counts"]["draft"] == 1
+    assert data["counts"]["closed"] == 1
+    assert data["can_record"] is True
+
+
+def test_queue_filters(client, doctor_token, hruba_id, three_states):
+    a1, a2, a3 = three_states
+    assert [i["appointment_id"] for i in queue(client, doctor_token, hruba_id, "draft").json()["items"]] == [a2.id]
+    assert [i["appointment_id"] for i in queue(client, doctor_token, hruba_id, "closed").json()["items"]] == [a1.id]
+    assert [i["appointment_id"] for i in queue(client, doctor_token, hruba_id, "all").json()["items"]] == [a3.id, a2.id, a1.id]
+    assert queue(client, doctor_token, hruba_id, "today").json()["items"] == []
+    assert queue(client, doctor_token, hruba_id, "nesmysl").status_code == 400
+
+
+def test_queue_excludes_future_days_but_today_filter_shows_waiting(
+    client, db_session, doctor_token, hruba_id, patient, monkeypatch
+):
+    from datetime import datetime, timedelta
+    from src.business import scheduling
+    from src.business.scheduling import slot_starts
+    from src.infrastructure.models.appointment_model import AppointmentModel
+    from src.infrastructure.repositories.appointment_repository import AppointmentRepository
+
+    # „Teď“ je pevně pondělí příštího týdne 10:00 – test nezávisí na skutečném čase
+    day = next_week_monday()
+    monkeypatch.setattr(scheduling, "local_now", lambda: datetime.combine(day, datetime.min.time()).replace(hour=10))
+
+    repo = AppointmentRepository(db_session)
+    created = {}
+    for label, start in (("past", datetime.combine(day, datetime.min.time()).replace(hour=9)),
+                         ("waiting", datetime.combine(day, datetime.min.time()).replace(hour=11)),
+                         ("tomorrow", datetime.combine(day + timedelta(days=1), datetime.min.time()).replace(hour=9))):
+        created[label] = repo.create_with_slots(
+            AppointmentModel(doctor_id=hruba_id, patient_id=patient["id"], start_at=start,
+                             end_at=start + timedelta(minutes=15), reason=label),
+            slot_starts(start, start + timedelta(minutes=15)),
+        ).id
+
+    today = queue(client, doctor_token, hruba_id, "today").json()
+    assert [(i["appointment_id"], i["state"]) for i in today["items"]] == [
+        (created["waiting"], "WAITING"), (created["past"], "TO_RECORD"),
+    ]
+    # „Vše“ nezahrnuje budoucí dny (ty řeší kalendář rezervací)
+    assert [i["appointment_id"] for i in queue(client, doctor_token, hruba_id, "all").json()["items"]] == [
+        created["waiting"], created["past"],
+    ]
+    pending = queue(client, doctor_token, hruba_id, "pending").json()
+    assert [i["appointment_id"] for i in pending["items"]] == [created["past"]]
+    assert pending["counts"]["today"] == 2
+
+
+def test_queue_pagination(client, db_session, doctor_token, hruba_id, patient):
+    for start, end in (("08:00", "08:15"), ("08:15", "08:30"), ("08:30", "08:45")):
+        make_past_appointment(db_session, hruba_id, patient["id"], start, end)
+    first = queue(client, doctor_token, hruba_id, limit=2).json()
+    assert len(first["items"]) == 2 and first["has_more"] is True
+    second = queue(client, doctor_token, hruba_id, limit=2, before=first["items"][-1]["start_at"]).json()
+    assert len(second["items"]) == 1 and second["has_more"] is False
+    assert second["items"][0]["start_at"] < first["items"][-1]["start_at"]
+
+
+def test_queue_permissions(client, doctor2_token, receptionist_token, admin_token, hruba_id, three_states):
+    assert queue(client, receptionist_token, hruba_id).status_code == 403
+    assert queue(client, doctor2_token, hruba_id).status_code == 403
+    admin_view = queue(client, admin_token, hruba_id)
+    assert admin_view.status_code == 200 and admin_view.json()["can_record"] is True
+
+
+def test_pending_count(client, doctor_token, doctor2_token, admin_token, receptionist_token, three_states):
+    def count(token):
+        return client.get("/api/v1/visits/pending-count", headers=auth(token))
+    assert count(doctor_token).json()["pending"] == 2
+    assert count(doctor2_token).json()["pending"] == 0
+    assert count(admin_token).json()["pending"] == 2
+    assert count(receptionist_token).status_code == 403
+
+
+def test_receptionist_cannot_read_visit_detail(client, doctor_token, doctor2_token, receptionist_token, past_appt):
+    visit = open_visit(client, doctor_token, past_appt.id).json()
+    assert client.get(f"/api/v1/visits/{visit['id']}", headers=auth(receptionist_token)).status_code == 403
+    # Ostatní lékaři záznam vidí (kontinuita péče), měnit ho ale nemohou
+    assert client.get(f"/api/v1/visits/{visit['id']}", headers=auth(doctor2_token)).status_code == 200
+    assert save(client, doctor2_token, visit["id"], []).status_code == 403
+
+
+def test_history_hides_clinical_note_from_receptionist(
+    client, doctor_token, doctor2_token, receptionist_token, past_appt, procedures, patient
+):
+    visit = open_visit(client, doctor_token, past_appt.id).json()
+    save(client, doctor_token, visit["id"], [{"procedure_id": procedures["09543"]["id"], "quantity": 1}], note="Citlivý nález")
+    client.post(f"/api/v1/visits/{visit['id']}/close", headers=auth(doctor_token))
+
+    reception = client.get(f"/api/v1/patients/{patient['id']}/history", headers=auth(receptionist_token)).json()
+    assert reception["items"][0]["visit"]["clinical_note"] is None
+    assert reception["items"][0]["visit"]["items"][0]["code"] == "09543"
+
+    colleague = client.get(f"/api/v1/patients/{patient['id']}/history", headers=auth(doctor2_token)).json()
+    assert colleague["items"][0]["visit"]["clinical_note"] == "Citlivý nález"
 
 
 def test_patient_history_contains_procedures_and_points(

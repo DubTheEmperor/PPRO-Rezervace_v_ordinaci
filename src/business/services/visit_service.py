@@ -3,8 +3,8 @@
 Životní cyklus: koncept (DRAFT) → uzavřeno (CLOSED). Uzavřená návštěva je neměnná
 a návštěvu nelze nikdy smazat (auditovatelnost zdravotní historie).
 """
-from datetime import date, datetime, time, timedelta, timezone
-from typing import List
+from datetime import datetime, time, timedelta, timezone
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from src.business import scheduling
 from src.business.dto.visit_dto import VisitUpdate
@@ -63,43 +63,97 @@ class VisitService:
             raise NotFoundError(f"Záznam návštěvy s ID {visit_id} nebyl nalezen.")
         return visit
 
-    def get_day_agenda(self, doctor_id: int, day: date, user: UserModel) -> dict:
-        """Pracovní fronta lékaře pro daný den se stavem zápisu každé návštěvy."""
+    def _ensure_queue_access(self, doctor: DoctorModel, user: UserModel) -> None:
+        """Frontu návštěv vidí admin (libovolného lékaře) a lékař (jen svou); recepce ne."""
+        if user.role == UserRole.ADMIN:
+            return
+        if user.role == UserRole.DOCTOR and doctor.user_id == user.id:
+            return
+        raise PermissionDeniedError("Frontu návštěv vidí pouze daný lékař nebo administrátor.")
+
+    @staticmethod
+    def _today_bounds(now: datetime) -> tuple:
+        day_start = datetime.combine(now.date(), time(0, 0))
+        return day_start, day_start + timedelta(days=1)
+
+    @staticmethod
+    def _agenda_state(appointment: AppointmentModel, now: datetime) -> str:
+        visit = appointment.visit
+        if visit is not None and visit.status == VisitStatus.CLOSED:
+            return AGENDA_CLOSED
+        if visit is not None:
+            return AGENDA_DRAFT
+        if appointment.start_at > now:
+            return AGENDA_WAITING
+        return AGENDA_TO_RECORD
+
+    def get_visit_queue(
+        self,
+        doctor_id: int,
+        queue_filter: str,
+        user: UserModel,
+        before: Optional[datetime] = None,
+        limit: int = 50,
+    ) -> dict:
+        """Fronta návštěv lékaře od nejnovější do minulosti, filtrovaná podle stavu zápisu."""
+        if queue_filter not in AppointmentRepository.QUEUE_FILTERS:
+            raise BusinessRuleError(f"Neznámý filtr fronty '{queue_filter}'.")
         doctor = self.doctor_repo.get_by_id(doctor_id)
         if not doctor:
             raise NotFoundError(f"Lékař s ID {doctor_id} nebyl nalezen.")
+        self._ensure_queue_access(doctor, user)
+
         now = scheduling.local_now()
-        day_start = datetime.combine(day, time(0, 0))
-        appointments = self.appointment_repo.list_for_doctor_day(
-            doctor.id, day_start, day_start + timedelta(days=1)
+        day_start, day_end = self._today_bounds(now)
+        appointments, has_more = self.appointment_repo.list_visit_queue(
+            doctor.id, queue_filter, now, day_start, day_end, before=before, limit=limit
         )
-        items = []
-        for a in appointments:
-            visit = a.visit
-            if visit is not None and visit.status == VisitStatus.CLOSED:
-                state = AGENDA_CLOSED
-            elif visit is not None:
-                state = AGENDA_DRAFT
-            elif a.start_at > now:
-                state = AGENDA_WAITING
-            else:
-                state = AGENDA_TO_RECORD
-            items.append({
-                "appointment_id": a.id,
-                "start_at": a.start_at,
-                "end_at": a.end_at,
-                "reason": a.reason,
-                "patient": a.patient,
-                "state": state,
-                "visit_id": visit.id if visit else None,
-            })
         return {
             "doctor": doctor,
-            "date": day,
             "now": now,
+            "filter": queue_filter,
             "can_record": self.can_record(doctor, user),
-            "items": items,
+            "counts": self.appointment_repo.count_visit_queue(doctor.id, now, day_start, day_end),
+            "has_more": has_more,
+            "items": [
+                {
+                    "appointment_id": a.id,
+                    "start_at": a.start_at,
+                    "end_at": a.end_at,
+                    "reason": a.reason,
+                    "patient": a.patient,
+                    "state": self._agenda_state(a, now),
+                    "visit_id": a.visit.id if a.visit else None,
+                }
+                for a in appointments
+            ],
         }
+
+    def get_pending_count(self, user: UserModel) -> int:
+        """Počet návštěv „K vyřízení“: lékař – vlastní, admin – všech lékařů."""
+        now = scheduling.local_now()
+        day_start, day_end = self._today_bounds(now)
+        if user.role == UserRole.ADMIN:
+            doctor_id = None
+        elif user.role == UserRole.DOCTOR:
+            doctor = self.doctor_repo.get_by_user_id(user.id)
+            if doctor is None:
+                return 0
+            doctor_id = doctor.id
+        else:
+            raise PermissionDeniedError("Frontu návštěv vidí pouze lékaři a administrátor.")
+        return self.appointment_repo.count_visit_queue(doctor_id, now, day_start, day_end)["pending"]
+
+    @staticmethod
+    def can_view_clinical_notes(user: UserModel) -> bool:
+        """Klinické poznámky vidí lékaři a administrátor, recepce ne (nejmenší oprávnění)."""
+        return user.role in (UserRole.DOCTOR, UserRole.ADMIN)
+
+    def get_visit_for_user(self, visit_id: int, user: UserModel) -> VisitModel:
+        """Detail záznamu návštěvy – lékaři (kontinuita péče) a administrátor; recepce ne."""
+        if not self.can_view_clinical_notes(user):
+            raise PermissionDeniedError("Záznam návštěvy mohou zobrazit pouze lékaři a administrátor.")
+        return self.get_visit(visit_id)
 
     def get_patient_history(self, patient_id: int) -> List[AppointmentModel]:
         if not self.patient_repo.get_by_id(patient_id):

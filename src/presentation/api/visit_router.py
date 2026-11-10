@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import datetime
+from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from src.business.domain import get_db, User
@@ -6,7 +7,8 @@ from src.business.dto import VisitUpdate
 from src.business.services.visit_service import VisitService
 from src.presentation.dependencies import get_current_user
 from src.presentation.schemas.visit_schemas import (
-    DayAgendaResponse,
+    PendingCountResponse,
+    VisitQueueResponse,
     VisitResponse,
     visit_to_response,
 )
@@ -15,18 +17,37 @@ router = APIRouter(tags=["Záznam o návštěvě"])
 
 
 @router.get(
-    "/doctors/{doctor_id}/agenda",
-    response_model=DayAgendaResponse,
-    summary="Pracovní fronta lékaře pro daný den",
-    description="Rezervace dne se stavem zápisu: WAITING, TO_RECORD, DRAFT, CLOSED.",
+    "/doctors/{doctor_id}/visit-queue",
+    response_model=VisitQueueResponse,
+    summary="Fronta návštěv lékaře",
+    description=(
+        "Návštěvy od nejnovější do minulosti filtrované podle stavu zápisu: "
+        "pending (K zápisu + Rozpracováno), today, draft, closed, all. "
+        "Vidí jen daný lékař a administrátor. Stránkování přes kurzor `before`."
+    ),
 )
-def get_day_agenda(
+def get_visit_queue(
     doctor_id: int,
-    day: date = Query(..., alias="date", description="Den (YYYY-MM-DD)"),
+    queue_filter: str = Query("pending", alias="filter", description="pending | today | draft | closed | all"),
+    before: Optional[datetime] = Query(None, description="Vrátit jen položky starší než tento čas"),
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return VisitService(db).get_day_agenda(doctor_id, day, current_user)
+    return VisitService(db).get_visit_queue(doctor_id, queue_filter, current_user, before=before, limit=limit)
+
+
+@router.get(
+    "/visits/pending-count",
+    response_model=PendingCountResponse,
+    summary="Počet návštěv k vyřízení",
+    description="Lékař – vlastní nevyřízené návštěvy, administrátor – součet všech lékařů.",
+)
+def get_pending_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return PendingCountResponse(pending=VisitService(db).get_pending_count(current_user))
 
 
 @router.post(
@@ -52,7 +73,7 @@ def get_visit(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return visit_to_response(VisitService(db).get_visit(visit_id))
+    return visit_to_response(VisitService(db).get_visit_for_user(visit_id, current_user))
 
 
 @router.put(
