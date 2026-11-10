@@ -1362,7 +1362,84 @@
       gap: 0.35rem;
     }
 
-    /* ===== ORDINACE DNES (FP4) ===== */
+    /* ===== NÁVŠTĚVY (FP4) ===== */
+    .queue-filters {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .queue-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .queue-chip:hover {
+      border-color: #cbd5e1;
+      background: #f8fafc;
+    }
+
+    .queue-chip.active {
+      background: var(--text-main);
+      border-color: var(--text-main);
+      color: white;
+    }
+
+    .chip-count {
+      min-width: 22px;
+      padding: 0.05rem 0.4rem;
+      border-radius: 10px;
+      background: #f1f5f9;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-align: center;
+    }
+
+    .queue-chip.active .chip-count {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .queue-chip.attention .chip-count {
+      background: var(--warning);
+      color: white;
+    }
+
+    .queue-day-header {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 0.45rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      background: #f1f5f9;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-badge {
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 0.35rem;
+      border-radius: 10px;
+      background: var(--warning);
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
     .clinic-layout {
       display: grid;
       grid-template-columns: 340px 1fr;
@@ -1809,8 +1886,8 @@
         <button id="tabBtnReservations" class="nav-tab active" onclick="switchDashboardTab('reservations')">
           <span>📅</span> Rezervace
         </button>
-        <button id="tabBtnClinic" class="nav-tab" onclick="switchDashboardTab('clinic')">
-          <span>🏥</span> Ordinace dnes
+        <button id="tabBtnClinic" class="nav-tab" onclick="switchDashboardTab('clinic')" style="display: none;">
+          <span>🏥</span> Návštěvy <span id="visitsBadge" class="tab-badge" style="display: none;">0</span>
         </button>
         <button id="tabBtnPatients" class="nav-tab" onclick="switchDashboardTab('patients')">
           <span>📋</span> Evidence pacientů
@@ -1879,30 +1956,22 @@
         </div>
       </div>
 
-      <!-- SECTION: CLINIC – ORDINACE DNES (Funkční požadavek 4) -->
+      <!-- SECTION: CLINIC – NÁVŠTĚVY (Funkční požadavek 4) -->
       <div id="sectionClinic" style="display: none;">
         <div class="dashboard-header">
           <div class="dashboard-title">
-            <h2>Ordinace dnes</h2>
+            <h2>Návštěvy</h2>
           </div>
         </div>
 
         <div class="card" style="overflow: visible;">
           <div class="cal-toolbar">
-            <div class="cal-doctor-select">
+            <div id="clinicDoctorPicker" class="cal-doctor-select">
               <span id="clinicDoctorDot" class="doctor-dot"></span>
               <select id="clinicDoctorSelect" class="form-control" onchange="onClinicDoctorChange()"
                 aria-label="Vybrat lékaře"></select>
             </div>
-            <div class="cal-nav">
-              <button class="cal-nav-btn" onclick="shiftClinicDay(-1)" title="Předchozí den (šipka vlevo)">‹</button>
-              <div class="cal-title">
-                <h3 id="clinicDayTitle">—</h3>
-                <span id="clinicDaySub"></span>
-              </div>
-              <button class="cal-nav-btn" onclick="shiftClinicDay(1)" title="Další den (šipka vpravo)">›</button>
-              <button class="btn btn-secondary btn-sm" onclick="clinicToday()">Dnes</button>
-            </div>
+            <div id="clinicFilters" class="queue-filters"></div>
           </div>
           <div class="clinic-layout">
             <div id="clinicQueue" class="clinic-queue"></div>
@@ -2398,6 +2467,12 @@
       currentUser = null;
       doctorsList = [];
       calDoctorId = null;
+      clinicDoctorId = null;
+      clinicSelectedApptId = null;
+      clinicFilter = 'pending';
+      clinicAutoFilter = true;
+      clinicDirty = false;
+      activeDashboardTab = 'reservations';
       localStorage.removeItem('token');
       showLogin();
       showToast('Byl jste odhlášen.');
@@ -2435,6 +2510,11 @@
         permEl.textContent = `Přihlášena ${currentUser.full_name}. Evidence pacientů je připravena pro vyhledávání a objednávky.`;
         btnNew.style.display = 'none';
       }
+
+      // Záložku Návštěvy vidí jen lékaři a administrátor (zdravotní záznamy)
+      document.getElementById('tabBtnClinic').style.display = canSeeVisits() ? 'flex' : 'none';
+      if (activeDashboardTab === 'clinic' && !canSeeVisits()) activeDashboardTab = 'reservations';
+      updateVisitsBadge();
 
       switchDashboardTab(activeDashboardTab || 'reservations');
     }
@@ -3641,10 +3721,10 @@
             <dt>Založeno</dt>
             <dd style="color: var(--text-muted); font-size: 0.85rem;">${escapeHtml(a.created_by_name || '—')}, ${created}</dd>
           </dl>
-          ${s <= new Date() ? `
+          ${s <= new Date() && canRecordFor(a.doctor.id) ? `
             <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
               <button class="btn btn-primary" onclick="goToClinic(${a.doctor.id}, '${isoDate(s)}', ${a.id})">
-                ${a.status === 'PLANNED' && canRecordFor(a.doctor.id) ? '✎ Zapsat návštěvu' : '🏥 Otevřít v Ordinaci dnes'}
+                ${a.status === 'PLANNED' ? '✎ Zapsat návštěvu' : '🏥 Otevřít v Návštěvách'}
               </button>
             </div>` : ''}`;
       } catch (err) {
@@ -3687,16 +3767,26 @@
       }
     }
 
-    /* ===== ORDINACE DNES – ZÁZNAM O NÁVŠTĚVĚ (FP4) ===== */
+    /* ===== NÁVŠTĚVY – FRONTA A ZÁZNAM O NÁVŠTĚVĚ (FP4) ===== */
     const AGENDA_LABELS = {
       WAITING: '○ Čeká',
       TO_RECORD: '● K zápisu',
       DRAFT: '✎ Rozpracováno',
       CLOSED: '✔ Uzavřeno',
     };
+    const QUEUE_FILTERS = [
+      { key: 'pending', label: 'K vyřízení' },
+      { key: 'today', label: 'Dnes' },
+      { key: 'draft', label: 'Rozpracováno' },
+      { key: 'closed', label: 'Uzavřeno' },
+      { key: 'all', label: 'Vše' },
+    ];
+    const QUEUE_PAGE = 50;
     let clinicDoctorId = null;
-    let clinicDate = new Date();
-    let clinicAgenda = null;
+    let clinicFilter = 'pending';
+    let clinicAutoFilter = true;   // při prvním otevření: prázdné „K vyřízení“ → přepnout na „Dnes“
+    let clinicAnchorBefore = null; // skok z kalendáře: první stránka začne u zvoleného dne
+    let clinicAgenda = null;       // poslední odpověď fronty (counts, can_record) + nasbírané položky
     let clinicSelectedApptId = null;
     let clinicVisit = null;      // načtený záznam návštěvy (VisitResponse)
     let clinicDraft = null;      // { note, items: [{procedure_id, code, name, points_per_unit, quantity}] }
@@ -3711,25 +3801,59 @@
       return currentUser.role === 'DOCTOR' && !!d && d.user_id === currentUser.id;
     }
 
+    function canSeeVisits() {
+      return !!currentUser && (currentUser.role === 'DOCTOR' || currentUser.role === 'ADMIN');
+    }
+
     function confirmDiscard() {
       return !clinicDirty || confirm('Máte neuložené změny v záznamu návštěvy. Opravdu je chcete zahodit?');
     }
 
+    async function updateVisitsBadge() {
+      const badge = document.getElementById('visitsBadge');
+      if (!canSeeVisits()) { badge.style.display = 'none'; return; }
+      try {
+        const data = await apiFetch('/api/v1/visits/pending-count');
+        badge.textContent = data.pending;
+        badge.style.display = data.pending > 0 ? 'inline-flex' : 'none';
+      } catch (err) {
+        badge.style.display = 'none';
+      }
+    }
+
     async function initClinic() {
+      const queueBox = document.getElementById('clinicQueue');
+      const pickerBox = document.getElementById('clinicDoctorPicker');
       try {
         if (!doctorsList.length) await loadDoctors();
         const active = doctorsList.filter(d => d.is_active);
-        const select = document.getElementById('clinicDoctorSelect');
-        select.innerHTML = active.map(d =>
-          `<option value="${d.id}">${escapeHtml(d.full_name)}${d.specialization ? ' – ' + escapeHtml(d.specialization) : ''}</option>`
-        ).join('');
-        if (!active.some(d => d.id === clinicDoctorId)) {
-          const own = currentUser.role === 'DOCTOR' ? active.find(d => d.user_id === currentUser.id) : null;
-          clinicDoctorId = (own || active.find(d => d.id === calDoctorId) || active[0] || {}).id || null;
+
+        if (currentUser.role === 'DOCTOR') {
+          // Lékař vidí jen své návštěvy – bez výběru lékaře
+          pickerBox.style.display = 'none';
+          const own = doctorsList.find(d => d.user_id === currentUser.id);
+          if (!own) {
+            clinicDoctorId = null;
+            queueBox.innerHTML = '';
+            document.getElementById('clinicFilters').innerHTML = '';
+            document.getElementById('clinicPanel').innerHTML =
+              '<div class="panel-message"><span class="big">🔗</span>Váš účet není propojen s profilem lékaře. Obraťte se na administrátora.</div>';
+            return;
+          }
+          clinicDoctorId = own.id;
+        } else {
+          pickerBox.style.display = 'flex';
+          const select = document.getElementById('clinicDoctorSelect');
+          select.innerHTML = active.map(d =>
+            `<option value="${d.id}">${escapeHtml(d.full_name)}${d.specialization ? ' – ' + escapeHtml(d.specialization) : ''}</option>`
+          ).join('');
+          if (!active.some(d => d.id === clinicDoctorId)) {
+            clinicDoctorId = (active.find(d => d.id === calDoctorId) || active[0] || {}).id || null;
+          }
+          if (clinicDoctorId) select.value = clinicDoctorId;
+          updateClinicDot();
         }
-        if (clinicDoctorId) select.value = clinicDoctorId;
-        updateClinicDot();
-        await loadAgenda();
+        await loadQueue();
       } catch (err) {
         showToast(err.message, true);
       }
@@ -3745,58 +3869,63 @@
       if (!confirmDiscard()) { select.value = clinicDoctorId; return; }
       clinicDoctorId = Number(select.value);
       clinicSelectedApptId = null;
+      clinicAnchorBefore = null;
+      clinicAutoFilter = true;
+      clinicFilter = 'pending';
       updateClinicDot();
-      loadAgenda();
+      loadQueue();
     }
 
-    function shiftClinicDay(delta) {
+    function setClinicFilter(key) {
+      if (key === clinicFilter && !clinicAnchorBefore) return;
       if (!confirmDiscard()) return;
-      clinicDate = addDays(clinicDate, delta);
-      clinicSelectedApptId = null;
-      loadAgenda();
-    }
-
-    function clinicToday() {
-      if (!confirmDiscard()) return;
-      clinicDate = new Date();
-      clinicSelectedApptId = null;
-      loadAgenda();
+      clinicFilter = key;
+      clinicAnchorBefore = null;
+      clinicAutoFilter = false;
+      loadQueue();
     }
 
     function goToClinic(doctorId, dateIso, appointmentId) {
       closeModal('appointmentDetailModal');
       clinicDoctorId = doctorId;
-      clinicDate = new Date(dateIso + 'T00:00:00');
+      clinicFilter = 'all';
+      clinicAutoFilter = false;
+      // První stránka fronty začne koncem zvoleného dne, aby položka byla hned vidět
+      clinicAnchorBefore = `${isoDate(addDays(new Date(dateIso + 'T00:00:00'), 1))}T00:00:00`;
       clinicSelectedApptId = appointmentId;
       clinicDirty = false;
       switchDashboardTab('clinic');
     }
 
-    function renderClinicHeader() {
-      const d = clinicDate;
-      document.getElementById('clinicDayTitle').textContent = `${DAY_LONG[weekdayIdx(d)]} ${d.getDate()}. ${d.getMonth() + 1}.`;
-      const isToday = isoDate(d) === isoDate(new Date());
-      document.getElementById('clinicDaySub').textContent = isToday ? `dnes · ${d.getFullYear()}` : String(d.getFullYear());
+    function fetchQueuePage(before) {
+      const params = new URLSearchParams({ filter: clinicFilter, limit: QUEUE_PAGE });
+      if (before) params.set('before', before);
+      return apiFetch(`/api/v1/doctors/${clinicDoctorId}/visit-queue?${params}`);
     }
 
-    async function loadAgenda() {
-      renderClinicHeader();
-      const queue = document.getElementById('clinicQueue');
+    async function loadQueue() {
+      const queueBox = document.getElementById('clinicQueue');
       if (!clinicDoctorId) {
-        queue.innerHTML = '<div class="clinic-empty">V systému není žádný aktivní lékař.</div>';
+        queueBox.innerHTML = '<div class="clinic-empty">V systému není žádný aktivní lékař.</div>';
         document.getElementById('clinicPanel').innerHTML = '';
         return;
       }
-      const reqDate = isoDate(clinicDate), reqDoctor = clinicDoctorId;
+      const reqDoctor = clinicDoctorId, reqFilter = clinicFilter;
       try {
-        const data = await apiFetch(`/api/v1/doctors/${reqDoctor}/agenda?date=${reqDate}`);
-        if (reqDate !== isoDate(clinicDate) || reqDoctor !== clinicDoctorId) return;
+        let data = await fetchQueuePage(clinicAnchorBefore);
+        if (reqDoctor !== clinicDoctorId || reqFilter !== clinicFilter) return;
+        if (clinicAutoFilter && clinicFilter === 'pending' && data.counts.pending === 0) {
+          // Vše zapsáno → rovnou ukážeme dnešní den
+          clinicFilter = 'today';
+          data = await fetchQueuePage(null);
+        }
+        clinicAutoFilter = false;
         clinicAgenda = data;
         if (!data.items.some(i => i.appointment_id === clinicSelectedApptId)) {
-          // Automaticky vybereme první návštěvu, která čeká na zápis
           const next = data.items.find(i => i.state === 'TO_RECORD' || i.state === 'DRAFT') || data.items[0];
           clinicSelectedApptId = next ? next.appointment_id : null;
         }
+        renderClinicFilters();
         renderQueue();
         await loadClinicPanel();
       } catch (err) {
@@ -3804,15 +3933,58 @@
       }
     }
 
+    async function loadOlderQueue() {
+      const last = clinicAgenda.items[clinicAgenda.items.length - 1];
+      try {
+        const data = await fetchQueuePage(last.start_at);
+        clinicAgenda = { ...data, items: clinicAgenda.items.concat(data.items) };
+        renderClinicFilters();
+        renderQueue();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function renderClinicFilters() {
+      const counts = clinicAgenda.counts;
+      document.getElementById('clinicFilters').innerHTML = QUEUE_FILTERS.map(f => `
+        <button type="button" class="queue-chip ${f.key === clinicFilter ? 'active' : ''} ${f.key === 'pending' && counts.pending > 0 ? 'attention' : ''}"
+          onclick="setClinicFilter('${f.key}')">
+          ${f.label}${f.key === 'all' ? '' : ` <span class="chip-count">${counts[f.key]}</span>`}
+        </button>`).join('');
+    }
+
+    function queueDayLabel(dateIso) {
+      if (dateIso === isoDate(new Date())) return 'Dnes';
+      if (dateIso === isoDate(addDays(new Date(), -1))) return 'Včera';
+      const d = new Date(dateIso + 'T00:00:00');
+      return `${DAY_LONG[weekdayIdx(d)]} ${fmtDate(d)}`;
+    }
+
     function renderQueue() {
-      const queue = document.getElementById('clinicQueue');
-      if (!clinicAgenda.items.length) {
-        queue.innerHTML = '<div class="clinic-empty">📭<br>Na tento den nejsou žádné rezervace.</div>';
+      const queueBox = document.getElementById('clinicQueue');
+      const items = clinicAgenda.items;
+      if (!items.length) {
+        const empty = {
+          pending: '✔<br>Vše zapsáno – žádné návštěvy k vyřízení.',
+          today: '📭<br>Dnes nejsou žádné rezervace.',
+          draft: '📭<br>Žádné rozpracované návštěvy.',
+          closed: '📭<br>Zatím žádné uzavřené návštěvy.',
+          all: '📭<br>Zatím žádné návštěvy.',
+        };
+        queueBox.innerHTML = `<div class="clinic-empty">${empty[clinicFilter]}</div>`;
         return;
       }
-      queue.innerHTML = clinicAgenda.items.map(i => {
+      let html = '';
+      let lastDay = null;
+      for (const i of items) {
         const s = parseLocal(i.start_at), e = parseLocal(i.end_at);
-        return `
+        const dayIso = isoDate(s);
+        if (dayIso !== lastDay) {
+          html += `<div class="queue-day-header">${queueDayLabel(dayIso)}</div>`;
+          lastDay = dayIso;
+        }
+        html += `
           <button type="button" class="queue-item ${i.appointment_id === clinicSelectedApptId ? 'active' : ''}"
             onclick="selectClinicItem(${i.appointment_id})">
             <span class="queue-time">${fmtTime(s)}<small>–${fmtTime(e)}</small></span>
@@ -3822,7 +3994,12 @@
             </span>
             <span class="state-pill state-${i.state}">${AGENDA_LABELS[i.state]}</span>
           </button>`;
-      }).join('');
+      }
+      if (clinicAgenda.has_more) {
+        html += `<div style="padding: 0.85rem; text-align: center;">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="loadOlderQueue()">Načíst starší</button></div>`;
+      }
+      queueBox.innerHTML = html;
     }
 
     function selectClinicItem(appointmentId) {
@@ -3844,7 +4021,9 @@
       const item = selectedAgendaItem();
       const panel = document.getElementById('clinicPanel');
       if (!item) {
-        panel.innerHTML = '<div class="panel-message"><span class="big">👈</span>Vyberte pacienta ze seznamu.</div>';
+        panel.innerHTML = clinicAgenda && !clinicAgenda.items.length
+          ? '<div class="panel-message"><span class="big">🎉</span>Není co zapisovat – zvolte jiný filtr.</div>'
+          : '<div class="panel-message"><span class="big">👈</span>Vyberte pacienta ze seznamu.</div>';
         return;
       }
       if (item.visit_id) {
@@ -4047,7 +4226,8 @@
     async function startVisit() {
       try {
         clinicVisit = await apiFetch(`/api/v1/appointments/${clinicSelectedApptId}/visit`, { method: 'POST' });
-        await loadAgenda();
+        await loadQueue();
+        updateVisitsBadge();
         setTimeout(() => { const el = document.getElementById('procSearch'); if (el) el.focus(); }, 50);
       } catch (err) {
         showToast(err.message, true);
@@ -4095,7 +4275,10 @@
         await apiFetch(`/api/v1/visits/${clinicVisit.id}/close`, { method: 'POST' });
         showToast('Návštěva byla uzavřena.');
         clinicDirty = false;
-        await loadAgenda();
+        // Ve frontě „K vyřízení“ uzavřená položka zmizí a vybere se další nevyřízená
+        if (clinicFilter === 'pending') clinicSelectedApptId = null;
+        await loadQueue();
+        updateVisitsBadge();
       } catch (err) {
         showToast(err.message, true);
         btn.disabled = false;
@@ -4194,12 +4377,11 @@
         else openModal.classList.remove('open');
         return;
       }
-      if (openModal || !currentUser || !['reservations', 'clinic'].includes(activeDashboardTab)) return;
+      if (openModal || !currentUser || activeDashboardTab !== 'reservations') return;
       const tag = (document.activeElement && document.activeElement.tagName) || '';
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
-      const shift = activeDashboardTab === 'clinic' ? shiftClinicDay : shiftWeek;
-      if (e.key === 'ArrowLeft') shift(-1);
-      if (e.key === 'ArrowRight') shift(1);
+      if (e.key === 'ArrowLeft') shiftWeek(-1);
+      if (e.key === 'ArrowRight') shiftWeek(1);
     });
 
     function escapeHtml(str) {
