@@ -164,4 +164,10 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
     - Byznys vrstva: `ProcedureService`, `VisitService` (doménové výjimky), DTO `visit_dto.py`, seed číselníku a demo návštěv z minulého týdne.
     - Prezentační vrstva: `procedure_router.py`, `visit_router.py` (`/doctors/{id}/agenda`, `/appointments/{id}/visit`, `/visits/{id}`, `/visits/{id}/close`), `GET /patients/{id}/history`.
     - Testy: `tests/test_visits.py` (17 testů – kauzalita, oprávnění, M:N s počty, snapshot bodů, neměnnost, fronta dne, historie) a unit testy `VisitService`. Celkem 86 testů.
+- **2026-11-11:** **Fronta návštěv s filtry místo denního pohledu a omezení viditelnosti zdravotních záznamů:**
+  - **Co bylo rozhodnuto:**
+    - Záložka *Ordinace dnes* je nahrazena záložkou **Návštěvy**: fronta návštěv lékaře od nejnovější do minulosti, seskupená po dnech, s filtry *K vyřízení* (výchozí – K zápisu + Rozpracováno), *Dnes*, *Rozpracováno*, *Uzavřeno*, *Vše* a jejich počty; starší položky se načítají po stránkách. Budoucí dny se ve frontě nezobrazují (řeší je kalendář rezervací). Na záložce je odznak s počtem nevyřízených návštěv.
+    - Viditelnost podle zásady nejmenších oprávnění (vynucuje API): záložku a frontu vidí jen lékař (pouze vlastní návštěvy) a administrátor (s výběrem lékaře); recepce ji nevidí. Detail záznamu návštěvy vidí lékaři a administrátor. V kartě pacienta vidí lékaři celou historii (kontinuita péče), recepce termíny a výkony **bez klinických poznámek**.
+  - **Proč:** Při denním pohledu se nezapsaná návštěva z minulých dnů snadno ztratila – lékař musel trefit přesné datum. Neuzavřené návštěvy by přitom chyběly v měsíčním výkazu (FP7). Klinické poznámky recepce pro svou práci (rezervace, výkazy) nepotřebuje.
+  - **Dopad na architekturu:** endpoint `GET /doctors/{id}/agenda` nahrazen `GET /doctors/{id}/visit-queue` (filtry, kurzorové stránkování, počty jedním SQL dotazem) a přidán `GET /visits/pending-count`; oprávnění v `VisitService`. Poznámka pro FP7: výkaz má upozornit na neuzavřené návštěvy v daném měsíci, aby recepce poznala neúplný výkaz. Testy: 92.
 
