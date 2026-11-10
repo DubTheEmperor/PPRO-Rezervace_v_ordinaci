@@ -7,7 +7,7 @@ from src.config import settings
 
 def hash_password(password: str) -> str:
     """Bezpečně zahashuje heslo pomocí bcrypt."""
-    salt = bcrypt.gensalt()
+    salt = bcrypt.gensalt(rounds=settings.BCRYPT_ROUNDS)
     hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
     return hashed.decode("utf-8")
 

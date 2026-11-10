@@ -1,6 +1,8 @@
 import os
 # Nastavení testovací SQLite databáze před inicializací nastavení
 os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+# Nízká cena bcryptu – hashování v testech trvá ~1 ms místo ~200 ms
+os.environ["BCRYPT_ROUNDS"] = "4"
 
 import pytest
 from fastapi.testclient import TestClient

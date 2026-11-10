@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev_secret_key_ppro_ordinace_na_vyhlidce_change_in_production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8 hodin pro pracovní směnu
+    # Cena bcrypt hashování (v testech se snižuje kvůli rychlosti, min. 4)
+    BCRYPT_ROUNDS: int = 12
     
     # Výchozí administrátor
     FIRST_ADMIN_USERNAME: str = "admin"
