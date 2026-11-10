@@ -17,6 +17,7 @@ from src.business.dto.doctor_dto import (
     DoctorUpdate,
 )
 from src.business.dto.appointment_dto import AppointmentCreate
+from src.business.dto.visit_dto import ProcedureCreate, ProcedureUpdate, VisitItemInput, VisitUpdate
 
 __all__ = [
     "UserBase",
@@ -31,4 +32,8 @@ __all__ = [
     "DoctorCreate",
     "DoctorUpdate",
     "AppointmentCreate",
+    "ProcedureCreate",
+    "ProcedureUpdate",
+    "VisitItemInput",
+    "VisitUpdate",
 ]

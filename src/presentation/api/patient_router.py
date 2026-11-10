@@ -10,6 +10,13 @@ from src.presentation.schemas.appointment_schemas import (
 )
 from src.business.services.patient_service import PatientService
 from src.business.services.appointment_service import AppointmentService
+from src.business.services.visit_service import VisitService
+from src.presentation.schemas.doctor_schemas import DoctorSummary
+from src.presentation.schemas.visit_schemas import (
+    PatientHistoryItem,
+    PatientHistoryResponse,
+    visit_to_response,
+)
 from src.presentation.dependencies import get_current_user, require_roles
 
 router = APIRouter(prefix="/patients", tags=["Evidence pacientů"])
@@ -78,6 +85,35 @@ def list_patient_appointments(
     return PatientAppointmentListResponse(
         items=[PatientAppointmentItem.model_validate(a) for a in appointments],
         total=len(appointments),
+    )
+
+
+@router.get(
+    "/{patient_id}/history",
+    response_model=PatientHistoryResponse,
+    summary="Historie pacienta",
+    description="Všechny rezervace pacienta (nejnovější první) včetně zapsaných návštěv, výkonů a bodů.",
+)
+def get_patient_history(
+    patient_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    appointments = VisitService(db).get_patient_history(patient_id)
+    return PatientHistoryResponse(
+        patient_id=patient_id,
+        items=[
+            PatientHistoryItem(
+                appointment_id=a.id,
+                start_at=a.start_at,
+                end_at=a.end_at,
+                reason=a.reason,
+                appointment_status=a.status,
+                doctor=DoctorSummary.model_validate(a.doctor),
+                visit=visit_to_response(a.visit) if a.visit else None,
+            )
+            for a in appointments
+        ],
     )
 
 

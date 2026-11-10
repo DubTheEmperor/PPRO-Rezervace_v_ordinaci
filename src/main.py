@@ -10,6 +10,8 @@ from src.business.seed import (
     seed_initial_patients,
     seed_doctors,
     seed_demo_appointments,
+    seed_procedures,
+    seed_demo_visits,
 )
 from src.presentation.error_handlers import register_error_handlers
 from src.presentation.api.auth_router import router as auth_router
@@ -17,6 +19,8 @@ from src.presentation.api.user_router import router as user_router
 from src.presentation.api.patient_router import router as patient_router
 from src.presentation.api.doctor_router import router as doctor_router
 from src.presentation.api.appointment_router import router as appointment_router
+from src.presentation.api.procedure_router import router as procedure_router
+from src.presentation.api.visit_router import router as visit_router
 
 
 @asynccontextmanager
@@ -29,6 +33,8 @@ async def lifespan(app: FastAPI):
         seed_initial_patients(db)
         seed_doctors(db)
         seed_demo_appointments(db)
+        seed_procedures(db)
+        seed_demo_visits(db)
     finally:
         db.close()
     yield
@@ -61,6 +67,8 @@ app.include_router(user_router, prefix=settings.API_V1_PREFIX)
 app.include_router(patient_router, prefix=settings.API_V1_PREFIX)
 app.include_router(doctor_router, prefix=settings.API_V1_PREFIX)
 app.include_router(appointment_router, prefix=settings.API_V1_PREFIX)
+app.include_router(procedure_router, prefix=settings.API_V1_PREFIX)
+app.include_router(visit_router, prefix=settings.API_V1_PREFIX)
 
 
 @app.get("/", include_in_schema=False)

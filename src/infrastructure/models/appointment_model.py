@@ -51,6 +51,7 @@ class AppointmentModel(Base):
         back_populates="appointment",
         cascade="all, delete-orphan",
     )
+    visit = relationship("VisitModel", back_populates="appointment", uselist=False)
 
     def __repr__(self) -> str:
         return f"<Appointment id={self.id} doctor={self.doctor_id} {self.start_at}-{self.end_at} {self.status}>"

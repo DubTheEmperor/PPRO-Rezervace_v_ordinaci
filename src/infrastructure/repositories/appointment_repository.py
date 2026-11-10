@@ -1,14 +1,17 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Iterable, Sequence
 from sqlalchemy import func
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from src.infrastructure.models.appointment_model import (
     AppointmentModel,
     AppointmentSlotModel,
     AppointmentStatus,
 )
+from src.infrastructure.models.visit_model import VisitModel, VisitProcedureModel
 
 ACTIVE_STATUSES = (AppointmentStatus.PLANNED,)
+# Stavy, které v kalendáři obsazují termín (proběhlá návštěva slot neuvolňuje)
+OCCUPYING_STATUSES = (AppointmentStatus.PLANNED, AppointmentStatus.COMPLETED)
 
 
 class AppointmentRepository:
@@ -68,7 +71,7 @@ class AppointmentRepository:
         doctor_id: int,
         date_from: datetime,
         date_to: datetime,
-        statuses: Sequence[AppointmentStatus] = ACTIVE_STATUSES,
+        statuses: Sequence[AppointmentStatus] = OCCUPYING_STATUSES,
     ) -> List[AppointmentModel]:
         return (
             self.db.query(AppointmentModel)
@@ -127,3 +130,35 @@ class AppointmentRepository:
             .all()
         )
         return {patient_id: count for patient_id, count in rows}
+
+    def list_for_doctor_day(
+        self, doctor_id: int, date_from: datetime, date_to: datetime
+    ) -> List[AppointmentModel]:
+        """Rezervace lékaře v daném dni včetně pacienta a případného záznamu návštěvy."""
+        return (
+            self.db.query(AppointmentModel)
+            .options(joinedload(AppointmentModel.patient), joinedload(AppointmentModel.visit))
+            .filter(
+                AppointmentModel.doctor_id == doctor_id,
+                AppointmentModel.start_at >= date_from,
+                AppointmentModel.start_at < date_to,
+                AppointmentModel.status.in_(OCCUPYING_STATUSES),
+            )
+            .order_by(AppointmentModel.start_at.asc())
+            .all()
+        )
+
+    def list_history_for_patient(self, patient_id: int) -> List[AppointmentModel]:
+        """Všechny rezervace pacienta (nejnovější první) včetně návštěv a vykázaných výkonů."""
+        return (
+            self.db.query(AppointmentModel)
+            .options(
+                joinedload(AppointmentModel.doctor),
+                joinedload(AppointmentModel.visit)
+                .selectinload(VisitModel.items)
+                .joinedload(VisitProcedureModel.procedure),
+            )
+            .filter(AppointmentModel.patient_id == patient_id)
+            .order_by(AppointmentModel.start_at.desc())
+            .all()
+        )

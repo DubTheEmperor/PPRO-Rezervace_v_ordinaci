@@ -95,3 +95,37 @@ def test_ensure_role(users):
     assert AuthService.ensure_role(users["vera"], [UserRole.RECEPTIONIST]) is users["vera"]
     with pytest.raises(PermissionDeniedError):
         AuthService.ensure_role(users["hruba"], [UserRole.RECEPTIONIST, UserRole.ADMIN])
+
+
+# --- VisitService (FP4) ---------------------------------------------------------------------------
+
+def test_visit_for_future_appointment_raises_business_rule_error(db_session, users, hruba, patient):
+    from src.business.services.visit_service import VisitService
+    appointment = AppointmentService(db_session).create_appointment(
+        booking(hruba.id, patient.id, next_week_monday(), "09:00", "09:15"), users["vera"]
+    )
+    with pytest.raises(BusinessRuleError, match="neproběhla"):
+        VisitService(db_session).open_visit(appointment.id, users["hruba"])
+
+
+def test_receptionist_cannot_open_visit(db_session, users, hruba, patient):
+    from src.business.services.visit_service import VisitService
+    from tests.helpers import make_past_appointment
+    appointment = make_past_appointment(db_session, hruba.id, patient.id)
+    with pytest.raises(PermissionDeniedError):
+        VisitService(db_session).open_visit(appointment.id, users["vera"])
+
+
+def test_closed_visit_is_immutable(db_session, users, hruba, patient):
+    from src.business.dto import VisitItemInput, VisitUpdate
+    from src.business.services.visit_service import VisitService
+    from src.infrastructure.repositories.procedure_repository import ProcedureRepository
+    from tests.helpers import make_past_appointment
+    service = VisitService(db_session)
+    appointment = make_past_appointment(db_session, hruba.id, patient.id)
+    visit = service.open_visit(appointment.id, users["hruba"])
+    procedure = ProcedureRepository(db_session).get_by_code("01025")
+    service.update_draft(visit.id, VisitUpdate(items=[VisitItemInput(procedure_id=procedure.id)]), users["hruba"])
+    service.close_visit(visit.id, users["hruba"])
+    with pytest.raises(ConflictError):
+        service.update_draft(visit.id, VisitUpdate(items=[]), users["hruba"])

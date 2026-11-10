@@ -4,7 +4,7 @@ Seed patří do byznys vrstvy: používá byznys pravidla (hashování hesel,
 rozpad termínu na sloty) a přes repozitáře zapisuje do datové vrstvy.
 """
 import logging
-from datetime import datetime, time, timedelta
+from datetime import datetime, time, timedelta, timezone
 from sqlalchemy.orm import Session
 from src.config import settings
 from src.infrastructure.models.user_model import UserModel, UserRole
@@ -12,9 +12,13 @@ from src.infrastructure.models.patient_model import PatientModel
 from src.infrastructure.repositories.user_repository import UserRepository
 from src.infrastructure.models.doctor_model import DoctorModel
 from src.infrastructure.models.appointment_model import AppointmentModel, AppointmentStatus
+from src.infrastructure.models.procedure_model import ProcedureModel
+from src.infrastructure.models.visit_model import VisitModel, VisitStatus
 from src.infrastructure.repositories.patient_repository import PatientRepository
 from src.infrastructure.repositories.doctor_repository import DoctorRepository
 from src.infrastructure.repositories.appointment_repository import AppointmentRepository
+from src.infrastructure.repositories.procedure_repository import ProcedureRepository
+from src.infrastructure.repositories.visit_repository import VisitRepository
 from src.business.security import hash_password
 from src.business.scheduling import local_now, slot_starts
 
@@ -235,3 +239,85 @@ def seed_demo_appointments(db: Session) -> None:
             slot_starts(start_at, end_at),
         )
     logger.info("Seed: vytvořeny demo rezervace na příští týden")
+
+
+# Ilustrativní číselník výkonů – kódy a názvy pro demo, bodové hodnoty jsou syntetické
+DEFAULT_PROCEDURES = [
+    ("01021", "Komplexní vyšetření praktickým lékařem", 520),
+    ("01022", "Opakované komplexní vyšetření", 260),
+    ("01023", "Cílené vyšetření praktickým lékařem", 130),
+    ("01025", "Kontrolní vyšetření praktickým lékařem", 70),
+    ("01030", "Telefonická konzultace", 35),
+    ("02230", "Měření krevního tlaku a pulzu", 20),
+    ("09127", "Elektrokardiogram (EKG)", 110),
+    ("09215", "Injekce i.m., s.c., i.d.", 16),
+    ("09219", "Injekce i.v. u dospělého", 22),
+    ("09511", "Převaz rány", 45),
+    ("09543", "Odběr venózní krve", 30),
+    ("09547", "Výplach zevního zvukovodu", 40),
+]
+
+
+def seed_procedures(db: Session) -> None:
+    """Naplní číselník výkonů, pokud v něm daný kód ještě není."""
+    repo = ProcedureRepository(db)
+    for code, name, points in DEFAULT_PROCEDURES:
+        if repo.get_by_code(code) is None:
+            repo.create(ProcedureModel(code=code, name=name, points=points, is_active=True))
+    logger.info("Seed: číselník výkonů připraven")
+
+
+def seed_demo_visits(db: Session) -> None:
+    """Dvě rezervace z minulého týdne: jedna s uzavřenou návštěvou, druhá čeká na zápis výkonů.
+
+    Seed zakládá rezervace v minulosti přímo přes repozitář (servis to správně zakazuje).
+    """
+    if db.query(VisitModel).first() is not None:
+        return
+
+    user_repo = UserRepository(db)
+    hruba_user = user_repo.get_by_username("hruba")
+    receptionist = user_repo.get_by_username("vera")
+    doctor = DoctorRepository(db).get_by_user_id(hruba_user.id) if hruba_user else None
+    patient_repo = PatientRepository(db)
+    closed_patient = patient_repo.get_by_insurance_number("6258092345")   # Černá
+    pending_patient = patient_repo.get_by_insurance_number("9411203456")  # Svoboda
+    procedures = {p.code: p for p in ProcedureRepository(db).search(is_active=True, limit=200)}
+    if not (doctor and closed_patient and pending_patient and procedures):
+        return
+
+    today = local_now().date()
+    last_monday = today - timedelta(days=today.weekday() + 7)  # Hrubá ordinuje v pondělí 8–12
+    appointment_repo = AppointmentRepository(db)
+
+    def past_appointment(patient, start, end, reason, status):
+        start_at = datetime.combine(last_monday, _t(start))
+        end_at = datetime.combine(last_monday, _t(end))
+        return appointment_repo.create_with_slots(
+            AppointmentModel(
+                doctor_id=doctor.id, patient_id=patient.id, start_at=start_at, end_at=end_at,
+                reason=reason, status=status,
+                created_by_user_id=receptionist.id if receptionist else None,
+            ),
+            slot_starts(start_at, end_at),
+        )
+
+    closed_appt = past_appointment(
+        closed_patient, "09:00", "09:30", "Pravidelná kontrola krevního tlaku.", AppointmentStatus.COMPLETED
+    )
+    past_appointment(pending_patient, "10:00", "10:15", "Kontrola kolene po rehabilitaci.", AppointmentStatus.PLANNED)
+
+    visit = VisitModel(
+        appointment_id=closed_appt.id, doctor_id=doctor.id, patient_id=closed_patient.id,
+        status=VisitStatus.CLOSED, clinical_note="TK 135/85, bez obtíží. Pokračovat v medikaci.",
+        created_by_user_id=hruba_user.id, updated_by_user_id=hruba_user.id,
+        closed_by_user_id=hruba_user.id, closed_at=datetime.now(timezone.utc),
+    )
+    visit_repo = VisitRepository(db)
+    visit_repo.create(visit)
+    visit_repo.replace_items(visit, [
+        (procedures[code].id, quantity, procedures[code].points)
+        for code, quantity in (("01025", 1), ("02230", 1), ("09543", 1))
+    ])
+    visit_repo.save(visit)
+    logger.info("Seed: vytvořeny demo návštěvy z minulého týdne")

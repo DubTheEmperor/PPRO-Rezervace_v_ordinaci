@@ -7,6 +7,8 @@ from src.infrastructure.models.appointment_model import (
     AppointmentSlotModel,
     AppointmentStatus,
 )
+from src.infrastructure.models.procedure_model import ProcedureModel
+from src.infrastructure.models.visit_model import VisitModel, VisitProcedureModel, VisitStatus
 
 __all__ = [
     "UserModel",
@@ -17,4 +19,8 @@ __all__ = [
     "AppointmentModel",
     "AppointmentSlotModel",
     "AppointmentStatus",
+    "ProcedureModel",
+    "VisitModel",
+    "VisitProcedureModel",
+    "VisitStatus",
 ]

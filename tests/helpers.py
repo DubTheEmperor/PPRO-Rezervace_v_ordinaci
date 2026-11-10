@@ -47,3 +47,29 @@ def book(client, token, doctor_id, patient_id, day, start, end, reason="Preventi
         },
         headers=auth(token),
     )
+
+
+def last_week_monday() -> date:
+    return next_week_monday() - timedelta(days=14)
+
+
+def make_past_appointment(db_session, doctor_id: int, patient_id: int, start: str = "09:00", end: str = "09:30"):
+    """Vloží proběhlou rezervaci (minulé pondělí) přímo přes repozitář.
+
+    Servis rezervace v minulosti správně zakazuje, testy návštěv je ale potřebují.
+    """
+    from datetime import datetime
+    from src.business.scheduling import slot_starts
+    from src.infrastructure.models.appointment_model import AppointmentModel, AppointmentStatus
+    from src.infrastructure.repositories.appointment_repository import AppointmentRepository
+
+    day = last_week_monday()
+    start_at = datetime.fromisoformat(f"{day}T{start}")
+    end_at = datetime.fromisoformat(f"{day}T{end}")
+    return AppointmentRepository(db_session).create_with_slots(
+        AppointmentModel(
+            doctor_id=doctor_id, patient_id=patient_id, start_at=start_at, end_at=end_at,
+            reason="Proběhlá kontrola", status=AppointmentStatus.PLANNED,
+        ),
+        slot_starts(start_at, end_at),
+    )

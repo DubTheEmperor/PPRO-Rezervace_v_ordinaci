@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 from src.main import app
 from src.infrastructure.database import Base, get_db
 from src.infrastructure.models.user_model import UserModel, UserRole
-from src.business.seed import seed_initial_users, seed_doctors
+from src.business.seed import seed_initial_users, seed_doctors, seed_procedures
 
 # In-memory SQLite databáze pro rychlé a izolované testy
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -34,6 +34,7 @@ def db_session():
     session = TestingSessionLocal()
     seed_initial_users(session)
     seed_doctors(session)
+    seed_procedures(session)
     try:
         yield session
     finally:
