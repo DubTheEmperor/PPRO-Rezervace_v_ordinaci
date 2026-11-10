@@ -36,7 +36,7 @@
 3. **Rezervace termínu u konkrétního lékaře:**
    - Objednání konkrétního pacienta na konkrétní datum a čas ke zvolenému lékaři.
    - Rezervaci zadává recepce.
-   - Povinná/volitelná textová poznámka s důvodem návštěvy (proč pacient přichází).
+   - Povinná textová poznámka s důvodem návštěvy (proč pacient přichází).
 4. **Záznam o uskutečněné návštěvě:**
    - Po příchodu pacienta a realizaci vyšetření zápis skutečně provedených výkonů.
    - Výkony se vybírají z centrálního číselníku výkonů (kód výkonu, název výkonu, bodové ohodnocení).
@@ -102,8 +102,8 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
 
 | # | Otevřený bod klienta | Problém / Dilema | Přijaté rozhodnutí a odůvodnění | Stav |
 |---|---|---|---|---|
-| **1** | **Délka jednoho termínu** | Mřížka po 15 minutách vs. dynamická délka termínu podle typu vyšetření. | *V diskuzi s vývojářem.* Návrh: Základní časový slot s pevnou délkou (např. 15 či 30 minut) nebo násobky slotů podle typu zákroku, aby se předešlo fragmentaci a kolizím v kalendáři. | K odsouhlasení |
-| **2** | **Kdo zakládá rezervaci** | Výhradně recepce vs. pacienti přes web. | Primární zaměření na recepční rozhraní (paní Věra). Backend navrhnout přes čisté servisní rozhraní / API tak, aby v budoucnu bylo možné napojit klientský portál bez přepisování byznys logiky. | K odsouhlasení |
+| **1** | **Délka jednoho termínu** | Mřížka po 15 minutách vs. dynamická délka termínu podle typu vyšetření. | Pevná mřížka **15minutových slotů**. Rezervace zabírá 1 až N po sobě jdoucích slotů (max. 16 slotů = 4 h) a musí celá ležet v jednom bloku ordinačních hodin. Recepce délku volí přímo v kalendáři (kliknutí = 1 slot, tažení = více slotů). Žádná fragmentace mimo mřížku, překryv lze jednoznačně kontrolovat po slotech. | Schváleno a realizováno |
+| **2** | **Kdo zakládá rezervaci** | Výhradně recepce vs. pacienti přes web. | Rezervace zakládá **recepce a administrátor** (role `RECEPTIONIST`, `ADMIN`). Lékař kalendář a detaily rezervací vidí, ale termíny nezakládá. Veškerá pravidla jsou v servisní vrstvě za REST API `POST /api/v1/appointments`, takže budoucí pacientský portál lze napojit bez přepisování byznys logiky. | Schváleno a realizováno |
 | **3** | **Co se zrušenou rezervací** | Zmizení z diáře vs. zachování pro statistiku nespolehlivých pacientů. | Stavový model rezervace (např. `STAV: PLANOVANA, USKUTECNENA, ZRUSA_PACIENTEM, ZRUSA_ORDINACI`). V kalendáři se zrušený termín uvolní pro novou rezervaci (neblokuje slot), ale záznam o zrušení zůstává trvale v historii pacienta pro statistiky. | K odsouhlasení |
 | **4** | **Jednoznačná totožnost pacienta** | Duplicity v diáři, nejasný primární identifikátor. | Jednoznačným klíčem v evidenci bude kombinace čísla pojištěnce (rodného čísla) a pojišťovny. Při zakládání nového pacienta systém provede deduplikační kontrolu (shoda telefonu, jména a data narození) a upozorní recepční na případnou existenci karty. | Schváleno a realizováno |
 | **5** | **Výpadek / nemoc lékaře** | Hromadné zrušení, přesun k jinému lékaři, nebo jen označení a obvolání. | Vytvoření režimu mimořádné nedostupnosti lékaře: dotčené rezervace přejdou do stavu `K_PREOBJEDNANI` a recepční se vygeneruje přehledná pracovní fronta pro obvolání s možností rychlého přesunu na volné sloty kolegů. | K odsouhlasení |
@@ -124,4 +124,20 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
     - Aplikační/byznys vrstva: Pydantic DTO validace (`patient_schemas.py`), byznys servis `PatientService` se striktní kontrolou duplicity a ochranou historie.
     - Prezentační vrstva: REST API `patient_router.py` a responzivní záložka *Evidence pacientů* ve webovém rozhraní pro paní Věru.
     - Testy: 8 nových automatizovaných testů v `tests/test_patients.py` (všechny testy v suite procházejí).
-
+- **2026-11-10:** **Realizace Funkčního požadavku 2 – Správa lékařů a ordinačních hodin:**
+  - **Co bylo rozhodnuto:** Lékař je samostatná doménová entita `doctors` (jméno, specializace, barva v kalendáři, stav) s volitelnou vazbou 1:1 na uživatelský účet. Týdenní ordinační hodiny jsou bloky `office_hours` (den v týdnu, začátek, konec), lékař může mít více bloků denně (např. dopoledne a odpoledne). Hodiny smí měnit administrátor a lékař, kterému profil patří. Seed obsahuje 3 lékaře (Hrubá, Malý, Veselá) s výchozími hodinami.
+  - **Proč:** Oddělení přihlašovacího účtu od doménové entity lékaře (lékař může existovat i bez účtu, do budoucna pacientský portál). Změna hodin, která by vyřadila již naplánované budoucí rezervace, je odmítnuta (409) – rezervace nesmí „osiřet“ mimo ordinační hodiny.
+  - **Odloženo:** Jednorázové výjimky v dostupnosti (konkrétní datum / nemoc) se budou řešit později spolu s otevřeným bodem 5. Pravidelná nedostupnost (např. úterní odpoledne na jiné adrese) se řeší tím, že daný blok v týdenních hodinách chybí.
+  - **Dopad na architekturu:**
+    - Datová vrstva: modely `DoctorModel`, `OfficeHoursModel`, migrace `003_doctors_office_hours`, repozitář `DoctorRepository`, seed `seed_doctors()`.
+    - Aplikační vrstva: čistá doménová logika `src/business/scheduling.py` (zarovnání na 15 min, rozpad na sloty, kontrola ordinačních hodin, validace bloků) a `DoctorService`.
+    - Prezentační vrstva: `doctor_router.py` (`/doctors`, `/doctors/{id}/office-hours`, `/doctors/{id}/calendar`), záložka *Lékaři a ordinační hodiny* s editorem hodin.
+- **2026-11-10:** **Realizace Funkčního požadavku 3 – Rezervace termínu u konkrétního lékaře:**
+  - **Co bylo rozhodnuto:** Rezervace (`appointments`) s povinným důvodem návštěvy a stavovým modelem `PLANNED / COMPLETED / CANCELLED_BY_PATIENT / CANCELLED_BY_OFFICE / NO_SHOW` (zatím se používá `PLANNED`, ostatní stavy připravují otevřený bod 3 a FP4/FP5). Ochrana proti překryvu je dvojí: kontrola v servisní vrstvě (srozumitelná hláška) a **databázová pojistka** – tabulka obsazených slotů `appointment_slots` s `UNIQUE(doctor_id, slot_start)`. Při souběžném pokusu o stejný slot databáze druhý zápis odmítne a API vrátí 409.
+  - **Proč:** Klient trvá na tom, že kolize nesmí vzniknout „za žádných okolností“ – čistě aplikační kontrola by nebyla odolná vůči souběhu. Řešení přes sloty funguje v PostgreSQL i v SQLite testech a přesně odpovídá 15min mřížce. Při budoucím zrušení se sloty smažou (termín se uvolní), záznam rezervace zůstane v historii pro statistiky.
+  - **Model času:** `start_at` / `end_at` jsou naivní lokální čas ordinace (Europe/Prague), „teď“ se počítá v této zóně.
+  - **Dopad na architekturu:**
+    - Datová vrstva: modely `AppointmentModel`, `AppointmentSlotModel`, migrace `004_create_appointments`, repozitář `AppointmentRepository`, demo rezervace v seedu.
+    - Aplikační vrstva: `AppointmentService` (aktivní lékař a pacient, zarovnání, stejný den, max. 4 h, ne v minulosti, v ordinačních hodinách, volné sloty) a počty nadcházejících rezervací v `PatientService`.
+    - Prezentační vrstva: `appointment_router.py` (`POST /appointments`, `GET /appointments/{id}`), `GET /patients/{id}/appointments`, záložka *Rezervace* s týdenním kalendářem (7 řádků Po–Ne, 15min buňky, výběr kliknutím/tažením, obsazené termíny červeně s detailem, mimo ordinační hodiny a minulost šedě, přepínání týdnů šipkami) a sloupec *Rezervace* v evidenci pacientů.
+    - Testy: `tests/test_scheduling.py`, `tests/test_doctors.py`, `tests/test_appointments.py` (přesná kolize, částečný překryv, navazující termíny, DB pojistka, mimo ordinační hodiny, přes polední pauzu, oprávnění). Celá sada 54 testů prochází.
