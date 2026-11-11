@@ -15,6 +15,8 @@ class AppointmentResponse(BaseModel):
     reason: str
     status: AppointmentStatus
     created_at: datetime
+    cancelled_at: Optional[datetime] = None
+    cancellation_note: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -23,6 +25,8 @@ class AppointmentDetailResponse(AppointmentResponse):
     patient: PatientResponse
     doctor: DoctorSummary
     created_by_name: Optional[str] = None
+    cancelled_by_name: Optional[str] = None
+    has_visit: bool = False
 
 
 class PatientAppointmentItem(BaseModel):

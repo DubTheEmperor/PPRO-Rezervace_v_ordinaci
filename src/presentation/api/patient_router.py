@@ -3,7 +3,11 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from src.business.domain import get_db, User, UserRole
 from src.business.dto import PatientCreate, PatientUpdate
-from src.presentation.schemas.patient_schemas import PatientResponse, PatientListResponse
+from src.presentation.schemas.patient_schemas import (
+    PatientResponse,
+    PatientListResponse,
+    ReliabilityResponse,
+)
 from src.presentation.schemas.appointment_schemas import (
     PatientAppointmentItem,
     PatientAppointmentListResponse,
@@ -40,11 +44,14 @@ def list_patients(
     patients, total = patient_service.get_patients(
         skip=skip, limit=limit, search=search, is_active=is_active
     )
-    counts = patient_service.get_upcoming_appointment_counts([p.id for p in patients])
+    ids = [p.id for p in patients]
+    counts = patient_service.get_upcoming_appointment_counts(ids)
+    reliability = patient_service.get_reliability(ids)
     items = []
     for p in patients:
         item = PatientResponse.model_validate(p)
         item.upcoming_appointments_count = counts.get(p.id, 0)
+        item.reliability = ReliabilityResponse.from_domain(reliability[p.id])
         items.append(item)
     return PatientListResponse(
         items=items,
@@ -66,7 +73,15 @@ def get_patient_detail(
 ):
     patient_service = PatientService(db)
     patient = patient_service.get_patient_by_id(patient_id)
-    return PatientResponse.model_validate(patient)
+    return _patient_response(patient_service, patient)
+
+
+def _patient_response(patient_service: PatientService, patient) -> PatientResponse:
+    """Detail pacienta včetně počtu nadcházejících rezervací a spolehlivosti."""
+    item = PatientResponse.model_validate(patient)
+    item.upcoming_appointments_count = patient_service.get_upcoming_appointment_counts([patient.id]).get(patient.id, 0)
+    item.reliability = ReliabilityResponse.from_domain(patient_service.get_reliability([patient.id])[patient.id])
+    return item
 
 
 @router.get(
@@ -114,6 +129,8 @@ def get_patient_history(
                 appointment_status=a.status,
                 doctor=DoctorSummary.model_validate(a.doctor),
                 visit=visit_to_response(a.visit, include_clinical_note=show_notes) if a.visit else None,
+                cancelled_at=a.cancelled_at,
+                cancellation_note=a.cancellation_note,
             )
             for a in appointments
         ],

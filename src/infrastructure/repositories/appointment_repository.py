@@ -51,6 +51,46 @@ class AppointmentRepository:
         self.db.refresh(appointment)
         return appointment
 
+    def save_releasing_slots(self, appointment: AppointmentModel) -> AppointmentModel:
+        """Uloží změnu stavu a v téže transakci smaže obsazené sloty (termín se uvolní).
+
+        Samotná rezervace zůstává v databázi (historie pacienta, statistika spolehlivosti).
+        """
+        try:
+            appointment.slots.clear()
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        self.db.refresh(appointment)
+        return appointment
+
+    def list_reliability_events(
+        self,
+        patient_ids: Iterable[int],
+        since: datetime,
+        statuses: Sequence[AppointmentStatus],
+    ) -> List[Tuple[int, AppointmentStatus, datetime, Optional[datetime]]]:
+        """(patient_id, status, start_at, cancelled_at) rezervací v daných stavech od `since`."""
+        ids = list(patient_ids)
+        if not ids:
+            return []
+        rows = (
+            self.db.query(
+                AppointmentModel.patient_id,
+                AppointmentModel.status,
+                AppointmentModel.start_at,
+                AppointmentModel.cancelled_at,
+            )
+            .filter(
+                AppointmentModel.patient_id.in_(ids),
+                AppointmentModel.status.in_(statuses),
+                AppointmentModel.start_at >= since,
+            )
+            .all()
+        )
+        return [tuple(r) for r in rows]
+
     def find_taken_slots(
         self, doctor_id: int, slot_starts: Iterable[datetime]
     ) -> List[AppointmentSlotModel]:

@@ -1,7 +1,9 @@
 from typing import Optional, List, Tuple, Dict
 from sqlalchemy.orm import Session
 from src.business.exceptions import BusinessRuleError, NotFoundError, PermissionDeniedError
+from src.business import reliability
 from src.business.scheduling import local_now
+from src.infrastructure.models.appointment_model import AppointmentStatus
 from src.infrastructure.models.patient_model import PatientModel
 from src.infrastructure.models.user_model import UserModel, UserRole
 from src.infrastructure.repositories.patient_repository import PatientRepository
@@ -36,6 +38,17 @@ class PatientService:
         return AppointmentRepository(self.db).count_upcoming_by_patient_ids(
             patient_ids, local_now()
         )
+
+    def get_reliability(self, patient_ids: List[int]) -> Dict[int, reliability.Reliability]:
+        """Spolehlivost pacientů za posuvné okno (jeden dotaz; bez událostí = zelená)."""
+        since = reliability.window_start(local_now())
+        events = AppointmentRepository(self.db).list_reliability_events(
+            patient_ids, since, (AppointmentStatus.CANCELLED_BY_PATIENT, AppointmentStatus.NO_SHOW)
+        )
+        grouped: Dict[int, list] = {pid: [] for pid in patient_ids}
+        for patient_id, status, start_at, cancelled_at in events:
+            grouped.setdefault(patient_id, []).append((status, start_at, cancelled_at))
+        return {pid: reliability.evaluate(items) for pid, items in grouped.items()}
 
     def create_patient(self, patient_data: PatientCreate) -> PatientModel:
         # Kontrola unikátnosti čísla pojištěnce

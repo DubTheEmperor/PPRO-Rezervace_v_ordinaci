@@ -1,15 +1,16 @@
+from datetime import datetime, timezone
 from typing import List
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from src.business.exceptions import BusinessRuleError, ConflictError, NotFoundError
+from src.business.exceptions import BusinessRuleError, ConflictError, NotFoundError, PermissionDeniedError
 from src.business import scheduling
 from src.business.services.doctor_service import blocks_by_weekday
 from src.infrastructure.models.appointment_model import AppointmentModel, AppointmentStatus
-from src.infrastructure.models.user_model import UserModel
+from src.infrastructure.models.user_model import UserModel, UserRole
 from src.infrastructure.repositories.appointment_repository import AppointmentRepository
 from src.infrastructure.repositories.doctor_repository import DoctorRepository
 from src.infrastructure.repositories.patient_repository import PatientRepository
-from src.business.dto.appointment_dto import AppointmentCreate
+from src.business.dto.appointment_dto import AppointmentCancel, AppointmentCreate
 
 
 class AppointmentService:
@@ -81,3 +82,59 @@ class AppointmentService:
         except IntegrityError:
             # Souběžná rezervace stejného slotu – zachytila ji DB pojistka UNIQUE(doctor_id, slot_start)
             raise ConflictError("Termín byl mezitím obsazen jinou rezervací. Vyberte prosím jiný čas.")
+
+    # --- Zrušení a nedostavení (FP5) ----------------------------------------------------------
+
+    @staticmethod
+    def can_cancel(user: UserModel) -> bool:
+        """Termíny na základě telefonátu ruší recepce nebo administrátor."""
+        return user.role in (UserRole.RECEPTIONIST, UserRole.ADMIN)
+
+    @staticmethod
+    def can_mark_no_show(appointment: AppointmentModel, user: UserModel) -> bool:
+        """Nedostavení označí recepce, administrátor nebo lékař, jemuž termín patří."""
+        if user.role in (UserRole.RECEPTIONIST, UserRole.ADMIN):
+            return True
+        return user.role == UserRole.DOCTOR and appointment.doctor.user_id == user.id
+
+    def cancel_appointment(
+        self, appointment_id: int, data: AppointmentCancel, current_user: UserModel
+    ) -> AppointmentModel:
+        """Zruší naplánovaný termín: slot se uvolní, rezervace zůstává v historii pacienta."""
+        if not self.can_cancel(current_user):
+            raise PermissionDeniedError("Rezervaci může zrušit pouze recepce nebo administrátor.")
+        appointment = self.get_appointment(appointment_id)
+        if appointment.status != AppointmentStatus.PLANNED:
+            raise ConflictError("Rezervaci nelze zrušit – není ve stavu naplánovaná.")
+        if appointment.start_at <= scheduling.local_now():
+            raise BusinessRuleError(
+                "Termín už začal nebo proběhl – zrušit jej nelze. Pokud pacient nepřišel, "
+                "označte jej jako „Nedostavil se“."
+            )
+        appointment.status = (
+            AppointmentStatus.CANCELLED_BY_PATIENT
+            if data.cancelled_by == "PATIENT"
+            else AppointmentStatus.CANCELLED_BY_OFFICE
+        )
+        appointment.cancelled_at = datetime.now(timezone.utc)
+        appointment.cancelled_by_user_id = current_user.id
+        appointment.cancellation_note = data.note
+        return self.repo.save_releasing_slots(appointment)
+
+    def mark_no_show(self, appointment_id: int, current_user: UserModel) -> AppointmentModel:
+        """Označí proběhlý termín, na který pacient nepřišel (bez záznamu návštěvy)."""
+        appointment = self.get_appointment(appointment_id)
+        if not self.can_mark_no_show(appointment, current_user):
+            raise PermissionDeniedError(
+                "Nedostavení může označit recepce, administrátor nebo lékař, jemuž termín patří."
+            )
+        if appointment.status != AppointmentStatus.PLANNED:
+            raise ConflictError("Termín nelze označit jako nedostavení – není ve stavu naplánovaná.")
+        if appointment.start_at > scheduling.local_now():
+            raise BusinessRuleError("Termín ještě nezačal – nedostavení lze označit až po jeho začátku.")
+        if appointment.visit is not None:
+            raise ConflictError("K termínu už existuje záznam návštěvy – pacient se dostavil.")
+        appointment.status = AppointmentStatus.NO_SHOW
+        appointment.cancelled_at = datetime.now(timezone.utc)
+        appointment.cancelled_by_user_id = current_user.id
+        return self.repo.save_releasing_slots(appointment)

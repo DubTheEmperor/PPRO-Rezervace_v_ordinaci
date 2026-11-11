@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from src.business.domain import get_db, User, UserRole
-from src.business.dto import AppointmentCreate
+from src.business.dto import AppointmentCancel, AppointmentCreate
 from src.presentation.schemas.appointment_schemas import (
     AppointmentResponse,
     AppointmentDetailResponse,
 )
+from src.presentation.schemas.patient_schemas import ReliabilityResponse
 from src.business.services.appointment_service import AppointmentService
+from src.business.services.patient_service import PatientService
 from src.presentation.dependencies import get_current_user, require_roles
 
 router = APIRouter(prefix="/appointments", tags=["Rezervace termínů"])
@@ -44,4 +46,43 @@ def get_appointment_detail(
     appointment = AppointmentService(db).get_appointment(appointment_id)
     response = AppointmentDetailResponse.model_validate(appointment, from_attributes=True)
     response.created_by_name = appointment.created_by.full_name if appointment.created_by else None
+    response.cancelled_by_name = appointment.cancelled_by.full_name if appointment.cancelled_by else None
+    response.has_visit = appointment.visit is not None
+    reliability = PatientService(db).get_reliability([appointment.patient_id])[appointment.patient_id]
+    response.patient.reliability = ReliabilityResponse.from_domain(reliability)
     return response
+
+
+@router.post(
+    "/{appointment_id}/cancel",
+    response_model=AppointmentResponse,
+    summary="Zrušení rezervace",
+    description=(
+        "Recepce nebo administrátor zruší naplánovaný termín, který ještě nezačal. Slot se uvolní "
+        "pro novou rezervaci, záznam zůstává v historii pacienta. Zrušení pacientem se počítá "
+        "do jeho spolehlivosti, zrušení ordinací ne."
+    ),
+)
+def cancel_appointment(
+    appointment_id: int,
+    data: AppointmentCancel,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    appointment = AppointmentService(db).cancel_appointment(appointment_id, data, current_user)
+    return AppointmentResponse.model_validate(appointment)
+
+
+@router.post(
+    "/{appointment_id}/no-show",
+    response_model=AppointmentResponse,
+    summary="Označení nedostavení",
+    description="Proběhlý naplánovaný termín bez záznamu návštěvy – pacient nepřišel.",
+)
+def mark_no_show(
+    appointment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    appointment = AppointmentService(db).mark_no_show(appointment_id, current_user)
+    return AppointmentResponse.model_validate(appointment)

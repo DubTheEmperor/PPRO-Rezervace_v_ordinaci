@@ -1,5 +1,6 @@
 """Vstupní DTO pro rezervace termínů."""
 from datetime import datetime
+from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 from src.business.scheduling import LOCAL_TZ
 
@@ -30,3 +31,18 @@ class AppointmentCreate(BaseModel):
         if len(stripped) < 3:
             raise ValueError("Důvod návštěvy je povinný (alespoň 3 znaky).")
         return stripped
+
+
+class AppointmentCancel(BaseModel):
+    cancelled_by: Literal["PATIENT", "OFFICE"] = Field(
+        "PATIENT", description="Kdo termín ruší: pacient (počítá se do spolehlivosti) nebo ordinace"
+    )
+    note: Optional[str] = Field(None, max_length=300, description="Volitelná krátká poznámka ke zrušení")
+
+    @field_validator("note")
+    @classmethod
+    def strip_note(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        stripped = v.strip()
+        return stripped or None

@@ -24,6 +24,7 @@ class AppointmentModel(Base):
     __tablename__ = "appointments"
     __table_args__ = (
         Index("ix_appointments_doctor_start", "doctor_id", "start_at"),
+        Index("ix_appointments_patient_status_start", "patient_id", "status", "start_at"),
         CheckConstraint("start_at < end_at", name="ck_appointments_range"),
     )
 
@@ -36,6 +37,10 @@ class AppointmentModel(Base):
     status = Column(Enum(AppointmentStatus), default=AppointmentStatus.PLANNED, nullable=False)
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    # Zrušení / nedostavení (FP5) – kdy a kdo stav nastavil, volitelná poznámka
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    cancelled_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    cancellation_note = Column(Text, nullable=True)
     updated_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -45,7 +50,8 @@ class AppointmentModel(Base):
 
     doctor = relationship("DoctorModel")
     patient = relationship("PatientModel")
-    created_by = relationship("UserModel")
+    created_by = relationship("UserModel", foreign_keys=[created_by_user_id])
+    cancelled_by = relationship("UserModel", foreign_keys=[cancelled_by_user_id])
     slots = relationship(
         "AppointmentSlotModel",
         back_populates="appointment",

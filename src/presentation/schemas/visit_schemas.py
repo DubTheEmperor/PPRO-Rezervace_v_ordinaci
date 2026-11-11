@@ -105,6 +105,8 @@ class PatientHistoryItem(BaseModel):
     appointment_status: AppointmentStatus
     doctor: DoctorSummary
     visit: Optional[VisitResponse]
+    cancelled_at: Optional[datetime] = None
+    cancellation_note: Optional[str] = None
 
 
 class PatientHistoryResponse(BaseModel):
