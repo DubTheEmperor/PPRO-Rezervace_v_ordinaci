@@ -130,7 +130,6 @@ def get_patient_history(
                 doctor=DoctorSummary.model_validate(a.doctor),
                 visit=visit_to_response(a.visit, include_clinical_note=show_notes) if a.visit else None,
                 cancelled_at=a.cancelled_at,
-                cancellation_note=a.cancellation_note,
             )
             for a in appointments
         ],

@@ -118,7 +118,6 @@ class AppointmentService:
         )
         appointment.cancelled_at = datetime.now(timezone.utc)
         appointment.cancelled_by_user_id = current_user.id
-        appointment.cancellation_note = data.note
         return self.repo.save_releasing_slots(appointment)
 
     def mark_no_show(self, appointment_id: int, current_user: UserModel) -> AppointmentModel:

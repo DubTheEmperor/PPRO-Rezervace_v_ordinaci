@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import List
 from pydantic import BaseModel, ConfigDict, Field
 from src.business import reliability as rel
 
@@ -33,7 +33,6 @@ class PatientResponse(BaseModel):
     phone_number: str
     insurance_number: str
     insurance_company_code: str
-    notes: Optional[str]
     is_active: bool
     created_at: datetime
     updated_at: datetime

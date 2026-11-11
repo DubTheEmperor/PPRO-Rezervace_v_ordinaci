@@ -16,7 +16,6 @@ class AppointmentResponse(BaseModel):
     status: AppointmentStatus
     created_at: datetime
     cancelled_at: Optional[datetime] = None
-    cancellation_note: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

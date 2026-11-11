@@ -28,10 +28,10 @@ def future_appt(client, receptionist_token, hruba_id, patient):
     return response.json()
 
 
-def cancel(client, token, appointment_id, cancelled_by="PATIENT", note=None):
+def cancel(client, token, appointment_id, cancelled_by="PATIENT"):
     return client.post(
         f"/api/v1/appointments/{appointment_id}/cancel",
-        json={"cancelled_by": cancelled_by, "note": note},
+        json={"cancelled_by": cancelled_by},
         headers=auth(token),
     )
 
@@ -62,12 +62,11 @@ def insert_event(db_session, doctor_id, patient_id, status, days_ago, cancel_hou
 # --- Zrušení -----------------------------------------------------------------------------------
 
 def test_receptionist_cancels_and_slot_is_released(client, receptionist_token, hruba_id, patient, patient2, future_appt):
-    response = cancel(client, receptionist_token, future_appt["id"], note="Pacient je nemocný")
+    response = cancel(client, receptionist_token, future_appt["id"])
     assert response.status_code == 200, response.text
     body = response.json()
     assert body["status"] == "CANCELLED_BY_PATIENT"
     assert body["cancelled_at"] is not None
-    assert body["cancellation_note"] == "Pacient je nemocný"
 
     # Uvolněný slot lze ihned znovu zarezervovat jiným pacientem
     rebook = book(client, receptionist_token, hruba_id, patient2["id"], next_week_monday(), "09:00", "09:30")

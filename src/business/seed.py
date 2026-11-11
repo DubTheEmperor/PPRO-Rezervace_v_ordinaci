@@ -94,7 +94,6 @@ def seed_initial_patients(db: Session) -> None:
             "phone_number": "+420777111222",
             "insurance_number": "7854121234",
             "insurance_company_code": "111",
-            "notes": "Pacientka často volá a omlouvá termíny na poslední chvíli.",
         },
         {
             "first_name": "Jan",
@@ -103,7 +102,6 @@ def seed_initial_patients(db: Session) -> None:
             "phone_number": "+420602333444",
             "insurance_number": "8501015678",
             "insurance_company_code": "205",
-            "notes": "Alergie na penicilin.",
         },
         {
             "first_name": "Marie",
@@ -112,7 +110,6 @@ def seed_initial_patients(db: Session) -> None:
             "phone_number": "+420721555666",
             "insurance_number": "6258092345",
             "insurance_company_code": "211",
-            "notes": "Pravidelné kontroly krevního tlaku každé 3 měsíce.",
         },
         {
             "first_name": "Petr",
@@ -121,7 +118,6 @@ def seed_initial_patients(db: Session) -> None:
             "phone_number": "+420732888999",
             "insurance_number": "9411203456",
             "insurance_company_code": "207",
-            "notes": "Aktivní běžec, rehabilitace kolene.",
         },
     ]
 
@@ -135,7 +131,6 @@ def seed_initial_patients(db: Session) -> None:
                 phone_number=p_data["phone_number"],
                 insurance_number=p_data["insurance_number"],
                 insurance_company_code=p_data["insurance_company_code"],
-                notes=p_data["notes"],
                 is_active=True,
             )
             repo.create(patient)

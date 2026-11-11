@@ -355,26 +355,6 @@
       text-decoration: underline;
     }
 
-    .btn-note-icon {
-      background: #f0f9ff;
-      border: 1px solid #bae6fd;
-      color: #0284c7;
-      border-radius: 6px;
-      padding: 0.35rem 0.6rem;
-      cursor: pointer;
-      font-size: 0.95rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
-    }
-
-    .btn-note-icon:hover {
-      background: #e0f2fe;
-      border-color: #7dd3fc;
-      transform: scale(1.08);
-    }
-
     /* DASHBOARD */
     .dashboard-header {
       display: flex;
@@ -2120,14 +2100,13 @@
                   <th style="white-space: nowrap;">Číslo pojištěnce</th>
                   <th style="width: 95px; text-align: center;">Pojišťovna</th>
                   <th style="width: 90px; text-align: center;">Rezervace</th>
-                  <th style="width: 65px; text-align: center;">Poznámka</th>
                   <th style="width: 85px; text-align: center;">Stav</th>
                   <th style="width: 165px; text-align: right;">Akce</th>
                 </tr>
               </thead>
               <tbody id="patientTableBody">
                 <tr>
-                  <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                  <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                     Načítání pacientů...
                   </td>
                 </tr>
@@ -2293,11 +2272,6 @@
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label for="patientNotes">Interní poznámka k pacientovi</label>
-            <textarea id="patientNotes" class="form-control" rows="3"
-              placeholder="např. alergie, preference ranních termínů..."></textarea>
-          </div>
           <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
             <input type="checkbox" id="patientIsActive" checked style="width: 16px; height: 16px;">
             <label for="patientIsActive" style="margin-bottom: 0; cursor: pointer;">Pacient je aktivní</label>
@@ -2308,27 +2282,6 @@
           <button type="submit" class="btn btn-primary" id="btnSavePatient">Uložit kartu pacienta</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- MODAL FOR PATIENT NOTE (POPUP) -->
-  <div id="noteModal" class="modal-overlay">
-    <div class="modal" style="max-width: 440px;">
-      <div class="modal-header" style="padding: 1rem 1.25rem;">
-        <h3 id="noteModalTitle" style="font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
-          <span>📝</span> Poznámka k pacientovi
-        </h3>
-        <button class="close-btn" onclick="closeNoteModal()">&times;</button>
-      </div>
-      <div class="modal-body" style="padding: 1.25rem;">
-        <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;" id="noteModalPatientName">
-          Pacient: <strong>Jan Novák</strong>
-        </div>
-        <div id="noteModalContent"
-          style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.5; background: #f8fafc; border: 1px solid var(--border); padding: 0.85rem; border-radius: 6px; color: var(--text-main); max-height: 250px; overflow-y: auto;">
-          Obsah poznámky...
-        </div>
-      </div>
     </div>
   </div>
 
@@ -2470,13 +2423,9 @@
               <div class="booking-summary-sub" id="cancelSummarySub">—</div>
             </div>
           </div>
-          <div class="cancel-choice">
+          <div class="cancel-choice" style="margin-bottom: 0;">
             <label><input type="radio" name="cancelBy" value="PATIENT" checked>Ruší pacient<small>např. zavolal, že nepřijde</small></label>
             <label><input type="radio" name="cancelBy" value="OFFICE">Ruší ordinace<small>např. nemoc lékaře</small></label>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label for="cancelNote">Poznámka (nepovinné)</label>
-            <input type="text" id="cancelNote" class="form-control" maxlength="300" placeholder="např. nemoc, přeobjedná se">
           </div>
         </div>
         <div class="modal-footer">
@@ -2885,7 +2834,7 @@
     function renderPatients() {
       const tbody = document.getElementById('patientTableBody');
       if (patientsList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Nenalezeni žádní pacienti. Pro přidání klikněte na <strong>+ Nový pacient</strong>.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">Nenalezeni žádní pacienti. Pro přidání klikněte na <strong>+ Nový pacient</strong>.</td></tr>`;
         return;
       }
 
@@ -2916,13 +2865,6 @@
               ${p.upcoming_appointments_count > 0 ? `
                 <button type="button" class="appt-count-btn" onclick="showPatientAppointments(${p.id})" title="Zobrazit nadcházející rezervace">
                   📅 ${p.upcoming_appointments_count}
-                </button>
-              ` : `<span style="color: var(--text-muted); font-size: 0.9rem;">—</span>`}
-            </td>
-            <td style="text-align: center;">
-              ${p.notes && p.notes.trim() ? `
-                <button type="button" class="btn-note-icon" onclick="showNoteModal(${p.id})" title="Zobrazit poznámku">
-                  <span>📝</span>
                 </button>
               ` : `<span style="color: var(--text-muted); font-size: 0.9rem;">—</span>`}
             </td>
@@ -2962,18 +2904,6 @@
       return phone;
     }
 
-    function showNoteModal(patientId) {
-      const p = patientsList.find(x => x.id === patientId);
-      if (!p) return;
-      document.getElementById('noteModalPatientName').innerHTML = `Pacient: <strong>${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong> (ID: #${p.id})`;
-      document.getElementById('noteModalContent').textContent = p.notes && p.notes.trim() ? p.notes : 'Bez poznámky.';
-      document.getElementById('noteModal').classList.add('open');
-    }
-
-    function closeNoteModal() {
-      document.getElementById('noteModal').classList.remove('open');
-    }
-
     function handlePatientSearch() {
       clearTimeout(patientSearchDebounce);
       patientSearchDebounce = setTimeout(() => {
@@ -3002,7 +2932,6 @@
         document.getElementById('patientPhoneNumber').value = patientObj.phone_number;
         document.getElementById('patientInsuranceNumber').value = patientObj.insurance_number;
         document.getElementById('patientInsuranceCompany').value = patientObj.insurance_company_code;
-        document.getElementById('patientNotes').value = patientObj.notes || '';
         document.getElementById('patientIsActive').checked = patientObj.is_active;
       } else {
         title.textContent = 'Zaevidování nového pacienta';
@@ -3035,7 +2964,6 @@
         phone_number: document.getElementById('patientPhoneNumber').value.trim(),
         insurance_number: document.getElementById('patientInsuranceNumber').value.trim(),
         insurance_company_code: document.getElementById('patientInsuranceCompany').value,
-        notes: document.getElementById('patientNotes').value.trim() || null,
         is_active: document.getElementById('patientIsActive').checked,
       };
 
@@ -3224,7 +3152,6 @@
         `${DAY_LONG[weekdayIdx(s)]} ${fmtDate(s)}, ${fmtTime(s)}–${fmtTime(e)}`;
       document.getElementById('cancelSummarySub').textContent = `${appt.patientName} · ${appt.doctorName}`;
       document.querySelector('input[name="cancelBy"][value="PATIENT"]').checked = true;
-      document.getElementById('cancelNote').value = '';
       document.getElementById('cancelModal').classList.add('open');
       setTimeout(() => document.getElementById('btnConfirmCancel').focus(), 50);
     }
@@ -3237,10 +3164,7 @@
       try {
         await apiFetch(`/api/v1/appointments/${cancelTarget.id}/cancel`, {
           method: 'POST',
-          body: {
-            cancelled_by: document.querySelector('input[name="cancelBy"]:checked').value,
-            note: document.getElementById('cancelNote').value.trim() || null,
-          },
+          body: { cancelled_by: document.querySelector('input[name="cancelBy"]:checked').value },
         });
         closeModal('cancelModal');
         closeModal('appointmentDetailModal');
@@ -3972,7 +3896,6 @@
               ${escapeHtml(a.doctor.full_name)}</dd>
             <dt>Důvod návštěvy</dt>
             <dd><div class="detail-reason" style="width: 100%;">${escapeHtml(a.reason)}</div></dd>
-            ${p.notes ? `<dt>Poznámka k pacientovi</dt><dd style="color: var(--text-muted);">${escapeHtml(p.notes)}</dd>` : ''}
             <dt>Založeno</dt>
             <dd style="color: var(--text-muted); font-size: 0.85rem;">${escapeHtml(a.created_by_name || '—')}, ${created}</dd>
           </dl>
@@ -3980,7 +3903,6 @@
             <div class="cancel-info">
               ${escapeHtml(STATUS_LABELS[a.status] || a.status)} · ${escapeHtml(a.cancelled_by_name || '—')},
               ${new Date(a.cancelled_at).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              ${a.cancellation_note ? `<br>${escapeHtml(a.cancellation_note)}` : ''}
             </div>` : ''}
           ${appointmentDetailActions(a, s)}`;
         appointmentDetailCurrent = a;
@@ -4569,7 +4491,7 @@
       const when = new Date(h.cancelled_at).toLocaleString('cs-CZ', {
         day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
       });
-      const text = `Zaznamenáno ${when}${h.cancellation_note ? ` · ${h.cancellation_note}` : ''}`;
+      const text = `Zaznamenáno ${when}`;
       return `tabindex="0" style="cursor: help;" data-tip="${escapeHtml(text)}"`;
     }
 
@@ -4638,7 +4560,6 @@
                 <span class="ins-badge">${escapeHtml(INS_NAMES[p.insurance_company_code] || p.insurance_company_code)}</span>
                 <a href="tel:${escapeHtml(p.phone_number)}" class="phone-link">📞 ${escapeHtml(formatPhoneNumber(p.phone_number))}</a>
               </div>
-              ${p.notes ? `<div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">📝 ${escapeHtml(p.notes)}</div>` : ''}
             </div>
             <div style="text-align: right; font-size: 0.82rem; color: var(--text-muted);">
               <div>${plural(closedVisits.length, 'uskutečněná návštěva', 'uskutečněné návštěvy', 'uskutečněných návštěv')}</div>

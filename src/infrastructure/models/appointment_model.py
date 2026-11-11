@@ -37,10 +37,9 @@ class AppointmentModel(Base):
     status = Column(Enum(AppointmentStatus), default=AppointmentStatus.PLANNED, nullable=False)
     created_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    # Zrušení / nedostavení (FP5) – kdy a kdo stav nastavil, volitelná poznámka
+    # Zrušení / nedostavení (FP5) – kdy a kdo stav nastavil
     cancelled_at = Column(DateTime(timezone=True), nullable=True)
     cancelled_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    cancellation_note = Column(Text, nullable=True)
     updated_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

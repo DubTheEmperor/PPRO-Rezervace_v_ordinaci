@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from src.infrastructure.database import Base
 
 
@@ -13,7 +13,6 @@ class PatientModel(Base):
     phone_number = Column(String(20), nullable=False, index=True)
     insurance_number = Column(String(20), unique=True, index=True, nullable=False)
     insurance_company_code = Column(String(10), nullable=False)
-    notes = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(

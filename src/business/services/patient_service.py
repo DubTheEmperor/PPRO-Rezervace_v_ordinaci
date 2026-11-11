@@ -66,7 +66,6 @@ class PatientService:
             phone_number=patient_data.phone_number.strip(),
             insurance_number=patient_data.insurance_number.strip(),
             insurance_company_code=patient_data.insurance_company_code.strip(),
-            notes=patient_data.notes.strip() if patient_data.notes else None,
             is_active=patient_data.is_active,
         )
         return self.repo.create(new_patient)
@@ -95,9 +94,6 @@ class PatientService:
 
         if patient_data.insurance_company_code is not None:
             patient.insurance_company_code = patient_data.insurance_company_code.strip()
-
-        if patient_data.notes is not None:
-            patient.notes = patient_data.notes.strip() if patient_data.notes.strip() else None
 
         if patient_data.is_active is not None:
             patient.is_active = patient_data.is_active

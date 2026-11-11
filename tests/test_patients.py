@@ -10,7 +10,6 @@ def test_create_patient_success(client, receptionist_token):
         "phone_number": "+420777123456",
         "insurance_number": "9005151234",
         "insurance_company_code": "111",
-        "notes": "Preferuje ranní termíny.",
     }
     response = client.post(
         "/api/v1/patients",
@@ -202,7 +201,6 @@ def test_update_patient(client, receptionist_token):
 
     update_payload = {
         "phone_number": "+420777000999",
-        "notes": "Změna telefonního čísla na vyžádání pacienta.",
     }
     update_res = client.put(
         f"/api/v1/patients/{patient_id}",
@@ -212,7 +210,7 @@ def test_update_patient(client, receptionist_token):
     assert update_res.status_code == 200
     updated_data = update_res.json()
     assert updated_data["phone_number"] == "+420777000999"
-    assert updated_data["notes"] == "Změna telefonního čísla na vyžádání pacienta."
+    assert "notes" not in updated_data
     assert updated_data["first_name"] == "Jiří"
 
 

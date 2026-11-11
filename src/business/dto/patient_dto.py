@@ -14,7 +14,6 @@ class PatientBase(BaseModel):
     phone_number: str = Field(..., min_length=9, max_length=20, description="Telefonní číslo")
     insurance_number: str = Field(..., min_length=9, max_length=20, description="Číslo pojištěnce / rodné číslo")
     insurance_company_code: str = Field(..., min_length=3, max_length=10, description="Kód zdravotní pojišťovny (např. 111)")
-    notes: Optional[str] = Field(None, max_length=1000, description="Interní poznámka k pacientovi")
     is_active: bool = Field(default=True, description="Aktivní záznam pacienta")
 
     @field_validator("phone_number")
@@ -55,7 +54,6 @@ class PatientUpdate(BaseModel):
     phone_number: Optional[str] = Field(None, min_length=9, max_length=20)
     insurance_number: Optional[str] = Field(None, min_length=9, max_length=20)
     insurance_company_code: Optional[str] = Field(None, min_length=3, max_length=10)
-    notes: Optional[str] = Field(None, max_length=1000)
     is_active: Optional[bool] = None
 
     @field_validator("phone_number")
