@@ -25,10 +25,16 @@ class CalendarBlock(BaseModel):
     end_time: time
 
 
+class FreeInterval(BaseModel):
+    start_at: datetime
+    end_at: datetime
+
+
 class CalendarDay(BaseModel):
     date: date
     weekday: int
     blocks: List[CalendarBlock]
+    free_intervals: List[FreeInterval] = Field(default_factory=list, description="Volné termíny dne (FP6)")
 
 
 class CalendarAppointment(BaseModel):
@@ -47,3 +53,24 @@ class WeekCalendarResponse(BaseModel):
     now: datetime = Field(..., description="Aktuální lokální čas ordinace (pro zešednutí minulosti)")
     days: List[CalendarDay]
     appointments: List[CalendarAppointment]
+
+
+class FreeSlotsDay(BaseModel):
+    date: date
+    intervals: List[FreeInterval]
+
+
+class FreeSlotsResponse(BaseModel):
+    """Volné termíny lékaře ve zvoleném týdnu (FP6) – souvislé volné úseky v 15min mřížce."""
+    doctor_id: int
+    week_start: date
+    slot_minutes: int
+    days: List[FreeSlotsDay]
+
+
+class NextFreeSlotResponse(BaseModel):
+    doctor_id: int
+    minutes: int
+    start_at: Optional[datetime] = Field(None, description="Začátek nejbližšího volného termínu, jinak null")
+    end_at: Optional[datetime] = None
+    horizon_days: int

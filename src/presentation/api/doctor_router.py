@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from src.business.domain import get_db, User, UserRole
 from src.business.dto import DoctorCreate, DoctorUpdate, OfficeHoursUpdate
-from src.presentation.schemas.doctor_schemas import DoctorResponse, WeekCalendarResponse
+from src.presentation.schemas.doctor_schemas import (
+    DoctorResponse,
+    FreeSlotsResponse,
+    NextFreeSlotResponse,
+    WeekCalendarResponse,
+)
 from src.business.services.doctor_service import DoctorService
 from src.presentation.dependencies import get_current_user, require_roles
 
@@ -97,3 +102,36 @@ def get_week_calendar(
     current_user: User = Depends(get_current_user),
 ):
     return DoctorService(db).get_week_calendar(doctor_id, week_start)
+
+
+@router.get(
+    "/{doctor_id}/free-slots",
+    response_model=FreeSlotsResponse,
+    summary="Volné termíny lékaře v týdnu",
+    description=(
+        "Souvislé volné úseky (15min mřížka) v ordinačních hodinách lékaře pro týden začínající "
+        "zadaným pondělím. Obsazené sloty a minulost se vynechávají."
+    ),
+)
+def get_free_slots(
+    doctor_id: int,
+    week_start: date = Query(..., description="Pondělí týdne (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return DoctorService(db).get_free_slots(doctor_id, week_start)
+
+
+@router.get(
+    "/{doctor_id}/next-free-slot",
+    response_model=NextFreeSlotResponse,
+    summary="Nejbližší volný termín lékaře",
+    description="První volný termín zadané délky od teď (hledá se nejvýše 90 dní dopředu).",
+)
+def get_next_free_slot(
+    doctor_id: int,
+    minutes: int = Query(15, description="Požadovaná délka termínu v minutách (násobek 15)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return DoctorService(db).find_next_free_slot(doctor_id, minutes)

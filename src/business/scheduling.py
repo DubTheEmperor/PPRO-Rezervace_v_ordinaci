@@ -4,8 +4,8 @@ Model času: pevná mřížka 15minutových slotů (otevřený bod 1). Rezervace
 1 až MAX_SLOTS_PER_APPOINTMENT po sobě jdoucích slotů a musí celá ležet v jednom
 bloku ordinačních hodin lékaře. Všechny časy jsou naivní lokální čas ordinace.
 """
-from datetime import datetime, time, timedelta
-from typing import Iterable, List, Sequence, Tuple
+from datetime import date, datetime, time, timedelta
+from typing import Iterable, List, Optional, Sequence, Set, Tuple
 from zoneinfo import ZoneInfo
 
 SLOT_MINUTES = 15
@@ -76,3 +76,44 @@ def validate_blocks(blocks: Sequence[Tuple[int, time, time]]) -> List[str]:
                 )
     return errors
 
+
+
+# --- Volné termíny (FP6) -------------------------------------------------------------------
+
+NEXT_FREE_HORIZON_DAYS = 90
+Interval = Tuple[datetime, datetime]
+
+
+def free_intervals(
+    day: date, blocks_for_weekday: Iterable[TimeBlock], taken: Set[datetime], now: datetime
+) -> List[Interval]:
+    """Volné intervaly lékaře v daném dni.
+
+    Slot je volný, když leží v bloku ordinačních hodin, není obsazený (`taken` = začátky
+    obsazených slotů) a nezačíná v minulosti. Souvislé volné sloty se slučují jen v rámci
+    jednoho bloku – přes polední pauzu se interval nespojí.
+    """
+    result: List[Interval] = []
+    for block_start, block_end in sorted(blocks_for_weekday):
+        current: Optional[List[datetime]] = None
+        for slot in slot_starts(datetime.combine(day, block_start), datetime.combine(day, block_end)):
+            if slot >= now and slot not in taken:
+                if current is None:
+                    current = [slot, slot + SLOT_DELTA]
+                else:
+                    current[1] = slot + SLOT_DELTA
+            elif current is not None:
+                result.append((current[0], current[1]))
+                current = None
+        if current is not None:
+            result.append((current[0], current[1]))
+    return result
+
+
+def first_free_start(intervals: Iterable[Interval], minutes: int) -> Optional[Interval]:
+    """První termín délky `minutes`, který se celý vejde do některého volného intervalu."""
+    needed = timedelta(minutes=minutes)
+    for start, end in intervals:
+        if end - start >= needed:
+            return start, start + needed
+    return None

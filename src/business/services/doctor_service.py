@@ -120,13 +120,74 @@ class DoctorService:
 
         return self.repo.replace_office_hours(doctor, sorted(blocks))
 
+    # --- Volné termíny (FP6) ----------------------------------------------------------------
+
+    def _free_intervals_by_day(
+        self, doctor: DoctorModel, first_day: date, day_count: int, now: datetime
+    ) -> Dict[date, List[scheduling.Interval]]:
+        """Volné intervaly pro souvislý úsek dní (obsazené sloty se načtou jedním dotazem)."""
+        days = [first_day + timedelta(days=i) for i in range(day_count)]
+        if not doctor.is_active:
+            return {day: [] for day in days}
+        by_day = blocks_by_weekday(doctor)
+        range_from = datetime.combine(first_day, time(0, 0))
+        taken = self.appointment_repo.list_taken_slot_starts(
+            doctor.id, range_from, range_from + timedelta(days=day_count)
+        )
+        return {day: scheduling.free_intervals(day, by_day[day.weekday()], taken, now) for day in days}
+
+    @staticmethod
+    def _ensure_monday(week_start: date) -> None:
+        if week_start.weekday() != 0:
+            raise BusinessRuleError("Parametr week_start musí být pondělí.")
+
+    def get_free_slots(self, doctor_id: int, week_start: date) -> dict:
+        """Volné termíny lékaře ve zvoleném kalendářním týdnu."""
+        self._ensure_monday(week_start)
+        doctor = self.get_doctor(doctor_id)
+        free = self._free_intervals_by_day(doctor, week_start, 7, scheduling.local_now())
+        return {
+            "doctor_id": doctor.id,
+            "week_start": week_start,
+            "slot_minutes": scheduling.SLOT_MINUTES,
+            "days": [
+                {"date": day, "intervals": [{"start_at": s, "end_at": e} for s, e in intervals]}
+                for day, intervals in free.items()
+            ],
+        }
+
+    def find_next_free_slot(self, doctor_id: int, minutes: int = scheduling.SLOT_MINUTES) -> dict:
+        """Nejbližší volný termín dané délky od teď v horizontu NEXT_FREE_HORIZON_DAYS dní."""
+        max_minutes = scheduling.MAX_SLOTS_PER_APPOINTMENT * scheduling.SLOT_MINUTES
+        if minutes % scheduling.SLOT_MINUTES != 0 or not scheduling.SLOT_MINUTES <= minutes <= max_minutes:
+            raise BusinessRuleError(
+                f"Délka termínu musí být násobek {scheduling.SLOT_MINUTES} minut "
+                f"v rozsahu {scheduling.SLOT_MINUTES}–{max_minutes} minut."
+            )
+        doctor = self.get_doctor(doctor_id)
+        now = scheduling.local_now()
+        free = self._free_intervals_by_day(doctor, now.date(), scheduling.NEXT_FREE_HORIZON_DAYS, now)
+        found = None
+        for intervals in free.values():
+            found = scheduling.first_free_start(intervals, minutes)
+            if found:
+                break
+        return {
+            "doctor_id": doctor.id,
+            "minutes": minutes,
+            "start_at": found[0] if found else None,
+            "end_at": found[1] if found else None,
+            "horizon_days": scheduling.NEXT_FREE_HORIZON_DAYS,
+        }
+
     # --- Týdenní kalendář -----------------------------------------------------------------
 
     def get_week_calendar(self, doctor_id: int, week_start: date) -> dict:
-        if week_start.weekday() != 0:
-            raise BusinessRuleError("Parametr week_start musí být pondělí.")
+        self._ensure_monday(week_start)
         doctor = self.get_doctor(doctor_id)
         by_day = blocks_by_weekday(doctor)
+        now = scheduling.local_now()
+        free = self._free_intervals_by_day(doctor, week_start, 7, now)
 
         days = []
         for offset in range(7):
@@ -135,6 +196,7 @@ class DoctorService:
                 "date": day,
                 "weekday": offset,
                 "blocks": [{"start_time": s, "end_time": e} for s, e in sorted(by_day[offset])],
+                "free_intervals": [{"start_at": s, "end_at": e} for s, e in free[day]],
             })
 
         range_from = datetime.combine(week_start, time(0, 0))
@@ -144,7 +206,7 @@ class DoctorService:
         return {
             "doctor": doctor,
             "week_start": week_start,
-            "now": scheduling.local_now(),
+            "now": now,
             "days": days,
             "appointments": [
                 {

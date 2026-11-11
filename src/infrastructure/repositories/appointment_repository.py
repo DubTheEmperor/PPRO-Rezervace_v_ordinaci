@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Iterable, Sequence, Tuple
+from typing import Optional, List, Dict, Iterable, Sequence, Set, Tuple
 from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Session, contains_eager, joinedload
 from src.infrastructure.models.appointment_model import (
@@ -90,6 +90,21 @@ class AppointmentRepository:
             .all()
         )
         return [tuple(r) for r in rows]
+
+    def list_taken_slot_starts(
+        self, doctor_id: int, date_from: datetime, date_to: datetime
+    ) -> Set[datetime]:
+        """Začátky obsazených slotů lékaře v intervalu [date_from, date_to) – zdroj pravdy pro volno."""
+        rows = (
+            self.db.query(AppointmentSlotModel.slot_start)
+            .filter(
+                AppointmentSlotModel.doctor_id == doctor_id,
+                AppointmentSlotModel.slot_start >= date_from,
+                AppointmentSlotModel.slot_start < date_to,
+            )
+            .all()
+        )
+        return {row[0] for row in rows}
 
     def find_taken_slots(
         self, doctor_id: int, slot_starts: Iterable[datetime]
