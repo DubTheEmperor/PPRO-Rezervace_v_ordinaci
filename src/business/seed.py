@@ -20,7 +20,7 @@ from src.infrastructure.repositories.appointment_repository import AppointmentRe
 from src.infrastructure.repositories.procedure_repository import ProcedureRepository
 from src.infrastructure.repositories.visit_repository import VisitRepository
 from src.business.security import hash_password
-from src.business.scheduling import local_now, slot_starts
+from src.business.scheduling import LOCAL_TZ, local_now, slot_starts
 
 logger = logging.getLogger("seed")
 
@@ -321,3 +321,55 @@ def seed_demo_visits(db: Session) -> None:
     ])
     visit_repo.save(visit)
     logger.info("Seed: vytvořeny demo návštěvy z minulého týdne")
+
+
+def seed_demo_cancellations(db: Session) -> None:
+    """Historická zrušení a nedostavení (FP5), aby demo ukázalo všechny barvy spolehlivosti.
+
+    Krátká: 3× zrušeno (1× pozdě) + 2× nedostavila se → červená; Dvořák: 1 + 1 → žlutá;
+    ostatní pacienti zůstávají zelení. Zrušené termíny neobsazují sloty.
+    """
+    if db.query(AppointmentModel).filter(
+        AppointmentModel.status.in_((AppointmentStatus.CANCELLED_BY_PATIENT, AppointmentStatus.NO_SHOW))
+    ).first() is not None:
+        return
+
+    user_repo = UserRepository(db)
+    hruba_user = user_repo.get_by_username("hruba")
+    receptionist = user_repo.get_by_username("vera")
+    doctor = DoctorRepository(db).get_by_user_id(hruba_user.id) if hruba_user else None
+    patient_repo = PatientRepository(db)
+    if doctor is None:
+        return
+
+    today = local_now().date()
+    this_monday = today - timedelta(days=today.weekday())
+    demo = [
+        # (RČ pacienta, před kolika týdny, stav, kolik hodin předem zrušeno)
+        ("7854121234", 3, AppointmentStatus.CANCELLED_BY_PATIENT, 2),
+        ("7854121234", 7, AppointmentStatus.NO_SHOW, None),
+        ("7854121234", 12, AppointmentStatus.CANCELLED_BY_PATIENT, 72),
+        ("7854121234", 20, AppointmentStatus.NO_SHOW, None),
+        ("7854121234", 30, AppointmentStatus.CANCELLED_BY_PATIENT, 48),
+        ("8501015678", 5, AppointmentStatus.CANCELLED_BY_PATIENT, 96),
+        ("8501015678", 16, AppointmentStatus.NO_SHOW, None),
+    ]
+    for insurance_number, weeks_ago, status, hours_before in demo:
+        patient = patient_repo.get_by_insurance_number(insurance_number)
+        if patient is None:
+            continue
+        start_at = datetime.combine(this_monday - timedelta(weeks=weeks_ago), _t("10:30"))
+        if hours_before is not None:
+            event_local = start_at - timedelta(hours=hours_before)
+        else:
+            event_local = start_at + timedelta(hours=1)
+        db.add(AppointmentModel(
+            doctor_id=doctor.id, patient_id=patient.id,
+            start_at=start_at, end_at=start_at + timedelta(minutes=15),
+            reason="Kontrolní vyšetření.", status=status,
+            created_by_user_id=receptionist.id if receptionist else None,
+            cancelled_by_user_id=receptionist.id if receptionist else None,
+            cancelled_at=event_local.replace(tzinfo=LOCAL_TZ).astimezone(timezone.utc),
+        ))
+    db.commit()
+    logger.info("Seed: vytvořena demo zrušení a nedostavení")

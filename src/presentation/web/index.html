@@ -1802,6 +1802,94 @@
         margin-bottom: 0.5rem;
       }
     }
+
+    /* ===== Spolehlivost pacienta (FP5) – nenápadná tečka s tooltipem ===== */
+    .rel-dot {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      vertical-align: middle;
+      margin-right: 0.4rem;
+      cursor: help;
+      font-size: 0.55rem;
+      font-weight: 800;
+      color: white;
+      line-height: 1;
+    }
+    .rel-GREEN { background: var(--success); }
+    .rel-YELLOW { background: var(--warning); }
+    .rel-RED { background: var(--danger); width: 14px; height: 14px; }
+    .rel-RED::after { content: '!'; }
+
+    #tipBox {
+      position: fixed;
+      z-index: 3000;
+      max-width: 280px;
+      padding: 0.45rem 0.65rem;
+      border-radius: 6px;
+      background: #1e293b;
+      color: white;
+      font-size: 0.8rem;
+      line-height: 1.35;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.12s;
+    }
+    #tipBox.show { opacity: 1; }
+
+    /* Akce u rezervace v seznamu pacienta */
+    .patient-appt-actions {
+      margin-left: auto;
+      align-self: center;
+      flex-shrink: 0;
+    }
+
+    /* Dialog zrušení rezervace */
+    .cancel-choice {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    .cancel-choice label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      padding: 0.75rem 0.85rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .cancel-choice label small {
+      font-weight: 400;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+    .cancel-choice input { display: none; }
+    .cancel-choice label:has(input:checked) {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+    .cancel-info {
+      margin-top: 0.75rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: var(--radius);
+      background: #f1f5f9;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .detail-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
   </style>
 </head>
 
@@ -2366,6 +2454,41 @@
     </div>
   </div>
 
+  <!-- MODAL: ZRUŠENÍ REZERVACE (FP5) -->
+  <div id="cancelModal" class="modal-overlay">
+    <div class="modal" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3>Zrušit rezervaci</h3>
+        <button class="close-btn" onclick="closeModal('cancelModal')">&times;</button>
+      </div>
+      <form onsubmit="confirmCancel(event)">
+        <div class="modal-body">
+          <div class="booking-summary" style="margin-bottom: 1rem;">
+            <div class="booking-summary-icon">🗓️</div>
+            <div>
+              <div class="booking-summary-main" id="cancelSummaryMain">—</div>
+              <div class="booking-summary-sub" id="cancelSummarySub">—</div>
+            </div>
+          </div>
+          <div class="cancel-choice">
+            <label><input type="radio" name="cancelBy" value="PATIENT" checked>Ruší pacient<small>např. zavolal, že nepřijde</small></label>
+            <label><input type="radio" name="cancelBy" value="OFFICE">Ruší ordinace<small>např. nemoc lékaře</small></label>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="cancelNote">Poznámka (nepovinné)</label>
+            <input type="text" id="cancelNote" class="form-control" maxlength="300" placeholder="např. nemoc, přeobjedná se">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('cancelModal')">Zpět</button>
+          <button type="submit" class="btn btn-danger" id="btnConfirmCancel">Zrušit termín</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="tipBox" role="tooltip"></div>
+
   <!-- MODAL: PATIENT CARD (historie návštěv, jen ke čtení) -->
   <div id="patientCardModal" class="modal-overlay">
     <div class="modal" style="max-width: 720px;">
@@ -2776,6 +2899,7 @@
           <tr>
             <td style="white-space: nowrap; text-align: center;"><strong style="color: var(--text-muted);">#${p.id}</strong></td>
             <td style="white-space: nowrap;">
+              ${reliabilityDot(p.reliability)}
               <button type="button" class="link-btn" onclick="openPatientCard(${p.id})" title="Otevřít kartu pacienta">
                 <strong style="font-size: 0.95rem;">${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
               </button>
@@ -3046,6 +3170,109 @@
 
     function closeModal(id) {
       document.getElementById(id).classList.remove('open');
+    }
+
+    /* ===== SPOLEHLIVOST PACIENTA (FP5) ===== */
+    function reliabilityText(r) {
+      const period = `Za posledních ${r.window_months} měsíců`;
+      if (!r.score) return `${period} bez zrušení i nedostavení.`;
+      const parts = [];
+      if (r.cancelled) parts.push(`zrušeno ${r.cancelled}×`);
+      if (r.no_show) parts.push(`nedostavil(a) se ${r.no_show}×`);
+      let text = `${period}: ${parts.join(', ')}`;
+      if (r.late) text += ` (z toho ${r.late}× zrušeno méně než 24 h předem)`;
+      return text + '.';
+    }
+
+    function reliabilityDot(r) {
+      if (!r) return '';
+      const text = escapeHtml(reliabilityText(r));
+      return `<span class="rel-dot rel-${r.level}" tabindex="0" data-tip="${text}" aria-label="${text}"></span>`;
+    }
+
+    // Lehký tooltip pro prvky s data-tip (myš i dotyk/fokus na tabletu)
+    function showTip(el) {
+      const box = document.getElementById('tipBox');
+      box.textContent = el.dataset.tip;
+      const r = el.getBoundingClientRect();
+      box.classList.add('show');
+      const w = box.offsetWidth, h = box.offsetHeight;
+      let left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), window.innerWidth - w - 8);
+      let top = r.bottom + 8;
+      if (top + h > window.innerHeight - 8) top = r.top - h - 8;
+      box.style.left = `${left}px`;
+      box.style.top = `${top}px`;
+    }
+    function hideTip() { document.getElementById('tipBox').classList.remove('show'); }
+    document.addEventListener('mouseover', (e) => { const el = e.target.closest('[data-tip]'); if (el) showTip(el); });
+    document.addEventListener('mouseout', (e) => { if (e.target.closest('[data-tip]')) hideTip(); });
+    document.addEventListener('focusin', (e) => { const el = e.target.closest('[data-tip]'); if (el) showTip(el); });
+    document.addEventListener('focusout', hideTip);
+    document.addEventListener('scroll', hideTip, true);
+
+    const canCancelAppointments = () => !!currentUser && ['RECEPTIONIST', 'ADMIN'].includes(currentUser.role);
+    const canMarkNoShow = (doctorId) => !!currentUser && (currentUser.role === 'RECEPTIONIST' || canRecordFor(doctorId));
+
+    /* ===== ZRUŠENÍ REZERVACE A NEDOSTAVENÍ (FP5) ===== */
+    let cancelTarget = null;
+
+    // appt: { id, start_at, end_at, patientId, patientName, doctorName }
+    function openCancelDialog(appt) {
+      cancelTarget = appt;
+      const s = parseLocal(appt.start_at), e = parseLocal(appt.end_at);
+      document.getElementById('cancelSummaryMain').textContent =
+        `${DAY_LONG[weekdayIdx(s)]} ${fmtDate(s)}, ${fmtTime(s)}–${fmtTime(e)}`;
+      document.getElementById('cancelSummarySub').textContent = `${appt.patientName} · ${appt.doctorName}`;
+      document.querySelector('input[name="cancelBy"][value="PATIENT"]').checked = true;
+      document.getElementById('cancelNote').value = '';
+      document.getElementById('cancelModal').classList.add('open');
+      setTimeout(() => document.getElementById('btnConfirmCancel').focus(), 50);
+    }
+
+    async function confirmCancel(event) {
+      event.preventDefault();
+      if (!cancelTarget) return;
+      const btn = document.getElementById('btnConfirmCancel');
+      btn.disabled = true;
+      try {
+        await apiFetch(`/api/v1/appointments/${cancelTarget.id}/cancel`, {
+          method: 'POST',
+          body: {
+            cancelled_by: document.querySelector('input[name="cancelBy"]:checked').value,
+            note: document.getElementById('cancelNote').value.trim() || null,
+          },
+        });
+        closeModal('cancelModal');
+        closeModal('appointmentDetailModal');
+        showToast('Rezervace byla zrušena, termín je opět volný.');
+        afterAppointmentChange(cancelTarget.patientId);
+      } catch (err) {
+        showToast(err.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function markNoShow(appointmentId, patientId) {
+      if (!confirm('Označit termín jako „Nedostavil se“? Změnu nelze vrátit.')) return;
+      try {
+        await apiFetch(`/api/v1/appointments/${appointmentId}/no-show`, { method: 'POST' });
+        closeModal('appointmentDetailModal');
+        showToast('Termín označen jako „Nedostavil se“.');
+        afterAppointmentChange(patientId);
+        if (activeDashboardTab === 'clinic') { await loadQueue(); updateVisitsBadge(); }
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    // Obnoví pohledy, kterých se změna stavu rezervace týká
+    function afterAppointmentChange(patientId) {
+      if (activeDashboardTab === 'reservations') loadCalendar();
+      if (activeDashboardTab === 'patients') loadPatients();
+      if (patientId && document.getElementById('patientAppointmentsModal').classList.contains('open')) {
+        showPatientAppointments(patientId);
+      }
     }
 
     const pad = n => String(n).padStart(2, '0');
@@ -3605,7 +3832,7 @@
         box.innerHTML = bookingResults.length
           ? bookingResults.map(p => `
               <button type="button" class="patient-result" onclick="selectBookingPatient(${p.id})">
-                <strong>${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
+                <strong>${reliabilityDot(p.reliability)}${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
                 <span>nar. ${p.birth_year} · ${escapeHtml(formatPhoneNumber(p.phone_number))}</span>
               </button>`).join('')
           : '<div class="search-hint">Hledání neodpovídá žádný aktivní pacient. Nového pacienta založíte v záložce Evidence pacientů.</div>';
@@ -3623,7 +3850,7 @@
       box.innerHTML = `
         <div class="selected-patient">
           <div>
-            <strong>${escapeHtml(bookingPatient.last_name)} ${escapeHtml(bookingPatient.first_name)}</strong>
+            <strong>${reliabilityDot(bookingPatient.reliability)}${escapeHtml(bookingPatient.last_name)} ${escapeHtml(bookingPatient.first_name)}</strong>
             <small>nar. ${bookingPatient.birth_year} · ${escapeHtml(formatPhoneNumber(bookingPatient.phone_number))} · ${escapeHtml(INS_NAMES[bookingPatient.insurance_company_code] || bookingPatient.insurance_company_code)}</small>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="clearBookingPatient()">Změnit</button>
@@ -3684,6 +3911,34 @@
     }
 
     // --- Detail rezervace ---
+    let appointmentDetailCurrent = null;
+
+    function appointmentDetailActions(a, s) {
+      const now = new Date();
+      const buttons = [];
+      const planned = a.status === 'PLANNED';
+      if (planned && s > now && canCancelAppointments()) {
+        buttons.push(`<button class="btn btn-danger" onclick="cancelFromDetail()">Zrušit rezervaci</button>`);
+      }
+      if (planned && s <= now && !a.has_visit && canMarkNoShow(a.doctor.id)) {
+        buttons.push(`<button class="btn btn-secondary" onclick="markNoShow(${a.id}, ${a.patient.id})">Nedostavil se</button>`);
+      }
+      if (s <= now && canRecordFor(a.doctor.id) && (planned || a.has_visit)) {
+        buttons.push(`<button class="btn btn-primary" onclick="goToClinic(${a.doctor.id}, '${isoDate(s)}', ${a.id})">
+          ${a.has_visit ? '🏥 Otevřít v Návštěvách' : '✎ Zapsat návštěvu'}</button>`);
+      }
+      return buttons.length ? `<div class="detail-actions">${buttons.join('')}</div>` : '';
+    }
+
+    function cancelFromDetail() {
+      const a = appointmentDetailCurrent;
+      if (!a) return;
+      openCancelDialog({
+        id: a.id, start_at: a.start_at, end_at: a.end_at, patientId: a.patient.id,
+        patientName: `${a.patient.last_name} ${a.patient.first_name}`, doctorName: a.doctor.full_name,
+      });
+    }
+
     async function openAppointmentDetail(appointmentId) {
       const body = document.getElementById('appointmentDetailBody');
       body.innerHTML = '<div class="search-hint">Načítání rezervace…</div>';
@@ -3705,7 +3960,7 @@
           </div>
           <dl class="detail-list">
             <dt>Pacient</dt>
-            <dd><strong>${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
+            <dd>${reliabilityDot(p.reliability)}<strong>${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</strong>
               <span style="color: var(--text-muted);">(nar. ${p.birth_year})</span></dd>
             <dt>Telefon</dt>
             <dd><a href="tel:${escapeHtml(p.phone_number)}" class="phone-link"><span>📞</span> ${escapeHtml(formatPhoneNumber(p.phone_number))}</a></dd>
@@ -3721,18 +3976,32 @@
             <dt>Založeno</dt>
             <dd style="color: var(--text-muted); font-size: 0.85rem;">${escapeHtml(a.created_by_name || '—')}, ${created}</dd>
           </dl>
-          ${s <= new Date() && canRecordFor(a.doctor.id) ? `
-            <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
-              <button class="btn btn-primary" onclick="goToClinic(${a.doctor.id}, '${isoDate(s)}', ${a.id})">
-                ${a.status === 'PLANNED' ? '✎ Zapsat návštěvu' : '🏥 Otevřít v Návštěvách'}
-              </button>
-            </div>` : ''}`;
+          ${a.cancelled_at ? `
+            <div class="cancel-info">
+              ${escapeHtml(STATUS_LABELS[a.status] || a.status)} · ${escapeHtml(a.cancelled_by_name || '—')},
+              ${new Date(a.cancelled_at).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              ${a.cancellation_note ? `<br>${escapeHtml(a.cancellation_note)}` : ''}
+            </div>` : ''}
+          ${appointmentDetailActions(a, s)}`;
+        appointmentDetailCurrent = a;
       } catch (err) {
         body.innerHTML = `<div class="search-hint" style="color: var(--danger);">${escapeHtml(err.message)}</div>`;
       }
     }
 
     /* ===== REZERVACE V EVIDENCI PACIENTŮ ===== */
+    let patientAppointmentsCache = [];
+    let patientAppointmentsName = '';
+
+    function cancelFromPatientList(appointmentId, patientId) {
+      const a = patientAppointmentsCache.find(x => x.id === appointmentId);
+      if (!a) return;
+      openCancelDialog({
+        id: a.id, start_at: a.start_at, end_at: a.end_at,
+        patientId, patientName: patientAppointmentsName, doctorName: a.doctor.full_name,
+      });
+    }
+
     async function showPatientAppointments(patientId) {
       const p = patientsList.find(x => x.id === patientId);
       document.getElementById('patientAppointmentsTitle').textContent =
@@ -3746,8 +4015,11 @@
           body.innerHTML = '<div class="search-hint">Pacient nemá žádné nadcházející rezervace.</div>';
           return;
         }
+        patientAppointmentsName = p ? `${p.last_name} ${p.first_name}` : '';
+        patientAppointmentsCache = data.items;
         body.innerHTML = data.items.map(a => {
           const s = parseLocal(a.start_at), e = parseLocal(a.end_at);
+          const cancellable = canCancelAppointments() && a.status === 'PLANNED' && s > new Date();
           return `
             <div class="patient-appt-item">
               <div class="patient-appt-date">
@@ -3760,6 +4032,11 @@
                 <span class="muted"><span class="doctor-dot" style="background: ${escapeHtml(a.doctor.color)}; width: 9px; height: 9px;"></span>${escapeHtml(a.doctor.full_name)}</span>
                 <span>${escapeHtml(a.reason)}</span>
               </div>
+              ${cancellable ? `
+                <div class="patient-appt-actions">
+                  <button type="button" class="btn btn-danger btn-sm"
+                    onclick="cancelFromPatientList(${a.id}, ${patientId})">Zrušit</button>
+                </div>` : ''}
             </div>`;
         }).join('');
       } catch (err) {
@@ -4052,6 +4329,7 @@
       } else if (item.state === 'TO_RECORD') {
         body = clinicAgenda.can_record
           ? `<div class="panel-message"><span class="big">📝</span>Záznam o této návštěvě zatím neexistuje.<br><br>
+               <button class="btn btn-secondary" onclick="markNoShow(${item.appointment_id}, ${p.id})">Nedostavil se</button>
                <button class="btn btn-primary" onclick="startVisit()">Zapsat výkony</button></div>`
           : `<div class="panel-message"><span class="big">📝</span>Návštěva čeká na zápis výkonů lékařem.</div>`;
       } else if (editable) {
@@ -4286,6 +4564,15 @@
     }
 
     /* ===== KARTA PACIENTA (historie, jen ke čtení) ===== */
+    function cancelTip(h) {
+      if (!h.cancelled_at) return '';
+      const when = new Date(h.cancelled_at).toLocaleString('cs-CZ', {
+        day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+      const text = `Zaznamenáno ${when}${h.cancellation_note ? ` · ${h.cancellation_note}` : ''}`;
+      return `tabindex="0" style="cursor: help;" data-tip="${escapeHtml(text)}"`;
+    }
+
     async function openPatientCard(patientId) {
       const body = document.getElementById('patientCardBody');
       body.innerHTML = '<div class="search-hint">Načítání karty pacienta…</div>';
@@ -4319,7 +4606,7 @@
               <div class="history-body">
                 <div class="history-top">
                   <strong>${fmtDate(s)}, ${fmtTime(s)}–${fmtTime(e)}</strong>
-                  <span class="state-pill state-${state}">${label}</span>
+                  <span class="state-pill state-${state}" ${cancelTip(h)}>${label}</span>
                 </div>
                 <div class="patient-appt-info" style="margin-top: 0.15rem;">
                   <span class="muted"><span class="doctor-dot" style="background: ${escapeHtml(h.doctor.color)}; width: 9px; height: 9px;"></span>${escapeHtml(h.doctor.full_name)}</span>
@@ -4345,6 +4632,7 @@
           <div class="panel-head" style="margin-bottom: 0.25rem;">
             <div>
               <div class="panel-meta" style="margin-top: 0;">
+                ${reliabilityDot(p.reliability)}
                 <span>nar. ${p.birth_year}</span>
                 <code>${escapeHtml(p.insurance_number)}</code>
                 <span class="ins-badge">${escapeHtml(INS_NAMES[p.insurance_company_code] || p.insurance_company_code)}</span>

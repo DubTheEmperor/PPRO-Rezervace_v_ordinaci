@@ -194,3 +194,20 @@ def test_reliability_in_patient_list_and_appointment_detail(
     assert item["reliability"]["level"] == "YELLOW"
     detail = client.get(f"/api/v1/appointments/{future_appt['id']}", headers=auth(receptionist_token)).json()
     assert detail["patient"]["reliability"]["no_show"] == 2
+
+
+def test_demo_seed_shows_all_reliability_levels(db_session):
+    from src.business.seed import seed_initial_patients, seed_demo_cancellations
+    from src.business.services.patient_service import PatientService
+    from src.infrastructure.repositories.patient_repository import PatientRepository
+
+    seed_initial_patients(db_session)
+    seed_demo_cancellations(db_session)
+    seed_demo_cancellations(db_session)  # idempotentní
+    repo = PatientRepository(db_session)
+    ids = {rc: repo.get_by_insurance_number(rc).id for rc in ("7854121234", "8501015678", "6258092345")}
+    result = PatientService(db_session).get_reliability(list(ids.values()))
+    assert result[ids["7854121234"]].level == "RED"
+    assert result[ids["7854121234"]].late == 1
+    assert result[ids["8501015678"]].level == "YELLOW"
+    assert result[ids["6258092345"]].level == "GREEN"

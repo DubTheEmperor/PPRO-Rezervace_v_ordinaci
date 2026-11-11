@@ -12,6 +12,7 @@ from src.business.seed import (
     seed_demo_appointments,
     seed_procedures,
     seed_demo_visits,
+    seed_demo_cancellations,
 )
 from src.presentation.error_handlers import register_error_handlers
 from src.presentation.api.auth_router import router as auth_router
@@ -35,6 +36,7 @@ async def lifespan(app: FastAPI):
         seed_demo_appointments(db)
         seed_procedures(db)
         seed_demo_visits(db)
+        seed_demo_cancellations(db)
     finally:
         db.close()
     yield
