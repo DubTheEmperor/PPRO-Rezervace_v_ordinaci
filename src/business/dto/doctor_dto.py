@@ -4,6 +4,8 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
 COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
+ICP_PATTERN = r"^\d{8}$"
+SPECIALTY_CODE_PATTERN = r"^\d{3}$"
 
 
 class OfficeHoursBlock(BaseModel):
@@ -23,6 +25,8 @@ class DoctorCreate(BaseModel):
     specialization: Optional[str] = Field(None, max_length=100)
     color: str = Field("#0284c7", pattern=COLOR_PATTERN, description="Barva lékaře v kalendáři")
     user_id: Optional[int] = Field(None, description="Propojený uživatelský účet s rolí DOCTOR")
+    icp: Optional[str] = Field(None, pattern=ICP_PATTERN, description="IČP – identifikační číslo pracoviště (8 číslic)")
+    specialty_code: Optional[str] = Field(None, pattern=SPECIALTY_CODE_PATTERN, description="Kód odbornosti (3 číslice)")
     is_active: bool = True
 
 
@@ -31,4 +35,6 @@ class DoctorUpdate(BaseModel):
     specialization: Optional[str] = Field(None, max_length=100)
     color: Optional[str] = Field(None, pattern=COLOR_PATTERN)
     user_id: Optional[int] = None
+    icp: Optional[str] = Field(None, pattern=ICP_PATTERN)
+    specialty_code: Optional[str] = Field(None, pattern=SPECIALTY_CODE_PATTERN)
     is_active: Optional[bool] = None

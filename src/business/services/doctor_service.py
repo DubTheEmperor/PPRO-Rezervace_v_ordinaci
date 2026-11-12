@@ -60,6 +60,8 @@ class DoctorService:
             specialization=data.specialization.strip() if data.specialization else None,
             color=data.color,
             user_id=data.user_id,
+            icp=data.icp,
+            specialty_code=data.specialty_code,
             is_active=data.is_active,
         )
         return self.repo.create(doctor)
@@ -77,6 +79,10 @@ class DoctorService:
             doctor.specialization = data.specialization.strip() if data.specialization else None
         if data.color is not None:
             doctor.color = data.color
+        if "icp" in fields:
+            doctor.icp = data.icp
+        if "specialty_code" in fields:
+            doctor.specialty_code = data.specialty_code
         if data.is_active is not None:
             doctor.is_active = data.is_active
         return self.repo.update(doctor)

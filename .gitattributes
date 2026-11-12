@@ -1,3 +1,4 @@
 # Nastavení konců řádků
 * text=auto
 *.sh text eol=lf
+*.ttf binary

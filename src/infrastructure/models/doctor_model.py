@@ -15,6 +15,9 @@ class DoctorModel(Base):
     full_name = Column(String(100), nullable=False)
     specialization = Column(String(100), nullable=True)
     color = Column(String(7), nullable=False, default="#0284c7")
+    # Identifikátory pro vykazování pojišťovnám (FP7) – IČP pracoviště a kód odbornosti
+    icp = Column(String(8), nullable=True)
+    specialty_code = Column(String(3), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(

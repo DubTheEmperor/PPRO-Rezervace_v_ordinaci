@@ -4,7 +4,8 @@ Seed patří do byznys vrstvy: používá byznys pravidla (hashování hesel,
 rozpad termínu na sloty) a přes repozitáře zapisuje do datové vrstvy.
 """
 import logging
-from datetime import datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from src.config import settings
 from src.infrastructure.models.user_model import UserModel, UserRole
@@ -149,6 +150,8 @@ DEFAULT_DOCTORS = [
         "full_name": "MUDr. Jana Hrubá",
         "specialization": "Praktický lékař pro dospělé",
         "color": "#0284c7",
+        "icp": "52999101",
+        "specialty_code": "001",
         "hours": [(0, "08:00", "12:00"), (0, "13:00", "16:00"), (2, "08:00", "12:00"), (3, "12:00", "18:00")],
     },
     {
@@ -157,6 +160,8 @@ DEFAULT_DOCTORS = [
         "specialization": "Interna",
         # Úterní odpoledne ordinuje na jiné adrese – proto v úterý jen dopoledne
         "color": "#059669",
+        "icp": "52999102",
+        "specialty_code": "101",
         "hours": [(1, "07:30", "12:00"), (3, "07:30", "12:00"), (4, "08:00", "12:00")],
     },
     {
@@ -164,6 +169,8 @@ DEFAULT_DOCTORS = [
         "full_name": "MUDr. Lucie Veselá",
         "specialization": "Praktický lékař, preventivní péče",
         "color": "#9333ea",
+        "icp": "52999103",
+        "specialty_code": "001",
         "hours": [(0, "13:00", "18:00"), (2, "13:00", "18:00"), (4, "08:00", "11:00")],
     },
 ]
@@ -176,13 +183,23 @@ def seed_doctors(db: Session) -> None:
 
     for d in DEFAULT_DOCTORS:
         user = user_repo.get_by_username(d["username"])
-        if user is None or doctor_repo.get_by_user_id(user.id):
+        if user is None:
+            continue
+        existing = doctor_repo.get_by_user_id(user.id)
+        if existing:
+            # Doplnění identifikátorů pro výkazy (FP7) u lékařů založených dřívějším seedem
+            if existing.icp is None and existing.specialty_code is None:
+                existing.icp = d["icp"]
+                existing.specialty_code = d["specialty_code"]
+                doctor_repo.update(existing)
             continue
         doctor = doctor_repo.create(DoctorModel(
             user_id=user.id,
             full_name=d["full_name"],
             specialization=d["specialization"],
             color=d["color"],
+            icp=d["icp"],
+            specialty_code=d["specialty_code"],
             is_active=True,
         ))
         doctor_repo.replace_office_hours(
@@ -368,3 +385,90 @@ def seed_demo_cancellations(db: Session) -> None:
         ))
     db.commit()
     logger.info("Seed: vytvořena demo zrušení a nedostavení")
+
+
+# Demo podklady pro měsíční výkaz (FP7) – minulý kalendářní měsíc.
+# (lékař, den v týdnu, kolikátý v měsíci, začátek, konec, RČ pacienta, výkony [(kód, počet)])
+# Prázdný seznam výkonů = proběhlý termín bez záznamu (výkaz na něj upozorní).
+DEMO_REPORT_VISITS = [
+    ("hruba", 2, 0, "08:00", "08:30", "7854121234", [("01021", 1), ("02230", 1), ("09543", 1)]),
+    ("hruba", 2, 0, "09:00", "09:15", "8501015678", [("01023", 1), ("09215", 3)]),
+    ("hruba", 2, 1, "08:30", "09:00", "6258092345", [("01025", 1), ("09127", 1)]),
+    ("hruba", 2, 1, "10:00", "10:15", "9411203456", [("01023", 1), ("09511", 2)]),
+    ("hruba", 2, 2, "08:00", "08:15", "7854121234", [("01030", 1)]),
+    ("hruba", 2, 2, "11:00", "11:15", "8501015678", []),
+    ("maly", 1, 0, "08:00", "08:45", "6258092345", [("01021", 1), ("09543", 1), ("09127", 1)]),
+    ("maly", 1, 1, "09:00", "09:15", "9411203456", [("01025", 1), ("02230", 1)]),
+]
+# Důvod návštěvy demo podkladů – zároveň značka, že seed už proběhl (jen jednou na databázi)
+DEMO_REPORT_REASON = "Pravidelná kontrola zdravotního stavu."
+
+
+def _nth_weekday(year: int, month: int, weekday: int, index: int):
+    day = date(year, month, 1)
+    day += timedelta(days=(weekday - day.weekday()) % 7)
+    day += timedelta(weeks=index)
+    return day if day.month == month else None
+
+
+def seed_demo_report_visits(db: Session) -> None:
+    """Uzavřené návštěvy v minulém měsíci (různé pojišťovny, opakovaný výkon) a jedna nezapsaná,
+    aby měsíční výkaz v demu nebyl prázdný a ukázal i upozornění na neúplnost."""
+    if db.query(AppointmentModel).filter(AppointmentModel.reason == DEMO_REPORT_REASON).first() is not None:
+        return
+    user_repo = UserRepository(db)
+    doctor_repo = DoctorRepository(db)
+    patient_repo = PatientRepository(db)
+    appointment_repo = AppointmentRepository(db)
+    visit_repo = VisitRepository(db)
+    procedures = {p.code: p for p in ProcedureRepository(db).search(is_active=True, limit=200)}
+    receptionist = user_repo.get_by_username("vera")
+
+    first_of_month = local_now().date().replace(day=1)
+    previous = first_of_month - timedelta(days=1)
+    created = 0
+
+    for username, weekday, index, start, end, insurance_number, items in DEMO_REPORT_VISITS:
+        user = user_repo.get_by_username(username)
+        doctor = doctor_repo.get_by_user_id(user.id) if user else None
+        patient = patient_repo.get_by_insurance_number(insurance_number)
+        day = _nth_weekday(previous.year, previous.month, weekday, index)
+        if doctor is None or patient is None or day is None:
+            continue
+        if any(code not in procedures for code, _ in items):
+            continue
+        start_at = datetime.combine(day, _t(start))
+        end_at = datetime.combine(day, _t(end))
+        # Idempotence: termín v daném čase už existuje (dřívější seed nebo ruční rezervace)
+        if appointment_repo.list_taken_slot_starts(doctor.id, start_at, end_at):
+            continue
+        try:
+            appointment = appointment_repo.create_with_slots(
+                AppointmentModel(
+                    doctor_id=doctor.id, patient_id=patient.id, start_at=start_at, end_at=end_at,
+                    reason=DEMO_REPORT_REASON,
+                    status=AppointmentStatus.COMPLETED if items else AppointmentStatus.PLANNED,
+                    created_by_user_id=receptionist.id if receptionist else None,
+                ),
+                slot_starts(start_at, end_at),
+            )
+        except IntegrityError:
+            continue
+        created += 1
+        if not items:
+            continue
+        closed_at = end_at.replace(tzinfo=LOCAL_TZ).astimezone(timezone.utc)
+        visit = VisitModel(
+            appointment_id=appointment.id, doctor_id=doctor.id, patient_id=patient.id,
+            status=VisitStatus.CLOSED, clinical_note="Bez komplikací.",
+            created_by_user_id=user.id, updated_by_user_id=user.id,
+            closed_by_user_id=user.id, closed_at=closed_at,
+        )
+        visit_repo.create(visit)
+        visit_repo.replace_items(visit, [
+            (procedures[code].id, quantity, procedures[code].points) for code, quantity in items
+        ])
+        visit_repo.save(visit)
+
+    if created:
+        logger.info(f"Seed: vytvořeny demo podklady pro výkaz za {previous.month:02d}/{previous.year}")

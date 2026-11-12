@@ -2,9 +2,7 @@
 import re
 from typing import Optional
 from pydantic import BaseModel, Field, field_validator
-
-
-VALID_INSURANCE_CODES = {"111", "201", "205", "207", "209", "211", "213"}
+from src.business.insurance import VALID_INSURANCE_CODES
 
 
 class PatientBase(BaseModel):

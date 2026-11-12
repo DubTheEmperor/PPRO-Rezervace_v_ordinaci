@@ -6,6 +6,11 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0-demo"
     API_V1_PREFIX: str = "/api/v1"
     
+    # Údaje ordinace pro hlavičku výkazů pojišťovnám (syntetické hodnoty pro demo)
+    PRACTICE_NAME: str = "Ordinace Na Vyhlídce s.r.o."
+    PRACTICE_ADDRESS: str = "Na Vyhlídce 12, 500 03 Hradec Králové"
+    PRACTICE_ICZ: str = "52999000"
+
     # Databáze
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/ordinace_db"
     

@@ -7,6 +7,7 @@ from src.infrastructure.models.appointment_model import (
     AppointmentSlotModel,
     AppointmentStatus,
 )
+from src.infrastructure.models.patient_model import PatientModel
 from src.infrastructure.models.visit_model import VisitModel, VisitProcedureModel, VisitStatus
 
 ACTIVE_STATUSES = (AppointmentStatus.PLANNED,)
@@ -259,6 +260,36 @@ class AppointmentRepository:
             query = query.filter(AppointmentModel.doctor_id == doctor_id)
         row = query.one()
         return {name: int(getattr(row, name)) for name in self.QUEUE_FILTERS}
+
+    def list_unfinished_in_period(
+        self,
+        doctor_id: int,
+        period_start: datetime,
+        period_end: datetime,
+        now: datetime,
+        insurance_code: Optional[str] = None,
+    ) -> List[AppointmentModel]:
+        """Proběhlé naplánované termíny v období bez uzavřené návštěvy (nezapsané či koncept).
+
+        Slouží k upozornění, že měsíční výkaz zatím není úplný.
+        """
+        upper = min(period_end, now)
+        query = (
+            self.db.query(AppointmentModel)
+            .outerjoin(VisitModel, VisitModel.appointment_id == AppointmentModel.id)
+            .join(PatientModel, PatientModel.id == AppointmentModel.patient_id)
+            .options(contains_eager(AppointmentModel.visit), contains_eager(AppointmentModel.patient))
+            .filter(
+                AppointmentModel.doctor_id == doctor_id,
+                AppointmentModel.status == AppointmentStatus.PLANNED,
+                AppointmentModel.start_at >= period_start,
+                AppointmentModel.start_at < upper,
+                or_(VisitModel.id.is_(None), VisitModel.status == VisitStatus.DRAFT),
+            )
+        )
+        if insurance_code is not None:
+            query = query.filter(PatientModel.insurance_company_code == insurance_code)
+        return query.order_by(AppointmentModel.start_at).all()
 
     def list_history_for_patient(self, patient_id: int) -> List[AppointmentModel]:
         """Všechny rezervace pacienta (nejnovější první) včetně návštěv a vykázaných výkonů."""

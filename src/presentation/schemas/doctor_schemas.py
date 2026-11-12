@@ -16,6 +16,8 @@ class DoctorSummary(BaseModel):
 
 class DoctorResponse(DoctorSummary):
     user_id: Optional[int]
+    icp: Optional[str] = None
+    specialty_code: Optional[str] = None
     is_active: bool
     office_hours: List[OfficeHoursBlock]
 
