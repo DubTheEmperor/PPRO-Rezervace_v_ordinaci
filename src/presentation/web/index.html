@@ -1139,13 +1139,17 @@
     }
 
     /* ===== LÉKAŘI A ORDINAČNÍ HODINY ===== */
+    /* Karty lékařů vystředěné – neúplný řádek (např. 2 + 1 na tabletu) je uprostřed */
     .doctor-cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 1.25rem;
     }
 
     .doctor-card {
+      flex: 1 1 330px;
+      max-width: 440px;
       background: white;
       border: 1px solid var(--border);
       border-top: 4px solid var(--doc-color, var(--primary));
@@ -1263,6 +1267,17 @@
     .hours-total {
       font-size: 0.8rem;
       color: var(--text-muted);
+    }
+
+    .hours-total .away {
+      color: var(--away-dark);
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      .doctor-card {
+        max-width: none;
+      }
     }
 
     .hours-edit-row {
@@ -3620,6 +3635,11 @@
       return `${n} ${word}`;
     }
 
+    // Počet hodin bez jednotky v českém zápisu: 780 → „13“, 510 → „8,5“
+    function hoursNumber(minutes) {
+      return (minutes / 60).toLocaleString('cs-CZ', { maximumFractionDigits: 2 });
+    }
+
     function durationLabel(minutes) {
       const h = Math.floor(minutes / 60), m = minutes % 60;
       if (!h) return `${m} min`;
@@ -3701,7 +3721,9 @@
             </div>
             <div class="doctor-card-body">${rows}</div>
             <div class="doctor-card-foot">
-              <span class="hours-total">Celkem ${durationLabel(totalMin)} týdně${awayMin ? ` <span style="color: var(--away-dark);">+ ${durationLabel(awayMin)} jinde</span>` : ''}</span>
+              ${awayMin
+                ? `<span class="hours-total" title="${escapeHtml(`${durationLabel(totalMin)} v ordinaci, ${durationLabel(awayMin)} na jiném pracovišti`)}">Celkem ${hoursNumber(totalMin)} <span class="away">+ ${hoursNumber(awayMin)}</span> h týdně</span>`
+                : `<span class="hours-total">Celkem ${durationLabel(totalMin)} týdně</span>`}
               <div class="action-group">
                 ${isAdmin ? `<button class="btn btn-secondary btn-sm" onclick="openDoctorModal(${d.id})">Údaje</button>` : ''}
                 ${canEditHours(d) ? `<button class="btn btn-primary btn-sm" onclick="openHoursModal(${d.id})">Upravit hodiny</button>` : ''}
