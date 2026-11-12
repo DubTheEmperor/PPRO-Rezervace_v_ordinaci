@@ -1,5 +1,5 @@
 from datetime import date, datetime, time, timedelta
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 from sqlalchemy.orm import Session
 from src.business.exceptions import BusinessRuleError, ConflictError, NotFoundError, PermissionDeniedError
 from src.business import scheduling
@@ -16,9 +16,24 @@ from src.business.dto.doctor_dto import (
 
 
 def blocks_by_weekday(doctor: DoctorModel) -> Dict[int, List[scheduling.TimeBlock]]:
+    """Rezervovatelné bloky (lékař ordinuje v ordinaci) po dnech v týdnu.
+
+    Bloky jiného pracoviště se sem nezahrnují – rezervace, volné termíny i kontrola
+    ordinačních hodin s nimi proto automaticky nepočítají.
+    """
     result: Dict[int, List[scheduling.TimeBlock]] = {d: [] for d in range(7)}
     for oh in doctor.office_hours:
-        result[oh.weekday].append((oh.start_time, oh.end_time))
+        if oh.is_bookable:
+            result[oh.weekday].append((oh.start_time, oh.end_time))
+    return result
+
+
+def away_blocks_by_weekday(doctor: DoctorModel) -> Dict[int, List[Tuple[time, time, str]]]:
+    """Bloky, kdy lékař pravidelně ordinuje na jiném pracovišti: (začátek, konec, místo)."""
+    result: Dict[int, List[Tuple[time, time, str]]] = {d: [] for d in range(7)}
+    for oh in doctor.office_hours:
+        if not oh.is_bookable:
+            result[oh.weekday].append((oh.start_time, oh.end_time, oh.location or ""))
     return result
 
 
@@ -103,15 +118,18 @@ class DoctorService:
         if not self.can_manage_hours(doctor, current_user):
             raise PermissionDeniedError("Ordinační hodiny může měnit pouze administrátor nebo daný lékař.")
 
-        blocks = [(b.weekday, b.start_time, b.end_time) for b in data.blocks]
-        errors = scheduling.validate_blocks(blocks)
+        blocks = [(b.weekday, b.start_time, b.end_time, b.kind, b.location) for b in data.blocks]
+        # Bloky se nesmí překrývat bez ohledu na typ (ordinace × jiné pracoviště)
+        errors = scheduling.validate_blocks([b[:3] for b in blocks])
         if errors:
             raise BusinessRuleError(" ".join(errors))
 
-        # Změna hodin nesmí „osiřet“ již naplánované budoucí rezervace
+        # Změna hodin nesmí „osiřet“ již naplánované budoucí rezervace – rezervovat
+        # lze jen do bloků v ordinaci, takže se porovnává pouze s nimi
         new_by_day: Dict[int, List[scheduling.TimeBlock]] = {d: [] for d in range(7)}
-        for weekday, start, end in blocks:
-            new_by_day[weekday].append((start, end))
+        for weekday, start, end, kind, _location in blocks:
+            if kind == "OFFICE":
+                new_by_day[weekday].append((start, end))
         future = self.appointment_repo.list_future_for_doctor(doctor.id, scheduling.local_now())
         conflicts = [
             a for a in future
@@ -192,6 +210,7 @@ class DoctorService:
         self._ensure_monday(week_start)
         doctor = self.get_doctor(doctor_id)
         by_day = blocks_by_weekday(doctor)
+        away_by_day = away_blocks_by_weekday(doctor)
         now = scheduling.local_now()
         free = self._free_intervals_by_day(doctor, week_start, 7, now)
 
@@ -203,6 +222,10 @@ class DoctorService:
                 "weekday": offset,
                 "blocks": [{"start_time": s, "end_time": e} for s, e in sorted(by_day[offset])],
                 "free_intervals": [{"start_at": s, "end_at": e} for s, e in free[day]],
+                "away_blocks": [
+                    {"start_time": s, "end_time": e, "location": loc}
+                    for s, e, loc in sorted(away_by_day[offset])
+                ],
             })
 
         range_from = datetime.combine(week_start, time(0, 0))

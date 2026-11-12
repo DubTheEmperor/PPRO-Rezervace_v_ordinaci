@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from src.business.exceptions import BusinessRuleError, ConflictError, NotFoundError, PermissionDeniedError
 from src.business import scheduling
-from src.business.services.doctor_service import blocks_by_weekday
+from src.business.services.doctor_service import away_blocks_by_weekday, blocks_by_weekday
 from src.infrastructure.models.appointment_model import AppointmentModel, AppointmentStatus
 from src.infrastructure.models.user_model import UserModel, UserRole
 from src.infrastructure.repositories.appointment_repository import AppointmentRepository
@@ -59,6 +59,16 @@ class AppointmentService:
 
         day_blocks = blocks_by_weekday(doctor)[start.weekday()]
         if not scheduling.fits_office_hours(day_blocks, start, end):
+            away = next(
+                (loc for b_start, b_end, loc in away_blocks_by_weekday(doctor)[start.weekday()]
+                 if b_start < end.time() and start.time() < b_end),
+                None,
+            )
+            if away is not None:
+                raise BusinessRuleError(
+                    f"Lékař {doctor.full_name} v tuto dobu ordinuje na jiném pracovišti ({away}) – "
+                    "na tento čas se nelze objednat."
+                )
             raise BusinessRuleError(
                 f"Termín {start:%d. %m. %Y %H:%M}–{end:%H:%M} je mimo ordinační hodiny lékaře "
                 f"{doctor.full_name}."

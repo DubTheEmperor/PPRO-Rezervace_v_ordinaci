@@ -13,7 +13,7 @@ from src.presentation.schemas.doctor_schemas import (
 from src.business.services.doctor_service import DoctorService
 from src.presentation.dependencies import get_current_user, require_roles
 
-router = APIRouter(prefix="/doctors", tags=["Lékaři a ordinační hodiny"])
+router = APIRouter(prefix="/doctors", tags=["Ordinační hodiny"])
 
 
 @router.get(
@@ -76,7 +76,8 @@ def update_doctor(
     summary="Nastavení týdenních ordinačních hodin",
     description=(
         "Nahradí celý týdenní rozvrh lékaře. Smí administrátor nebo lékař, kterému profil patří. "
-        "Změna, která by vyřadila již naplánované rezervace, je odmítnuta (409)."
+        "Blok typu ELSEWHERE (jiné pracoviště, povinné `location`) se zobrazí v kalendáři, ale nelze "
+        "na něj rezervovat. Změna, která by vyřadila již naplánované rezervace, je odmítnuta (409)."
     ),
 )
 def replace_office_hours(

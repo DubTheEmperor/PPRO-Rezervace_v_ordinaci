@@ -10,5 +10,6 @@ from src.infrastructure.database import get_db
 from src.infrastructure.models.user_model import UserModel as User, UserRole
 from src.infrastructure.models.appointment_model import AppointmentStatus
 from src.infrastructure.models.visit_model import VisitStatus
+from src.infrastructure.models.office_hours_model import OfficeHoursKind
 
-__all__ = ["get_db", "User", "UserRole", "AppointmentStatus", "VisitStatus"]
+__all__ = ["get_db", "User", "UserRole", "AppointmentStatus", "VisitStatus", "OfficeHoursKind"]

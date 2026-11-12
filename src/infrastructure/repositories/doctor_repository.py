@@ -2,7 +2,7 @@ from datetime import time
 from typing import Optional, List, Sequence, Tuple
 from sqlalchemy.orm import Session, selectinload
 from src.infrastructure.models.doctor_model import DoctorModel
-from src.infrastructure.models.office_hours_model import OfficeHoursModel
+from src.infrastructure.models.office_hours_model import OfficeHoursKind, OfficeHoursModel
 
 
 class DoctorRepository:
@@ -38,15 +38,22 @@ class DoctorRepository:
         return doctor
 
     def replace_office_hours(
-        self, doctor: DoctorModel, blocks: Sequence[Tuple[int, time, time]]
+        self, doctor: DoctorModel, blocks: Sequence[Tuple]
     ) -> DoctorModel:
-        """Nahradí všechny týdenní bloky lékaře v jedné transakci."""
+        """Nahradí všechny týdenní bloky lékaře v jedné transakci.
+
+        Blok = (weekday, start, end) nebo (weekday, start, end, kind, location).
+        """
         doctor.office_hours.clear()
         self.db.flush()
-        for weekday, start, end in blocks:
-            doctor.office_hours.append(
-                OfficeHoursModel(weekday=weekday, start_time=start, end_time=end)
-            )
+        for block in blocks:
+            weekday, start, end = block[:3]
+            kind = block[3] if len(block) > 3 else OfficeHoursKind.OFFICE.value
+            location = block[4] if len(block) > 4 else None
+            doctor.office_hours.append(OfficeHoursModel(
+                weekday=weekday, start_time=start, end_time=end,
+                kind=OfficeHoursKind(kind).value, location=location,
+            ))
         self.db.commit()
         self.db.refresh(doctor)
         return doctor

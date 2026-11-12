@@ -143,6 +143,9 @@ def _t(value: str) -> time:
     return time(int(hours), int(minutes))
 
 
+# Syntetické jiné pracoviště (stejná hodnota je v migraci 009 pro doplnění existující databáze)
+DEMO_AWAY_LOCATION = "Poliklinika Jih"
+
 # Výchozí týdenní ordinační hodiny (0 = pondělí … 6 = neděle)
 DEFAULT_DOCTORS = [
     {
@@ -158,11 +161,12 @@ DEFAULT_DOCTORS = [
         "username": "maly",
         "full_name": "MUDr. Tomáš Malý",
         "specialization": "Interna",
-        # Úterní odpoledne ordinuje na jiné adrese – proto v úterý jen dopoledne
         "color": "#059669",
         "icp": "52999102",
         "specialty_code": "101",
         "hours": [(1, "07:30", "12:00"), (3, "07:30", "12:00"), (4, "08:00", "12:00")],
+        # Úterní odpoledne ordinuje na jiné adrese – v kalendáři vidět, objednat nelze
+        "away": [(1, "13:00", "17:00", DEMO_AWAY_LOCATION)],
     },
     {
         "username": "vesela",
@@ -202,9 +206,10 @@ def seed_doctors(db: Session) -> None:
             specialty_code=d["specialty_code"],
             is_active=True,
         ))
-        doctor_repo.replace_office_hours(
-            doctor, [(day, _t(start), _t(end)) for day, start, end in d["hours"]]
-        )
+        doctor_repo.replace_office_hours(doctor, [
+            *((day, _t(start), _t(end), "OFFICE", None) for day, start, end in d["hours"]),
+            *((day, _t(start), _t(end), "ELSEWHERE", loc) for day, start, end, loc in d.get("away", [])),
+        ])
         logger.info(f"Seed: vytvořen lékař '{d['full_name']}' s ordinačními hodinami")
 
 

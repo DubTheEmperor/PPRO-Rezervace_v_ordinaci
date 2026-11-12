@@ -1,7 +1,7 @@
 """Vstupní DTO pro správu lékařů a ordinačních hodin."""
 from datetime import time
-from typing import Optional, List
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional, List, Literal
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 
 COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
 ICP_PATTERN = r"^\d{8}$"
@@ -12,8 +12,25 @@ class OfficeHoursBlock(BaseModel):
     weekday: int = Field(..., ge=0, le=6, description="Den v týdnu (0 = pondělí … 6 = neděle)")
     start_time: time = Field(..., description="Začátek bloku (HH:MM, zarovnáno na 15 min)")
     end_time: time = Field(..., description="Konec bloku (HH:MM, zarovnáno na 15 min)")
+    kind: Literal["OFFICE", "ELSEWHERE"] = Field(
+        "OFFICE", description="OFFICE = ordinuje v ordinaci, ELSEWHERE = jiné pracoviště (nelze rezervovat)"
+    )
+    location: Optional[str] = Field(
+        None, max_length=100, description="Kde lékař ordinuje (povinné u jiného pracoviště)"
+    )
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="after")
+    def check_location(self) -> "OfficeHoursBlock":
+        location = (self.location or "").strip()
+        if self.kind == "ELSEWHERE":
+            if not location:
+                raise ValueError("Uveďte, kde lékař v tuto dobu ordinuje (jiné pracoviště).")
+            self.location = location
+        else:
+            self.location = None
+        return self
 
 
 class OfficeHoursUpdate(BaseModel):

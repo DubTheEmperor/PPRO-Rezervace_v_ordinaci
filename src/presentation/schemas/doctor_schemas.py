@@ -32,11 +32,19 @@ class FreeInterval(BaseModel):
     end_at: datetime
 
 
+class AwayBlock(BaseModel):
+    """Čas, kdy lékař pravidelně ordinuje na jiném pracovišti – nelze rezervovat."""
+    start_time: time
+    end_time: time
+    location: str
+
+
 class CalendarDay(BaseModel):
     date: date
     weekday: int
-    blocks: List[CalendarBlock]
+    blocks: List[CalendarBlock] = Field(..., description="Rezervovatelné bloky ordinačních hodin")
     free_intervals: List[FreeInterval] = Field(default_factory=list, description="Volné termíny dne (FP6)")
+    away_blocks: List[AwayBlock] = Field(default_factory=list, description="Jiné pracoviště (nelze rezervovat)")
 
 
 class CalendarAppointment(BaseModel):
