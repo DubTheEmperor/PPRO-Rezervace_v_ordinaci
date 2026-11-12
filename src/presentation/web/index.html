@@ -24,6 +24,9 @@
       --danger-light: #fee2e2;
       --warning: #f59e0b;
       --warning-light: #fef3c7;
+      --away: #d97706;
+      --away-dark: #b45309;
+      --away-light: #ffedd5;
       --role-admin: #8b5cf6;
       --role-admin-light: #ede9fe;
       --role-reception: #0ea5e9;
@@ -889,6 +892,12 @@
       background: #eef1f5;
     }
 
+    /* Lékař v tuto dobu ordinuje na jiném pracovišti – objednat nelze */
+    .cal-cell.away {
+      background: repeating-linear-gradient(135deg, #ffedd5 0 6px, #fed7aa 6px 12px);
+      border-right-color: #fde3c8;
+    }
+
     .cal-cell.selected,
     .cal-cell.selected:hover {
       background: var(--primary);
@@ -917,6 +926,15 @@
       color: #94a3b8;
       pointer-events: none;
       z-index: 1;
+    }
+
+    .cal-off-label.away {
+      color: var(--away-dark);
+      font-weight: 600;
+      max-width: calc(100% - 1.5rem);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .cal-appt {
@@ -1216,6 +1234,15 @@
       font-size: 0.8rem;
     }
 
+    .hours-pill.away {
+      background: var(--away-light);
+      color: var(--away-dark);
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .hours-none {
       color: #94a3b8;
       font-size: 0.82rem;
@@ -1267,6 +1294,38 @@
     .hours-edit-block .form-control {
       width: 120px;
       padding: 0.45rem 0.6rem;
+    }
+
+    .hours-edit-block {
+      flex-wrap: wrap;
+      border-left: 3px solid transparent;
+      padding-left: 0.4rem;
+      margin-left: -0.4rem;
+    }
+
+    .hours-edit-block.away {
+      border-left-color: var(--away);
+    }
+
+    .hours-edit-block .hours-kind {
+      width: auto;
+      padding: 0.45rem 0.4rem;
+      font-size: 0.82rem;
+    }
+
+    .hours-edit-block.away .hours-kind {
+      color: var(--away-dark);
+      border-color: #fdba74;
+      background: var(--away-light);
+    }
+
+    .hours-edit-block .hours-location {
+      flex: 1 1 100%;
+      width: auto;
+      max-width: 320px;
+      font-size: 0.82rem;
+      padding: 0.35rem 0.6rem;
+      border-color: #fdba74;
     }
 
     .icon-btn {
@@ -2257,7 +2316,7 @@
           <span>📊</span> Výkazy
         </button>
         <button id="tabBtnDoctors" class="nav-tab" onclick="switchDashboardTab('doctors')">
-          <span>🩺</span> Lékaři a ordinační hodiny
+          <span>🩺</span> Ordinační hodiny
         </button>
         <button id="tabBtnUsers" class="nav-tab" onclick="switchDashboardTab('users')">
           <span>👥</span> Správa personálu
@@ -2310,6 +2369,7 @@
               <span class="legend-item"><span class="legend-swatch" style="background: white;"></span> Volno</span>
               <span class="legend-item"><span class="legend-swatch" style="background: var(--primary);"></span> Vybráno</span>
               <span class="legend-item"><span class="legend-swatch" style="background: #ef4444; border-color: #dc2626;"></span> Obsazeno</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #ffedd5 0 4px, #fdba74 4px 8px); border-color: #fdba74;"></span> Jiné pracoviště</span>
               <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #f1f5f9 0 4px, #e2e8f0 4px 8px);"></span> Lékař neordinuje</span>
               <span class="legend-item"><span class="legend-swatch" style="background: #eef1f5;"></span> Minulost</span>
             </div>
@@ -2381,7 +2441,7 @@
       <div id="sectionDoctors" style="display: none;">
         <div class="dashboard-header">
           <div class="dashboard-title">
-            <h2>Lékaři a ordinační hodiny</h2>
+            <h2>Ordinační hodiny</h2>
           </div>
           <div>
             <button id="btnNewDoctor" class="btn btn-primary" onclick="openDoctorModal()" style="display: none;">
@@ -2668,7 +2728,7 @@
 
   <!-- MODAL: OFFICE HOURS EDITOR -->
   <div id="hoursModal" class="modal-overlay">
-    <div class="modal" style="max-width: 600px;">
+    <div class="modal" style="max-width: 760px;">
       <div class="modal-header">
         <h3 id="hoursModalTitle">Ordinační hodiny</h3>
         <button class="close-btn" onclick="closeModal('hoursModal')">&times;</button>
@@ -3605,16 +3665,24 @@
         return;
       }
       box.innerHTML = doctorsList.map(d => {
-        let totalMin = 0;
+        let totalMin = 0, awayMin = 0;
         const rows = DAY_LONG.map((name, i) => {
           const blocks = d.office_hours.filter(b => b.weekday === i);
-          blocks.forEach(b => { totalMin += timeToMin(b.end_time) - timeToMin(b.start_time); });
+          blocks.forEach(b => {
+            const len = timeToMin(b.end_time) - timeToMin(b.start_time);
+            if (b.kind === 'ELSEWHERE') awayMin += len; else totalMin += len;
+          });
           return `
             <div class="hours-row ${blocks.length ? '' : 'off'}">
               <span class="hours-day">${name}</span>
               <span class="hours-blocks">
                 ${blocks.length
-                  ? blocks.map(b => `<span class="hours-pill">${shortTime(b.start_time)}–${shortTime(b.end_time)}</span>`).join('')
+                  ? blocks.map(b => {
+                      const time = `${shortTime(b.start_time)}–${shortTime(b.end_time)}`;
+                      if (b.kind !== 'ELSEWHERE') return `<span class="hours-pill">${time}</span>`;
+                      const tip = escapeHtml(`Jiné pracoviště: ${b.location} – nelze objednat`);
+                      return `<span class="hours-pill away" title="${tip}">${time} · ${escapeHtml(b.location)}</span>`;
+                    }).join('')
                   : '<span class="hours-none">neordinuje</span>'}
               </span>
             </div>`;
@@ -3633,7 +3701,7 @@
             </div>
             <div class="doctor-card-body">${rows}</div>
             <div class="doctor-card-foot">
-              <span class="hours-total">Celkem ${durationLabel(totalMin)} týdně</span>
+              <span class="hours-total">Celkem ${durationLabel(totalMin)} týdně${awayMin ? ` <span style="color: var(--away-dark);">+ ${durationLabel(awayMin)} jinde</span>` : ''}</span>
               <div class="action-group">
                 ${isAdmin ? `<button class="btn btn-secondary btn-sm" onclick="openDoctorModal(${d.id})">Údaje</button>` : ''}
                 ${canEditHours(d) ? `<button class="btn btn-primary btn-sm" onclick="openHoursModal(${d.id})">Upravit hodiny</button>` : ''}
@@ -3653,7 +3721,10 @@
       hoursEditDoctorId = doctorId;
       hoursDraft = DAY_LONG.map((_, i) => d.office_hours
         .filter(b => b.weekday === i)
-        .map(b => ({ start: b.start_time.slice(0, 5), end: b.end_time.slice(0, 5) })));
+        .map(b => ({
+          start: b.start_time.slice(0, 5), end: b.end_time.slice(0, 5),
+          kind: b.kind || 'OFFICE', location: b.location || '',
+        })));
       document.getElementById('hoursModalTitle').textContent = `Ordinační hodiny – ${d.full_name}`;
       renderHoursEditor();
       document.getElementById('hoursModal').classList.add('open');
@@ -3665,13 +3736,22 @@
           <div class="hours-edit-day">${name}</div>
           <div class="hours-edit-blocks">
             ${hoursDraft[i].length ? hoursDraft[i].map((b, j) => `
-              <div class="hours-edit-block">
+              <div class="hours-edit-block ${b.kind === 'ELSEWHERE' ? 'away' : ''}">
                 <input type="time" step="900" class="form-control" value="${b.start}"
                   onchange="hoursDraft[${i}][${j}].start = this.value" aria-label="${name} začátek">
                 <span>–</span>
                 <input type="time" step="900" class="form-control" value="${b.end}"
                   onchange="hoursDraft[${i}][${j}].end = this.value" aria-label="${name} konec">
+                <select class="form-control hours-kind" onchange="setHoursKind(${i}, ${j}, this.value)"
+                  aria-label="${name} – kde lékař ordinuje">
+                  <option value="OFFICE" ${b.kind === 'ELSEWHERE' ? '' : 'selected'}>Ordinace</option>
+                  <option value="ELSEWHERE" ${b.kind === 'ELSEWHERE' ? 'selected' : ''}>Jiné pracoviště</option>
+                </select>
                 <button type="button" class="icon-btn" title="Odebrat blok" onclick="removeHoursBlock(${i}, ${j})">×</button>
+                ${b.kind === 'ELSEWHERE' ? `
+                  <input type="text" class="form-control hours-location" maxlength="100" value="${escapeHtml(b.location)}"
+                    placeholder="Kde (např. Poliklinika Jih)" oninput="hoursDraft[${i}][${j}].location = this.value"
+                    aria-label="${name} – název jiného pracoviště">` : ''}
               </div>`).join('') : '<span class="hours-none">neordinuje</span>'}
           </div>
           <button type="button" class="btn btn-secondary btn-sm" onclick="addHoursBlock(${i})">+ blok</button>
@@ -3682,11 +3762,22 @@
       const last = hoursDraft[day][hoursDraft[day].length - 1];
       if (last) {
         const start = Math.min(timeToMin(last.end) + 60, 22 * 60);
-        hoursDraft[day].push({ start: minToIso(start), end: minToIso(Math.min(start + 120, 23 * 60 + 45)) });
+        hoursDraft[day].push({ start: minToIso(start), end: minToIso(Math.min(start + 120, 23 * 60 + 45)), kind: 'OFFICE', location: '' });
       } else {
-        hoursDraft[day].push({ start: '08:00', end: '12:00' });
+        hoursDraft[day].push({ start: '08:00', end: '12:00', kind: 'OFFICE', location: '' });
       }
       renderHoursEditor();
+    }
+
+    // Jiné pracoviště: blok se zobrazí, ale nedá se na něj objednat; pole „Kde“ je povinné
+    function setHoursKind(day, idx, kind) {
+      hoursDraft[day][idx].kind = kind;
+      renderHoursEditor();
+      if (kind === 'ELSEWHERE') {
+        const input = document.querySelectorAll('#hoursEditor .hours-edit-row')[day]
+          .querySelectorAll('.hours-edit-block')[idx].querySelector('.hours-location');
+        if (input) input.focus();
+      }
     }
 
     function removeHoursBlock(day, idx) {
@@ -3706,7 +3797,15 @@
             showToast(`${DAY_LONG[i]}: blok ${b.start}–${b.end} musí začínat dříve, než končí.`, true);
             return;
           }
-          blocks.push({ weekday: i, start_time: b.start, end_time: b.end });
+          const location = (b.location || '').trim();
+          if (b.kind === 'ELSEWHERE' && !location) {
+            showToast(`${DAY_LONG[i]} ${b.start}–${b.end}: vyplňte, kde lékař ordinuje (jiné pracoviště).`, true);
+            return;
+          }
+          blocks.push({
+            weekday: i, start_time: b.start, end_time: b.end, kind: b.kind || 'OFFICE',
+            location: b.kind === 'ELSEWHERE' ? location : null,
+          });
         }
       }
       const btn = document.getElementById('btnSaveHours');
@@ -3901,7 +4000,7 @@
 
       // Rozsah sloupců podle ordinačních hodin (zaokrouhleno na celé hodiny)
       let minM = Infinity, maxM = -Infinity;
-      days.forEach(d => d.blocks.forEach(b => {
+      days.forEach(d => [...d.blocks, ...(d.away_blocks || [])].forEach(b => {
         minM = Math.min(minM, timeToMin(b.start_time));
         maxM = Math.max(maxM, timeToMin(b.end_time));
       }));
@@ -3943,6 +4042,7 @@
         // Volné úseky počítá server (byznys vrstva) – UI je jen zobrazuje
         const minOfDay = d => d.getHours() * 60 + d.getMinutes();
         const free = day.free_intervals.map(f => [minOfDay(parseLocal(f.start_at)), minOfDay(parseLocal(f.end_at))]);
+        const away = (day.away_blocks || []).map(b => ({ from: timeToMin(b.start_time), to: timeToMin(b.end_time), location: b.location }));
         html += `
           <div class="cal-day ${day.date === todayIso ? 'today' : ''} ${i >= 5 ? 'weekend' : ''}" style="grid-row: ${row}; grid-column: 1;">
             <span class="cal-day-name">${DAY_SHORT[i]}</span>
@@ -3953,17 +4053,30 @@
           const m = minM + c * SLOT_MIN;
           const slotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(m / 60), m % 60);
           const isFree = free.some(([fs, fe]) => fs <= m && m + SLOT_MIN <= fe);
-          // Priorita: obsazeno > minulost > volno (dle serveru) > lékař neordinuje
-          const state = bookedMap[i][c] ? 'booked' : slotDate < now ? 'past' : isFree ? 'free' : 'off';
+          const awayBlock = away.find(a => a.from <= m && m < a.to);
+          // Priorita: obsazeno > minulost > volno (dle serveru) > jiné pracoviště > lékař neordinuje
+          const state = bookedMap[i][c] ? 'booked' : slotDate < now ? 'past' : isFree ? 'free' : awayBlock ? 'away' : 'off';
           calState[i][c] = state;
           if (state === 'booked') continue;
           const label = `${DAY_SHORT[i]} ${date.getDate()}. ${date.getMonth() + 1}. ${minToTime(m)}–${minToTime(m + SLOT_MIN)}`;
-          const tip = state === 'free' ? `${label} · volno` : state === 'past' ? `${label} · již proběhlo` : `${label} · lékař neordinuje`;
-          html += `<div class="cal-cell ${state} ${c % 4 === 0 ? 'hour-start' : ''}" data-day="${i}" data-col="${c}" style="grid-row: ${row}; grid-column: ${c + 2};" title="${tip}"></div>`;
+          const tip = state === 'free' ? `${label} · volno`
+            : state === 'past' ? `${label} · již proběhlo`
+            : state === 'away' ? `${label} · lékař ordinuje jinde (${awayBlock.location}) – nelze objednat`
+            : `${label} · lékař neordinuje`;
+          html += `<div class="cal-cell ${state} ${c % 4 === 0 ? 'hour-start' : ''}" data-day="${i}" data-col="${c}" style="grid-row: ${row}; grid-column: ${c + 2};" title="${escapeHtml(tip)}"></div>`;
         }
+        // Štítek „Jiné pracoviště“ přes budoucí (nevypršelou) část bloku
+        away.forEach(a => {
+          const from = Math.max(0, (a.from - minM) / SLOT_MIN), to = Math.min(calCols, (a.to - minM) / SLOT_MIN);
+          let start = -1;
+          for (let c = from; c < to; c++) if (calState[i][c] === 'away') { start = c; break; }
+          if (start < 0) return;
+          const text = `Jiné pracoviště · ${a.location}`;
+          html += `<div class="cal-off-label away" style="grid-row: ${row}; grid-column: ${start + 2} / ${to + 2};" title="${escapeHtml(text)}">${escapeHtml(text)}</div>`;
+        });
         // Štítek jen přes nebudoucí část dne – u dnů v minulosti se nezobrazuje
         const firstOff = calState[i].indexOf('off');
-        if (!blocks.length && firstOff >= 0) {
+        if (!blocks.length && !away.length && firstOff >= 0) {
           html += `<div class="cal-off-label" style="grid-row: ${row}; grid-column: ${firstOff + 2} / span ${calCols - firstOff};">Lékař v tento den neordinuje</div>`;
         }
       });
