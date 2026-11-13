@@ -1374,7 +1374,7 @@
     }
 
     .sick-cal {
-      padding: 0.75rem 1.25rem 0.9rem;
+      padding: 0.5rem 1.25rem 0.6rem;
       border-top: 1px solid var(--border);
     }
 
@@ -1383,12 +1383,39 @@
       justify-content: space-between;
       align-items: center;
       gap: 0.5rem;
-      margin-bottom: 0.5rem;
     }
 
-    .sick-cal-title {
+    .sick-cal-grid {
+      margin-top: 0.5rem;
+    }
+
+    .sick-cal-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.2rem;
+      border: none;
+      background: none;
+      font: inherit;
       font-weight: 700;
       font-size: 0.88rem;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .sick-cal-toggle:hover {
+      color: var(--sick-dark);
+    }
+
+    .sick-cal-arrow {
+      display: inline-block;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: transform 0.15s;
+    }
+
+    .sick-cal-arrow.open {
+      transform: rotate(90deg);
     }
 
     .sick-cal-nav {
@@ -1493,12 +1520,6 @@
       background: white;
       color: var(--sick-dark);
       border: 2px dashed var(--sick);
-    }
-
-    .sick-cal-hint {
-      margin-top: 0.45rem;
-      font-size: 0.75rem;
-      color: var(--text-muted);
     }
 
     .btn-sick {
@@ -3268,7 +3289,7 @@
       </div>
       <div class="modal-body">
         <div class="booking-summary" style="margin-bottom: 1rem;">
-          <div class="booking-summary-icon">🤒</div>
+          <div class="booking-summary-icon">🗓️</div>
           <div>
             <div class="booking-summary-main" id="sickSummaryMain">—</div>
             <div class="booking-summary-sub" id="sickSummarySub">—</div>
@@ -4559,7 +4580,7 @@
         // Štítek „Nemoc lékaře“ přes budoucí část nemocného dne
         const firstSick = calState[i].indexOf('sick');
         if (firstSick >= 0) {
-          html += `<div class="cal-off-label sick" style="grid-row: ${row}; grid-column: ${firstSick + 2} / span ${calCols - firstSick};">🤒 Nemoc lékaře – nelze objednat</div>`;
+          html += `<div class="cal-off-label sick" style="grid-row: ${row}; grid-column: ${firstSick + 2} / span ${calCols - firstSick};">Nemoc lékaře – nelze objednat</div>`;
         }
         // Štítek jen přes nebudoucí část dne – u dnů v minulosti se nezobrazuje
         const firstOff = calState[i].indexOf('off');
@@ -4902,7 +4923,7 @@
               ${escapeHtml(STATUS_LABELS[a.status] || a.status)} · ${escapeHtml(a.cancelled_by_name || '—')},
               ${new Date(a.cancelled_at).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </div>` : ''}
-          ${a.status === 'TO_RESCHEDULE' ? '<div class="sick-note">🤒 Lékař je v tento den nemocný – termín čeká na přeobjednání.</div>' : ''}
+          ${a.status === 'TO_RESCHEDULE' ? '<div class="sick-note">Lékař je v tento den nemocný – termín čeká na přeobjednání.</div>' : ''}
           ${rescheduledToHtml(a.rescheduled_to_term)}
           ${appointmentDetailActions(a, s)}`;
         appointmentDetailCurrent = a;
@@ -4934,7 +4955,7 @@
     async function loadSickCal(doctorId) {
       let st = sickCals[doctorId];
       if (!st) {
-        st = sickCals[doctorId] = { month: firstOfMonth(new Date()), days: new Set(), nextPeriod: null, canEdit: false };
+        st = sickCals[doctorId] = { month: firstOfMonth(new Date()), days: new Set(), nextPeriod: null, canEdit: false, open: false };
       }
       renderSickCal(doctorId);
       const from = st.month, to = new Date(from.getFullYear(), from.getMonth() + 1, 0);
@@ -4985,25 +5006,36 @@
         cells += `<span class="${cls.join(' ')}" data-doctor="${doctorId}" data-date="${iso}" title="${escapeHtml(tip)}">${n}</span>`;
       }
 
+      // Kalendář je ve výchozím stavu sbalený – rozbalí se šipkou u nadpisu
       box.innerHTML = `
         <div class="sick-cal-head">
-          <span class="sick-cal-title">🤒 Nemoc</span>
-          <div class="sick-cal-nav">
-            <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, -1)" aria-label="Předchozí měsíc">‹</button>
-            <span class="sick-cal-month">${monthName(first)} ${first.getFullYear()}</span>
-            <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, 1)" aria-label="Další měsíc">›</button>
-          </div>
+          <button type="button" class="sick-cal-toggle" onclick="toggleSickCal(${doctorId})"
+            aria-expanded="${st.open}" aria-controls="sickCalBody-${doctorId}">
+            <span class="sick-cal-arrow ${st.open ? 'open' : ''}" aria-hidden="true">›</span> Nemoc
+          </button>
+          ${st.open ? `
+            <div class="sick-cal-nav">
+              <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, -1)" aria-label="Předchozí měsíc">‹</button>
+              <span class="sick-cal-month">${monthName(first)} ${first.getFullYear()}</span>
+              <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, 1)" aria-label="Další měsíc">›</button>
+            </div>` : ''}
         </div>
-        <div class="sick-cal-grid">${cells}</div>
-        ${st.canEdit ? '<div class="sick-cal-hint">Kliknutím nebo tažením označte dny nemoci, opakováním je zrušíte.</div>' : ''}`;
+        ${st.open ? `<div id="sickCalBody-${doctorId}" class="sick-cal-grid">${cells}</div>` : ''}`;
 
       const badge = document.getElementById(`sickNext-${doctorId}`);
       if (badge) {
         const p = st.nextPeriod;
         if (!p) badge.innerHTML = '';
-        else if (p.date_from <= today) badge.innerHTML = `<span class="sick-badge">🤒 Nemoc do ${fmtShortDate(fromIso(p.date_to))}</span>`;
-        else badge.innerHTML = `<span class="sick-badge">🤒 Nemoc ${periodLabel(p.date_from, p.date_to)}</span>`;
+        else if (p.date_from <= today) badge.innerHTML = `<span class="sick-badge">Nemoc do ${fmtShortDate(fromIso(p.date_to))}</span>`;
+        else badge.innerHTML = `<span class="sick-badge">Nemoc ${periodLabel(p.date_from, p.date_to)}</span>`;
       }
+    }
+
+    function toggleSickCal(doctorId) {
+      const st = sickCals[doctorId];
+      if (!st) return;
+      st.open = !st.open;
+      renderSickCal(doctorId);
     }
 
     // Výběr dnů kliknutím / tažením (myš i dotyk přes Pointer Events)
