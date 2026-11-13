@@ -27,6 +27,9 @@
       --away: #d97706;
       --away-dark: #b45309;
       --away-light: #ffedd5;
+      --sick: #db2777;
+      --sick-dark: #be185d;
+      --sick-light: #fce7f3;
       --role-admin: #8b5cf6;
       --role-admin-light: #ede9fe;
       --role-reception: #0ea5e9;
@@ -898,6 +901,17 @@
       border-right-color: #fde3c8;
     }
 
+    /* Lékař je v tento den nemocný (otevřený bod 5) – objednat nelze */
+    .cal-cell.sick {
+      background: repeating-linear-gradient(135deg, #fdf2f8 0 6px, #fce7f3 6px 12px);
+      border-right-color: #fbe3ef;
+    }
+
+    .cal-day.sick .cal-day-name,
+    .cal-day.sick .cal-day-num {
+      color: var(--sick-dark);
+    }
+
     .cal-cell.selected,
     .cal-cell.selected:hover {
       background: var(--primary);
@@ -926,6 +940,11 @@
       color: #94a3b8;
       pointer-events: none;
       z-index: 1;
+    }
+
+    .cal-off-label.sick {
+      color: var(--sick-dark);
+      font-weight: 700;
     }
 
     .cal-off-label.away {
@@ -962,6 +981,18 @@
 
     .cal-appt.is-past {
       opacity: 0.6;
+    }
+
+    /* Termín čeká na přeobjednání (nemoc lékaře) – slot drží, ale pacienta je třeba obvolat */
+    .cal-appt.to-reschedule {
+      background: white;
+      border: 2px dashed var(--sick);
+      color: var(--sick-dark);
+      box-shadow: none;
+    }
+
+    .cal-appt.to-reschedule:hover {
+      box-shadow: 0 4px 10px rgba(219, 39, 119, 0.25);
     }
 
     .cal-appt-name {
@@ -1136,6 +1167,371 @@
       border-radius: 6px;
       padding: 0.6rem 0.75rem;
       line-height: 1.45;
+    }
+
+    /* ===== REZERVACE – PODZÁLOŽKY A FRONTA K PŘEOBJEDNÁNÍ (otevřený bod 5) ===== */
+    .sub-tabs {
+      display: inline-flex;
+      gap: 0.25rem;
+      padding: 0.25rem;
+      background: #eef2f6;
+      border-radius: 12px;
+      flex-wrap: wrap;
+    }
+
+    .sub-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .sub-tab:hover {
+      color: var(--text-main);
+    }
+
+    .sub-tab.active {
+      background: white;
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sub-tab .chip-count.has-items {
+      background: var(--sick);
+      color: white;
+    }
+
+    .tab-badge.sick {
+      background: var(--sick);
+    }
+
+    .reschedule-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem 1rem;
+      flex-wrap: wrap;
+      padding: 0.85rem 1.1rem;
+      margin-bottom: 1rem;
+      border-radius: var(--radius);
+      background: var(--sick-light);
+      border: 1px solid #fbcfe8;
+      border-left: 4px solid var(--sick);
+    }
+
+    .reschedule-bar-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      font-size: 0.88rem;
+      min-width: 0;
+    }
+
+    .reschedule-bar-text strong {
+      color: var(--sick-dark);
+      font-size: 0.98rem;
+    }
+
+    .rq-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rq-day-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .rq-day-head span {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+    }
+
+    .rq-item {
+      display: grid;
+      grid-template-columns: 170px 1fr auto;
+      gap: 0.75rem 1.25rem;
+      align-items: center;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rq-time {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .rq-time strong {
+      font-size: 1.05rem;
+      color: var(--text-main);
+    }
+
+    .rq-past {
+      color: var(--sick-dark);
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+
+    .rq-patient {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.25rem;
+      min-width: 0;
+    }
+
+    .rq-name {
+      border: none;
+      background: none;
+      padding: 0;
+      font: inherit;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .rq-name:hover {
+      color: var(--primary);
+    }
+
+    .rq-reason {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      overflow-wrap: anywhere;
+    }
+
+    .rq-actions {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .rq-empty {
+      padding: 3rem 1rem;
+      text-align: center;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .rq-empty span {
+      font-size: 1.8rem;
+      color: var(--success);
+    }
+
+    @media (max-width: 768px) {
+      .rq-item {
+        grid-template-columns: 1fr;
+      }
+
+      .rq-actions {
+        justify-content: flex-start;
+      }
+    }
+
+    /* ===== NEMOC LÉKAŘE – MINI KALENDÁŘ NA KARTĚ ===== */
+    .sick-next:empty {
+      display: none;
+    }
+
+    .sick-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.3rem;
+      padding: 0.12rem 0.55rem;
+      border-radius: 20px;
+      background: var(--sick-light);
+      color: var(--sick-dark);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .sick-cal {
+      padding: 0.75rem 1.25rem 0.9rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .sick-cal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .sick-cal-title {
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    .sick-cal-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .sick-cal-month {
+      font-size: 0.82rem;
+      font-weight: 600;
+      min-width: 110px;
+      text-align: center;
+    }
+
+    .sc-nav {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      color: var(--text-main);
+    }
+
+    .sc-nav:hover {
+      background: #f1f5f9;
+    }
+
+    .sick-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .sc-head {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding-bottom: 2px;
+    }
+
+    .sc-day {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 34px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: var(--text-main);
+      border: 1px solid transparent;
+    }
+
+    .sc-day.no-hours {
+      background: #fafbfc;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .sc-day.today {
+      border-color: var(--text-main);
+    }
+
+    .sc-day.past {
+      background: white;
+      color: #cbd5e1;
+    }
+
+    .sc-day.sick {
+      background: repeating-linear-gradient(135deg, #fbcfe8 0 5px, #f9a8d4 5px 10px);
+      color: var(--sick-dark);
+      font-weight: 700;
+    }
+
+    .sc-day.sick.past {
+      opacity: 0.5;
+    }
+
+    .sc-day.editable {
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    .sc-day.editable:hover {
+      border-color: var(--sick);
+    }
+
+    .sc-day.sel-add {
+      background: var(--sick);
+      color: white;
+      border-color: var(--sick-dark);
+    }
+
+    .sc-day.sel-remove {
+      background: white;
+      color: var(--sick-dark);
+      border: 2px dashed var(--sick);
+    }
+
+    .sick-cal-hint {
+      margin-top: 0.45rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .btn-sick {
+      background: var(--sick);
+      color: white;
+    }
+
+    .btn-sick:hover {
+      background: var(--sick-dark);
+    }
+
+    .sick-impact {
+      font-size: 0.92rem;
+      line-height: 1.5;
+      padding: 0.75rem 0.9rem;
+      border-radius: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+    }
+
+    .sick-note {
+      margin-top: 0.75rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 8px;
+      background: var(--sick-light);
+      color: var(--sick-dark);
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .state-RESCHEDULE {
+      background: var(--sick-light);
+      color: var(--sick-dark);
     }
 
     /* ===== LÉKAŘI A ORDINAČNÍ HODINY ===== */
@@ -2319,7 +2715,8 @@
       <!-- NAVIGATION TABS -->
       <div class="nav-tabs">
         <button id="tabBtnReservations" class="nav-tab active" onclick="switchDashboardTab('reservations')">
-          <span>📅</span> Rezervace
+          <span>📅</span> Rezervace <span id="rescheduleBadge" class="tab-badge sick" style="display: none;"
+            title="Termíny k přeobjednání">0</span>
         </button>
         <button id="tabBtnClinic" class="nav-tab" onclick="switchDashboardTab('clinic')" style="display: none;">
           <span>🏥</span> Návštěvy <span id="visitsBadge" class="tab-badge" style="display: none;">0</span>
@@ -2357,8 +2754,16 @@
           <div class="dashboard-title">
             <h2>Rezervace termínů</h2>
           </div>
+          <div id="resSubTabs" class="sub-tabs" style="display: none;">
+            <button id="subTabCalendar" class="sub-tab active" onclick="switchResSubTab('calendar')">📅 Kalendář</button>
+            <button id="subTabQueue" class="sub-tab" onclick="switchResSubTab('queue')">
+              📞 K přeobjednání <span id="queueCountChip" class="chip-count">0</span>
+            </button>
+          </div>
         </div>
 
+        <div id="resCalendarPane">
+        <div id="rescheduleBar" class="reschedule-bar" style="display: none;"></div>
         <div class="card">
           <div class="cal-toolbar">
             <div class="cal-doctor-select">
@@ -2385,6 +2790,8 @@
               <span class="legend-item"><span class="legend-swatch" style="background: var(--primary);"></span> Vybráno</span>
               <span class="legend-item"><span class="legend-swatch" style="background: #ef4444; border-color: #dc2626;"></span> Obsazeno</span>
               <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #ffedd5 0 4px, #fdba74 4px 8px); border-color: #fdba74;"></span> Jiné pracoviště</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #fdf2f8 0 4px, #fbcfe8 4px 8px); border-color: #f9a8d4;"></span> Nemoc lékaře</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: white; border: 2px dashed var(--sick);"></span> K přeobjednání</span>
               <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #f1f5f9 0 4px, #e2e8f0 4px 8px);"></span> Lékař neordinuje</span>
               <span class="legend-item"><span class="legend-swatch" style="background: #eef1f5;"></span> Minulost</span>
             </div>
@@ -2393,6 +2800,18 @@
 
           <div class="cal-scroll">
             <div id="calGrid" class="cal-grid"></div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Fronta K přeobjednání (nemoc lékaře, otevřený bod 5) -->
+        <div id="resQueuePane" style="display: none;">
+          <div class="card">
+            <div class="rq-toolbar">
+              <select id="rqDoctorSelect" class="form-control" style="max-width: 280px;"
+                onchange="onRqDoctorChange()" aria-label="Filtrovat podle lékaře"></select>
+            </div>
+            <div id="rqList"></div>
           </div>
         </div>
       </div>
@@ -2693,7 +3112,7 @@
   <div id="bookingModal" class="modal-overlay">
     <div class="modal" style="max-width: 540px;">
       <div class="modal-header">
-        <h3>Nová rezervace termínu</h3>
+        <h3 id="bookingModalTitle">Nová rezervace termínu</h3>
         <button class="close-btn" onclick="closeBookingModal()">&times;</button>
       </div>
       <form id="bookingForm" onsubmit="saveBooking(event)">
@@ -2837,6 +3256,30 @@
           <button type="submit" class="btn btn-danger" id="btnConfirmCancel">Zrušit termín</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: NEMOC LÉKAŘE (potvrzení s náhledem dopadu) -->
+  <div id="sickModal" class="modal-overlay">
+    <div class="modal" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3 id="sickModalTitle">Označit nemoc</h3>
+        <button class="close-btn" onclick="closeSickModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="booking-summary" style="margin-bottom: 1rem;">
+          <div class="booking-summary-icon">🤒</div>
+          <div>
+            <div class="booking-summary-main" id="sickSummaryMain">—</div>
+            <div class="booking-summary-sub" id="sickSummarySub">—</div>
+          </div>
+        </div>
+        <div id="sickImpact" class="sick-impact"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeSickModal()">Zpět</button>
+        <button type="button" class="btn btn-sick" id="btnConfirmSick" onclick="confirmSick()">Označit nemoc</button>
+      </div>
     </div>
   </div>
 
@@ -2991,6 +3434,7 @@
       document.getElementById('tabBtnClinic').style.display = canSeeVisits() ? 'flex' : 'none';
       if (activeDashboardTab === 'clinic' && !canSeeVisits()) activeDashboardTab = 'reservations';
       updateVisitsBadge();
+      updateRescheduleBadge();
 
       switchDashboardTab(activeDashboardTab || 'reservations');
     }
@@ -3479,6 +3923,8 @@
       CANCELLED_BY_PATIENT: 'Zrušeno pacientem',
       CANCELLED_BY_OFFICE: 'Zrušeno ordinací',
       NO_SHOW: 'Nedostavil se',
+      TO_RESCHEDULE: 'K přeobjednání',
+      RESCHEDULED: 'Přeobjednáno',
     };
     const DAY_SHORT = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
     const DAY_LONG = ['Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota', 'Neděle'];
@@ -3556,7 +4002,8 @@
       document.getElementById('cancelSummaryMain').textContent =
         `${DAY_LONG[weekdayIdx(s)]} ${fmtDate(s)}, ${fmtTime(s)}–${fmtTime(e)}`;
       document.getElementById('cancelSummarySub').textContent = `${appt.patientName} · ${appt.doctorName}`;
-      document.querySelector('input[name="cancelBy"][value="PATIENT"]').checked = true;
+      // U nemoci lékaře ruší termín ordinace (nepočítá se do spolehlivosti pacienta)
+      document.querySelector(`input[name="cancelBy"][value="${appt.defaultBy || 'PATIENT'}"]`).checked = true;
       document.getElementById('cancelModal').classList.add('open');
       setTimeout(() => document.getElementById('btnConfirmCancel').focus(), 50);
     }
@@ -3597,7 +4044,10 @@
 
     // Obnoví pohledy, kterých se změna stavu rezervace týká
     function afterAppointmentChange(patientId) {
-      if (activeDashboardTab === 'reservations') loadCalendar();
+      if (activeDashboardTab === 'reservations') {
+        if (resSubTab === 'queue') loadRescheduleQueue(); else loadCalendar();
+      }
+      updateRescheduleBadge();
       if (activeDashboardTab === 'patients') loadPatients();
       if (patientId && document.getElementById('patientAppointmentsModal').classList.contains('open')) {
         showPatientAppointments(patientId);
@@ -3715,11 +4165,13 @@
               <div>
                 <h3>${escapeHtml(d.full_name)}</h3>
                 <p>${escapeHtml(d.specialization || 'Bez specializace')}</p>
+                <div id="sickNext-${d.id}" class="sick-next"></div>
               </div>
               ${!d.is_active ? `<span class="status-badge status-inactive"><span class="status-dot"></span>Neaktivní</span>`
                 : isOwn ? '<span class="role-badge role-DOCTOR">Můj profil</span>' : ''}
             </div>
             <div class="doctor-card-body">${rows}</div>
+            <div id="sickCal-${d.id}" class="sick-cal"></div>
             <div class="doctor-card-foot">
               ${awayMin
                 ? `<span class="hours-total" title="${escapeHtml(`${durationLabel(totalMin)} v ordinaci, ${durationLabel(awayMin)} na jiném pracovišti`)}">Celkem ${hoursNumber(totalMin)} <span class="away">+ ${hoursNumber(awayMin)}</span> h týdně</span>`
@@ -3731,6 +4183,8 @@
             </div>
           </div>`;
       }).join('');
+      setupSickListeners();
+      doctorsList.forEach(d => loadSickCal(d.id));
     }
 
     // --- Editor ordinačních hodin ---
@@ -3909,6 +4363,9 @@
 
     async function initReservations() {
       setupCalendarListeners();
+      const withQueue = canCancelAppointments();
+      document.getElementById('resSubTabs').style.display = withQueue ? 'inline-flex' : 'none';
+      if (!withQueue) resSubTab = 'calendar';
       try {
         await loadDoctors();
         const active = doctorsList.filter(d => d.is_active);
@@ -3922,7 +4379,7 @@
         }
         if (calDoctorId) select.value = calDoctorId;
         updateDoctorDot();
-        await loadCalendar();
+        switchResSubTab(resSubTab);
       } catch (err) {
         showToast(err.message, true);
       }
@@ -4066,7 +4523,8 @@
         const free = day.free_intervals.map(f => [minOfDay(parseLocal(f.start_at)), minOfDay(parseLocal(f.end_at))]);
         const away = (day.away_blocks || []).map(b => ({ from: timeToMin(b.start_time), to: timeToMin(b.end_time), location: b.location }));
         html += `
-          <div class="cal-day ${day.date === todayIso ? 'today' : ''} ${i >= 5 ? 'weekend' : ''}" style="grid-row: ${row}; grid-column: 1;">
+          <div class="cal-day ${day.date === todayIso ? 'today' : ''} ${i >= 5 ? 'weekend' : ''} ${day.sick ? 'sick' : ''}"
+            ${day.sick ? 'title="Lékař je v tento den nemocný"' : ''} style="grid-row: ${row}; grid-column: 1;">
             <span class="cal-day-name">${DAY_SHORT[i]}</span>
             <span class="cal-day-num">${date.getDate()}.</span>
           </div>`;
@@ -4076,13 +4534,15 @@
           const slotDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(m / 60), m % 60);
           const isFree = free.some(([fs, fe]) => fs <= m && m + SLOT_MIN <= fe);
           const awayBlock = away.find(a => a.from <= m && m < a.to);
-          // Priorita: obsazeno > minulost > volno (dle serveru) > jiné pracoviště > lékař neordinuje
-          const state = bookedMap[i][c] ? 'booked' : slotDate < now ? 'past' : isFree ? 'free' : awayBlock ? 'away' : 'off';
+          // Priorita: obsazeno > minulost > nemoc > volno (dle serveru) > jiné pracoviště > lékař neordinuje
+          const state = bookedMap[i][c] ? 'booked' : slotDate < now ? 'past' : day.sick ? 'sick'
+            : isFree ? 'free' : awayBlock ? 'away' : 'off';
           calState[i][c] = state;
           if (state === 'booked') continue;
           const label = `${DAY_SHORT[i]} ${date.getDate()}. ${date.getMonth() + 1}. ${minToTime(m)}–${minToTime(m + SLOT_MIN)}`;
           const tip = state === 'free' ? `${label} · volno`
             : state === 'past' ? `${label} · již proběhlo`
+            : state === 'sick' ? `${label} · lékař je nemocný – nelze objednat`
             : state === 'away' ? `${label} · lékař ordinuje jinde (${awayBlock.location}) – nelze objednat`
             : `${label} · lékař neordinuje`;
           html += `<div class="cal-cell ${state} ${c % 4 === 0 ? 'hour-start' : ''}" data-day="${i}" data-col="${c}" style="grid-row: ${row}; grid-column: ${c + 2};" title="${escapeHtml(tip)}"></div>`;
@@ -4096,6 +4556,11 @@
           const text = `Jiné pracoviště · ${a.location}`;
           html += `<div class="cal-off-label away" style="grid-row: ${row}; grid-column: ${start + 2} / ${to + 2};" title="${escapeHtml(text)}">${escapeHtml(text)}</div>`;
         });
+        // Štítek „Nemoc lékaře“ přes budoucí část nemocného dne
+        const firstSick = calState[i].indexOf('sick');
+        if (firstSick >= 0) {
+          html += `<div class="cal-off-label sick" style="grid-row: ${row}; grid-column: ${firstSick + 2} / span ${calCols - firstSick};">🤒 Nemoc lékaře – nelze objednat</div>`;
+        }
         // Štítek jen přes nebudoucí část dne – u dnů v minulosti se nezobrazuje
         const firstOff = calState[i].indexOf('off');
         if (!blocks.length && !away.length && firstOff >= 0) {
@@ -4105,11 +4570,13 @@
 
       appts.forEach(a => {
         const time = `${fmtTime(a.s)}–${fmtTime(a.e)}`;
-        const tip = `${a.patient_name} · ${time}\n${a.reason}`;
+        const waiting = a.status === 'TO_RESCHEDULE';
+        const tip = `${a.patient_name} · ${time}\n${a.reason}${waiting ? '\nK přeobjednání – lékař je nemocný' : ''}`;
+        const mark = waiting ? '📞 ' : a.status === 'COMPLETED' ? '✔ ' : '';
         html += `
-          <div class="cal-appt ${a.e <= now ? 'is-past' : ''}" style="grid-row: ${a.dayIdx + 2}; grid-column: ${a.from + 2} / ${a.to + 2};"
+          <div class="cal-appt ${waiting ? 'to-reschedule' : ''} ${a.e <= now ? 'is-past' : ''}" style="grid-row: ${a.dayIdx + 2}; grid-column: ${a.from + 2} / ${a.to + 2};"
             title="${escapeHtml(tip)}" onclick="openAppointmentDetail(${a.id})">
-            <span class="cal-appt-name">${a.status === 'COMPLETED' ? '✔ ' : ''}${escapeHtml(a.to - a.from >= 3 ? a.patient_name : a.patient_name.split(' ')[0])}</span>
+            <span class="cal-appt-name">${mark}${escapeHtml(a.to - a.from >= 3 ? a.patient_name : a.patient_name.split(' ')[0])}</span>
             ${a.to - a.from >= 3 ? `<span class="cal-appt-time">${time}</span>` : ''}
           </div>`;
       });
@@ -4144,8 +4611,14 @@
       e.preventDefault();
       if (cell.hasPointerCapture(e.pointerId)) cell.releasePointerCapture(e.pointerId);
       const day = Number(cell.dataset.day), col = Number(cell.dataset.col);
-      calDrag = { day, anchor: col };
-      setSelection(day, col, col);
+      calDrag = { day, anchor: col, lastTarget: col };
+      let end = col;
+      if (rescheduleTarget) {
+        const slots = Math.min(MAX_SLOTS, Math.round(
+          (parseLocal(rescheduleTarget.end_at) - parseLocal(rescheduleTarget.start_at)) / 60000 / SLOT_MIN));
+        while (end - col + 1 < slots && calState[day][end + 1] === 'free') end++;
+      }
+      setSelection(day, col, end);
     }
 
     function calPointerMove(e) {
@@ -4154,6 +4627,8 @@
       const cell = el && el.closest ? el.closest('.cal-cell') : null;
       if (!cell || Number(cell.dataset.day) !== calDrag.day) return;
       const target = Number(cell.dataset.col), anchor = calDrag.anchor;
+      if (target === calDrag.lastTarget) return;
+      calDrag.lastTarget = target;
       const dir = Math.sign(target - anchor);
       let end = anchor;
       // Výběr se rozšiřuje jen přes souvislá volná políčka (zastaví se o obsazené / šedé)
@@ -4226,9 +4701,21 @@
       document.getElementById('bookingSummarySub').innerHTML = `
         <span class="doctor-dot" style="background: ${escapeHtml(doctor.color)}; width: 10px; height: 10px;"></span>
         ${escapeHtml(doctor.full_name)} · ${durationLabel(endM - startM)}`;
-      clearBookingPatient(false);
+      const resched = !!rescheduleTarget;
+      document.getElementById('bookingModalTitle').textContent = resched ? 'Přeobjednání termínu' : 'Nová rezervace termínu';
+      document.getElementById('btnSaveBooking').textContent = resched ? 'Přeobjednat' : 'Rezervovat termín';
+      const reasonEl = document.getElementById('bookingReason');
+      reasonEl.readOnly = resched;
+      if (resched) {
+        // Pacient a důvod zůstávají z původního termínu
+        bookingPatient = rescheduleTarget.patient;
+        renderBookingPatient(true);
+        reasonEl.value = rescheduleTarget.reason;
+      } else {
+        clearBookingPatient(false);
+      }
       document.getElementById('bookingModal').classList.add('open');
-      setTimeout(() => document.getElementById('bookingPatientSearch').focus(), 50);
+      setTimeout(() => document.getElementById(resched ? 'btnSaveBooking' : 'bookingPatientSearch').focus(), 50);
     }
 
     function closeBookingModal() {
@@ -4266,6 +4753,11 @@
     function selectBookingPatient(patientId) {
       bookingPatient = bookingResults.find(p => p.id === patientId);
       if (!bookingPatient) return;
+      renderBookingPatient(false);
+      document.getElementById('bookingReason').focus();
+    }
+
+    function renderBookingPatient(locked) {
       document.getElementById('bookingPatientPicker').style.display = 'none';
       const box = document.getElementById('bookingPatientSelected');
       box.style.display = 'block';
@@ -4275,9 +4767,8 @@
             <strong>${reliabilityDot(bookingPatient.reliability)}${escapeHtml(bookingPatient.last_name)} ${escapeHtml(bookingPatient.first_name)}</strong>
             <small>nar. ${bookingPatient.birth_year} · ${escapeHtml(formatPhoneNumber(bookingPatient.phone_number))} · ${escapeHtml(INS_NAMES[bookingPatient.insurance_company_code] || bookingPatient.insurance_company_code)}</small>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="clearBookingPatient()">Změnit</button>
+          ${locked ? '' : '<button type="button" class="btn btn-secondary btn-sm" onclick="clearBookingPatient()">Změnit</button>'}
         </div>`;
-      document.getElementById('bookingReason').focus();
     }
 
     function clearBookingPatient(focus = true) {
@@ -4306,6 +4797,10 @@
       const label = selectionLabel();
       const btn = document.getElementById('btnSaveBooking');
       btn.disabled = true;
+      if (rescheduleTarget) {
+        await saveReschedule(day, startM, endM, label, btn);
+        return;
+      }
       try {
         await apiFetch('/api/v1/appointments', {
           method: 'POST',
@@ -4339,6 +4834,10 @@
       const now = new Date();
       const buttons = [];
       const planned = a.status === 'PLANNED';
+      if (a.status === 'TO_RESCHEDULE' && canCancelAppointments()) {
+        buttons.push(`<button class="btn btn-primary" onclick="startReschedule(${a.id})">📞 Přeobjednat</button>`);
+        buttons.push(`<button class="btn btn-danger" onclick="cancelFromDetail()">Zrušit rezervaci</button>`);
+      }
       if (planned && s > now && canCancelAppointments()) {
         buttons.push(`<button class="btn btn-danger" onclick="cancelFromDetail()">Zrušit rezervaci</button>`);
       }
@@ -4358,6 +4857,7 @@
       openCancelDialog({
         id: a.id, start_at: a.start_at, end_at: a.end_at, patientId: a.patient.id,
         patientName: `${a.patient.last_name} ${a.patient.first_name}`, doctorName: a.doctor.full_name,
+        defaultBy: a.status === 'TO_RESCHEDULE' ? 'OFFICE' : 'PATIENT',
       });
     }
 
@@ -4402,11 +4902,447 @@
               ${escapeHtml(STATUS_LABELS[a.status] || a.status)} · ${escapeHtml(a.cancelled_by_name || '—')},
               ${new Date(a.cancelled_at).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </div>` : ''}
+          ${a.status === 'TO_RESCHEDULE' ? '<div class="sick-note">🤒 Lékař je v tento den nemocný – termín čeká na přeobjednání.</div>' : ''}
+          ${rescheduledToHtml(a.rescheduled_to_term)}
           ${appointmentDetailActions(a, s)}`;
         appointmentDetailCurrent = a;
       } catch (err) {
         body.innerHTML = `<div class="search-hint" style="color: var(--danger);">${escapeHtml(err.message)}</div>`;
       }
+    }
+
+    /* ===== NEMOC LÉKAŘE – MINI KALENDÁŘ NA KARTĚ (otevřený bod 5) ===== */
+    const sickCals = {};     // doctorId -> { month (1. den), days: Set<iso>, nextPeriod, canEdit }
+    let sickDrag = null;     // { doctorId, anchor, current, mode: 'add' | 'remove' }
+    let sickPending = null;  // { doctorId, from, to, sick } – čeká na potvrzení v dialogu
+    let sickListenersReady = false;
+
+    const firstOfMonth = d => new Date(d.getFullYear(), d.getMonth(), 1);
+    const fmtShortDate = d => `${d.getDate()}. ${d.getMonth() + 1}.`;
+    const todayIso = () => isoDate(new Date());
+    const fromIso = iso => new Date(iso + 'T00:00:00');
+
+    function periodLabel(from, to) {
+      const a = fromIso(from), b = fromIso(to);
+      if (from === to) return fmtShortDate(a);
+      if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) {
+        return `${a.getDate()}.–${b.getDate()}. ${b.getMonth() + 1}.`;
+      }
+      return `${fmtShortDate(a)} – ${fmtShortDate(b)}`;
+    }
+
+    async function loadSickCal(doctorId) {
+      let st = sickCals[doctorId];
+      if (!st) {
+        st = sickCals[doctorId] = { month: firstOfMonth(new Date()), days: new Set(), nextPeriod: null, canEdit: false };
+      }
+      renderSickCal(doctorId);
+      const from = st.month, to = new Date(from.getFullYear(), from.getMonth() + 1, 0);
+      const reqMonth = isoDate(from);
+      try {
+        const data = await apiFetch(`/api/v1/doctors/${doctorId}/sick-days?date_from=${isoDate(from)}&date_to=${isoDate(to)}`);
+        if (isoDate(st.month) !== reqMonth) return; // mezitím přepnutý měsíc
+        st.days = new Set(data.days);
+        st.nextPeriod = data.next_period;
+        st.canEdit = data.can_edit;
+        renderSickCal(doctorId);
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function shiftSickMonth(doctorId, delta) {
+      const st = sickCals[doctorId];
+      if (!st) return;
+      st.month = new Date(st.month.getFullYear(), st.month.getMonth() + delta, 1);
+      st.days = new Set();
+      loadSickCal(doctorId);
+    }
+
+    function renderSickCal(doctorId) {
+      const box = document.getElementById(`sickCal-${doctorId}`);
+      const st = sickCals[doctorId];
+      if (!box || !st) return;
+      const doctor = doctorsList.find(x => x.id === doctorId);
+      const workDays = new Set(doctor ? doctor.office_hours.filter(b => b.kind !== 'ELSEWHERE').map(b => b.weekday) : []);
+      const first = st.month;
+      const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+      const today = todayIso();
+
+      let cells = DAY_SHORT.map(n => `<span class="sc-head">${n}</span>`).join('');
+      for (let i = 0; i < weekdayIdx(first); i++) cells += '<span></span>';
+      for (let n = 1; n <= daysInMonth; n++) {
+        const date = new Date(first.getFullYear(), first.getMonth(), n);
+        const iso = isoDate(date);
+        const past = iso < today, sick = st.days.has(iso), works = workDays.has(weekdayIdx(date));
+        const cls = ['sc-day'];
+        if (past) cls.push('past');
+        if (sick) cls.push('sick');
+        if (!works) cls.push('no-hours');
+        if (iso === today) cls.push('today');
+        if (st.canEdit && !past) cls.push('editable');
+        const tip = `${DAY_LONG[weekdayIdx(date)]} ${fmtDate(date)}${sick ? ' · nemoc' : ''}${works ? '' : ' · neordinuje'}`;
+        cells += `<span class="${cls.join(' ')}" data-doctor="${doctorId}" data-date="${iso}" title="${escapeHtml(tip)}">${n}</span>`;
+      }
+
+      box.innerHTML = `
+        <div class="sick-cal-head">
+          <span class="sick-cal-title">🤒 Nemoc</span>
+          <div class="sick-cal-nav">
+            <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, -1)" aria-label="Předchozí měsíc">‹</button>
+            <span class="sick-cal-month">${monthName(first)} ${first.getFullYear()}</span>
+            <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, 1)" aria-label="Další měsíc">›</button>
+          </div>
+        </div>
+        <div class="sick-cal-grid">${cells}</div>
+        ${st.canEdit ? '<div class="sick-cal-hint">Kliknutím nebo tažením označte dny nemoci, opakováním je zrušíte.</div>' : ''}`;
+
+      const badge = document.getElementById(`sickNext-${doctorId}`);
+      if (badge) {
+        const p = st.nextPeriod;
+        if (!p) badge.innerHTML = '';
+        else if (p.date_from <= today) badge.innerHTML = `<span class="sick-badge">🤒 Nemoc do ${fmtShortDate(fromIso(p.date_to))}</span>`;
+        else badge.innerHTML = `<span class="sick-badge">🤒 Nemoc ${periodLabel(p.date_from, p.date_to)}</span>`;
+      }
+    }
+
+    // Výběr dnů kliknutím / tažením (myš i dotyk přes Pointer Events)
+    function setupSickListeners() {
+      if (sickListenersReady) return;
+      sickListenersReady = true;
+      document.getElementById('doctorCards').addEventListener('pointerdown', sickPointerDown);
+      document.addEventListener('pointermove', sickPointerMove);
+      document.addEventListener('pointerup', sickPointerUp);
+      document.addEventListener('pointercancel', () => {
+        if (!sickDrag) return;
+        const id = sickDrag.doctorId;
+        sickDrag = null;
+        renderSickCal(id);
+      });
+    }
+
+    function sickDragRange() {
+      const [from, to] = [sickDrag.anchor, sickDrag.current].sort();
+      return { from, to, mode: sickDrag.mode };
+    }
+
+    function paintSickDrag() {
+      const { from, to, mode } = sickDragRange();
+      document.querySelectorAll(`#sickCal-${sickDrag.doctorId} .sc-day`).forEach(c => {
+        const inside = !c.classList.contains('past') && c.dataset.date >= from && c.dataset.date <= to;
+        c.classList.toggle('sel-add', inside && mode === 'add');
+        c.classList.toggle('sel-remove', inside && mode === 'remove');
+      });
+    }
+
+    function sickPointerDown(e) {
+      if (e.button !== 0) return;
+      const cell = e.target.closest('.sc-day.editable');
+      if (!cell) return;
+      e.preventDefault();
+      if (cell.hasPointerCapture(e.pointerId)) cell.releasePointerCapture(e.pointerId);
+      const doctorId = Number(cell.dataset.doctor), iso = cell.dataset.date;
+      // Tažení od neoznačeného dne nemoc přidává, od označeného ji ruší
+      sickDrag = { doctorId, anchor: iso, current: iso, mode: sickCals[doctorId].days.has(iso) ? 'remove' : 'add' };
+      paintSickDrag();
+    }
+
+    function sickPointerMove(e) {
+      if (!sickDrag) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const cell = el && el.closest ? el.closest('.sc-day') : null;
+      if (!cell || Number(cell.dataset.doctor) !== sickDrag.doctorId) return;
+      const iso = cell.dataset.date < todayIso() ? todayIso() : cell.dataset.date;
+      if (iso === sickDrag.current) return;
+      sickDrag.current = iso;
+      paintSickDrag();
+    }
+
+    function sickPointerUp() {
+      if (!sickDrag) return;
+      const { from, to, mode } = sickDragRange();
+      const doctorId = sickDrag.doctorId;
+      sickDrag = null;
+      openSickModal(doctorId, from, to, mode === 'add');
+    }
+
+    function sickImpactText(p) {
+      if (!p.days_changed) {
+        return p.sick ? 'Vybrané dny už jsou označené jako nemoc.' : 'Ve vybraných dnech není nemoc označená.';
+      }
+      const n = p.appointments;
+      const verb = n >= 2 && n <= 4 ? 'přejdou' : 'přejde';
+      if (p.sick) {
+        return n
+          ? `<strong>${plural(n, 'rezervace', 'rezervace', 'rezervací')}</strong> (${plural(p.patients, 'pacient', 'pacienti', 'pacientů')}) ${verb} do fronty <strong>K přeobjednání</strong>. Recepce pacienty obvolá a přeobjedná. Na tyto dny se nebude dát objednat.`
+          : 'V těchto dnech nejsou žádné naplánované rezervace. Na tyto dny se nebude dát objednat.';
+      }
+      return n
+        ? `<strong>${plural(n, 'rezervace', 'rezervace', 'rezervací')}</strong>, ${n === 1 ? 'která čeká' : 'které čekají'} na přeobjednání, se vrátí na původní termín. Dny bude opět možné objednávat.`
+        : 'Žádná rezervace nečeká na přeobjednání. Dny bude opět možné objednávat.';
+    }
+
+    async function openSickModal(doctorId, from, to, sick) {
+      const doctor = doctorsList.find(x => x.id === doctorId);
+      sickPending = { doctorId, from, to, sick };
+      const a = fromIso(from), b = fromIso(to);
+      const count = Math.round((b - a) / 86400000) + 1;
+      document.getElementById('sickModalTitle').textContent = sick ? 'Označit nemoc' : 'Zrušit nemoc';
+      document.getElementById('sickSummaryMain').textContent = from === to
+        ? `${DAY_LONG[weekdayIdx(a)]} ${fmtDate(a)}`
+        : `${DAY_SHORT[weekdayIdx(a)]} ${fmtDate(a)} – ${DAY_SHORT[weekdayIdx(b)]} ${fmtDate(b)}`;
+      document.getElementById('sickSummarySub').textContent =
+        `${doctor ? doctor.full_name : ''} · ${plural(count, 'den', 'dny', 'dní')}`;
+      const btn = document.getElementById('btnConfirmSick');
+      btn.textContent = sick ? 'Označit nemoc' : 'Zrušit nemoc';
+      btn.disabled = true;
+      const impact = document.getElementById('sickImpact');
+      impact.textContent = 'Zjišťuji dopad na rezervace…';
+      document.getElementById('sickModal').classList.add('open');
+      try {
+        const p = await apiFetch(`/api/v1/doctors/${doctorId}/sick-days/preview?date_from=${from}&date_to=${to}&sick=${sick}`);
+        if (sickPending !== null && sickPending.from === from && sickPending.to === to) {
+          impact.innerHTML = sickImpactText(p);
+          btn.disabled = !p.days_changed;
+          if (p.days_changed) btn.focus();
+        }
+      } catch (err) {
+        impact.textContent = err.message;
+      }
+    }
+
+    function closeSickModal() {
+      closeModal('sickModal');
+      const id = sickPending && sickPending.doctorId;
+      sickPending = null;
+      if (id) renderSickCal(id);
+    }
+
+    async function confirmSick() {
+      const p = sickPending;
+      if (!p) return;
+      const btn = document.getElementById('btnConfirmSick');
+      btn.disabled = true;
+      try {
+        const r = await apiFetch(`/api/v1/doctors/${p.doctorId}/sick-days`, {
+          method: 'PUT', body: { date_from: p.from, date_to: p.to, sick: p.sick },
+        });
+        if (p.sick) {
+          showToast(r.moved_to_queue
+            ? `Nemoc uložena. ${plural(r.moved_to_queue, 'rezervace čeká', 'rezervace čekají', 'rezervací čeká')} na přeobjednání.`
+            : 'Nemoc uložena.');
+        } else {
+          showToast(r.restored
+            ? `Nemoc zrušena. ${plural(r.restored, 'rezervace se vrátila', 'rezervace se vrátily', 'rezervací se vrátilo')} na původní termín.`
+            : 'Nemoc zrušena.');
+        }
+        closeSickModal();
+        loadSickCal(p.doctorId);
+        updateRescheduleBadge();
+      } catch (err) {
+        showToast(err.message, true);
+        btn.disabled = false;
+      }
+    }
+
+    /* ===== FRONTA K PŘEOBJEDNÁNÍ A PŘEOBJEDNÁNÍ (otevřený bod 5) ===== */
+    let resSubTab = 'calendar';
+    let rescheduleQueue = [];
+    let rqDoctorFilter = '';
+    let rescheduleTarget = null; // termín, který se právě přeobjednává (položka fronty / detail)
+
+    async function updateRescheduleBadge() {
+      const badge = document.getElementById('rescheduleBadge');
+      const chip = document.getElementById('queueCountChip');
+      if (!canCancelAppointments()) { badge.style.display = 'none'; return; }
+      try {
+        const { count } = await apiFetch('/api/v1/appointments/reschedule-queue/count');
+        badge.textContent = count;
+        badge.style.display = count > 0 ? 'inline-flex' : 'none';
+        chip.textContent = count;
+        chip.classList.toggle('has-items', count > 0);
+      } catch (err) {
+        badge.style.display = 'none';
+      }
+    }
+
+    function switchResSubTab(tab) {
+      if (tab === 'queue' && !canCancelAppointments()) tab = 'calendar';
+      if (tab === 'queue' && rescheduleTarget) {
+        rescheduleTarget = null;
+        renderRescheduleBar();
+      }
+      resSubTab = tab;
+      document.getElementById('subTabCalendar').classList.toggle('active', tab === 'calendar');
+      document.getElementById('subTabQueue').classList.toggle('active', tab === 'queue');
+      document.getElementById('resCalendarPane').style.display = tab === 'calendar' ? 'block' : 'none';
+      document.getElementById('resQueuePane').style.display = tab === 'queue' ? 'block' : 'none';
+      if (tab === 'queue') loadRescheduleQueue();
+      else loadCalendar();
+    }
+
+    function onRqDoctorChange() {
+      rqDoctorFilter = document.getElementById('rqDoctorSelect').value;
+      loadRescheduleQueue();
+    }
+
+    async function loadRescheduleQueue() {
+      const select = document.getElementById('rqDoctorSelect');
+      select.innerHTML = '<option value="">Všichni lékaři</option>' + doctorsList.map(d =>
+        `<option value="${d.id}">${escapeHtml(d.full_name)}</option>`).join('');
+      select.value = rqDoctorFilter;
+      try {
+        const data = await apiFetch(`/api/v1/appointments/reschedule-queue${rqDoctorFilter ? `?doctor_id=${rqDoctorFilter}` : ''}`);
+        rescheduleQueue = data.items;
+        renderRescheduleQueue();
+        updateRescheduleBadge();
+      } catch (err) {
+        showToast(err.message, true);
+      }
+    }
+
+    function renderRescheduleQueue() {
+      const box = document.getElementById('rqList');
+      if (!rescheduleQueue.length) {
+        box.innerHTML = '<div class="rq-empty"><span>✔</span>Žádné termíny nečekají na přeobjednání.</div>';
+        return;
+      }
+      const now = new Date();
+      const groups = [];
+      rescheduleQueue.forEach(a => {
+        const key = isoDate(parseLocal(a.start_at));
+        if (!groups.length || groups[groups.length - 1].key !== key) groups.push({ key, items: [] });
+        groups[groups.length - 1].items.push(a);
+      });
+      box.innerHTML = groups.map(g => {
+        const day = fromIso(g.key);
+        return `
+          <div class="rq-day">
+            <div class="rq-day-head">
+              <strong>${DAY_LONG[weekdayIdx(day)]} ${fmtDate(day)}</strong>
+              <span>${plural(g.items.length, 'termín', 'termíny', 'termínů')}</span>
+            </div>
+            ${g.items.map(a => {
+              const s = parseLocal(a.start_at), e = parseLocal(a.end_at), p = a.patient;
+              return `
+                <div class="rq-item">
+                  <div class="rq-time">
+                    <strong>${fmtTime(s)}–${fmtTime(e)}</strong>
+                    <span><span class="doctor-dot" style="background: ${escapeHtml(a.doctor.color)}; width: 9px; height: 9px;"></span>${escapeHtml(a.doctor.full_name)}</span>
+                    ${s <= now ? '<span class="rq-past">termín už uplynul</span>' : ''}
+                  </div>
+                  <div class="rq-patient">
+                    <button type="button" class="rq-name" onclick="openAppointmentDetail(${a.id})">${reliabilityDot(p.reliability)}${escapeHtml(p.last_name)} ${escapeHtml(p.first_name)}</button>
+                    <a href="tel:${escapeHtml(p.phone_number)}" class="phone-link"><span>📞</span> ${escapeHtml(formatPhoneNumber(p.phone_number))}</a>
+                    <span class="rq-reason">${escapeHtml(a.reason)}</span>
+                  </div>
+                  <div class="rq-actions">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="startReschedule(${a.id})">Přeobjednat</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="cancelFromQueue(${a.id})">Zrušit termín</button>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>`;
+      }).join('');
+    }
+
+    function cancelFromQueue(appointmentId) {
+      const a = rescheduleQueue.find(x => x.id === appointmentId);
+      if (!a) return;
+      openCancelDialog({
+        id: a.id, start_at: a.start_at, end_at: a.end_at, patientId: a.patient.id,
+        patientName: `${a.patient.last_name} ${a.patient.first_name}`, doctorName: a.doctor.full_name,
+        defaultBy: 'OFFICE',
+      });
+    }
+
+    // Přeobjednání: přepne na kalendář kolegy, výběr slotu otevře rezervační dialog v režimu přeobjednání
+    function startReschedule(appointmentId) {
+      const item = rescheduleQueue.find(x => x.id === appointmentId)
+        || (appointmentDetailCurrent && appointmentDetailCurrent.id === appointmentId ? appointmentDetailCurrent : null);
+      if (!item) return;
+      closeModal('appointmentDetailModal');
+      rescheduleTarget = item;
+      const active = doctorsList.filter(d => d.is_active);
+      const colleague = active.find(d => d.id !== item.doctor.id) || active.find(d => d.id === item.doctor.id);
+      if (colleague) calDoctorId = colleague.id;
+      const s = parseLocal(item.start_at), now = new Date();
+      calWeekStart = mondayOf(s > now ? s : now);
+      resSubTab = 'calendar';
+      renderRescheduleBar();
+      if (activeDashboardTab === 'reservations') {
+        document.getElementById('calDoctorSelect').value = calDoctorId;
+        updateDoctorDot();
+        switchResSubTab('calendar');
+      } else {
+        switchDashboardTab('reservations');
+      }
+    }
+
+    function renderRescheduleBar() {
+      const bar = document.getElementById('rescheduleBar');
+      const t = rescheduleTarget;
+      if (!t) {
+        bar.style.display = 'none';
+        bar.innerHTML = '';
+        return;
+      }
+      const s = parseLocal(t.start_at), e = parseLocal(t.end_at);
+      bar.style.display = 'flex';
+      bar.innerHTML = `
+        <div class="reschedule-bar-text">
+          <strong>📞 Přeobjednáváte: ${escapeHtml(t.patient.last_name)} ${escapeHtml(t.patient.first_name)}</strong>
+          <span>Původně ${escapeHtml(t.doctor.full_name)}, ${DAY_SHORT[weekdayIdx(s)]} ${fmtShortDate(s)} ${fmtTime(s)}–${fmtTime(e)}
+            (${durationLabel((e - s) / 60000)}). Vyberte nový termín, lékaře lze změnit.</span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="cancelRescheduleMode()">Zrušit přeobjednání</button>`;
+    }
+
+    function cancelRescheduleMode() {
+      rescheduleTarget = null;
+      renderRescheduleBar();
+      clearSelection();
+      if (canCancelAppointments()) switchResSubTab('queue');
+    }
+
+    async function saveReschedule(day, startM, endM, label, btn) {
+      const target = rescheduleTarget;
+      try {
+        await apiFetch(`/api/v1/appointments/${target.id}/reschedule`, {
+          method: 'POST',
+          body: {
+            doctor_id: calDoctorId,
+            start_at: `${day.date}T${minToIso(startM)}:00`,
+            end_at: `${day.date}T${minToIso(endM)}:00`,
+          },
+        });
+        const doctor = doctorsList.find(d => d.id === calDoctorId);
+        showToast(`Přeobjednáno: ${target.patient.last_name} ${target.patient.first_name} → ${doctor ? doctor.full_name : ''}, ${label}`);
+        closeBookingModal();
+        rescheduleTarget = null;
+        renderRescheduleBar();
+        updateRescheduleBadge();
+        switchResSubTab('queue');
+      } catch (err) {
+        showToast(err.message, true);
+        if (err.status === 409 || err.status === 400) {
+          closeBookingModal();
+          loadCalendar();
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function rescheduledToHtml(t) {
+      if (!t) return '';
+      const s = parseLocal(t.start_at), e = parseLocal(t.end_at);
+      return `
+        <div class="cancel-info">
+          Nový termín:
+          <a href="#" onclick="openAppointmentDetail(${t.id}); return false;">
+            ${DAY_SHORT[weekdayIdx(s)]} ${fmtDate(s)}, ${fmtTime(s)}–${fmtTime(e)} · ${escapeHtml(t.doctor_name)}</a>
+        </div>`;
     }
 
     /* ===== REZERVACE V EVIDENCI PACIENTŮ ===== */
@@ -4419,6 +5355,7 @@
       openCancelDialog({
         id: a.id, start_at: a.start_at, end_at: a.end_at,
         patientId, patientName: patientAppointmentsName, doctorName: a.doctor.full_name,
+        defaultBy: a.status === 'TO_RESCHEDULE' ? 'OFFICE' : 'PATIENT',
       });
     }
 
@@ -4439,7 +5376,8 @@
         patientAppointmentsCache = data.items;
         body.innerHTML = data.items.map(a => {
           const s = parseLocal(a.start_at), e = parseLocal(a.end_at);
-          const cancellable = canCancelAppointments() && a.status === 'PLANNED' && s > new Date();
+          const waiting = a.status === 'TO_RESCHEDULE';
+          const cancellable = canCancelAppointments() && ((a.status === 'PLANNED' && s > new Date()) || waiting);
           return `
             <div class="patient-appt-item">
               <div class="patient-appt-date">
@@ -4449,6 +5387,7 @@
               </div>
               <div class="patient-appt-info">
                 <strong>${fmtDate(s)}, ${fmtTime(s)}–${fmtTime(e)}</strong>
+                ${waiting ? '<span class="state-pill state-RESCHEDULE">📞 K přeobjednání</span>' : ''}
                 <span class="muted"><span class="doctor-dot" style="background: ${escapeHtml(a.doctor.color)}; width: 9px; height: 9px;"></span>${escapeHtml(a.doctor.full_name)}</span>
                 <span>${escapeHtml(a.reason)}</span>
               </div>
@@ -5012,6 +5951,7 @@
           let state, label;
           if (h.visit && h.visit.status === 'CLOSED') { state = 'CLOSED'; label = '✔ Uskutečněno'; }
           else if (h.visit) { state = 'DRAFT'; label = '✎ Rozpracováno'; }
+          else if (h.appointment_status === 'TO_RESCHEDULE') { state = 'RESCHEDULE'; label = '📞 K přeobjednání'; }
           else if (h.appointment_status !== 'PLANNED') { state = 'CANCELLED'; label = STATUS_LABELS[h.appointment_status] || h.appointment_status; }
           else if (s > now) { state = 'PLANNED'; label = '○ Naplánováno'; }
           else { state = 'TO_RECORD'; label = '● Čeká na zápis'; }
@@ -5081,10 +6021,11 @@
       const openModal = document.querySelector('.modal-overlay.open');
       if (e.key === 'Escape' && openModal) {
         if (openModal.id === 'bookingModal') closeBookingModal();
+        else if (openModal.id === 'sickModal') closeSickModal();
         else openModal.classList.remove('open');
         return;
       }
-      if (openModal || !currentUser || activeDashboardTab !== 'reservations') return;
+      if (openModal || !currentUser || activeDashboardTab !== 'reservations' || resSubTab !== 'calendar') return;
       const tag = (document.activeElement && document.activeElement.tagName) || '';
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
       if (e.key === 'ArrowLeft') shiftWeek(-1);
