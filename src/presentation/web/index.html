@@ -1386,7 +1386,7 @@
     }
 
     .sick-cal-grid {
-      margin-top: 0.5rem;
+      padding-top: 0.5rem;
     }
 
     .sick-cal-toggle {
@@ -1414,8 +1414,43 @@
       transition: transform 0.15s;
     }
 
-    .sick-cal-arrow.open {
+    .sick-cal.open .sick-cal-arrow {
       transform: rotate(90deg);
+    }
+
+    /* Plynulé rozbalení: výška řádku mřížky 0fr → 1fr */
+    .sick-cal-body {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.25s ease;
+    }
+
+    .sick-cal.open .sick-cal-body {
+      grid-template-rows: 1fr;
+    }
+
+    .sick-cal-inner {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .sick-cal-nav {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s;
+    }
+
+    .sick-cal.open .sick-cal-nav {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .sick-cal-body,
+      .sick-cal-nav,
+      .sick-cal-arrow {
+        transition: none;
+      }
     }
 
     .sick-cal-nav {
@@ -1561,6 +1596,8 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
+      /* Karty se nenatahují na výšku nejvyšší karty v řadě (např. rozbalený kalendář nemoci) */
+      align-items: flex-start;
       gap: 1.25rem;
     }
 
@@ -5006,21 +5043,26 @@
         cells += `<span class="${cls.join(' ')}" data-doctor="${doctorId}" data-date="${iso}" title="${escapeHtml(tip)}">${n}</span>`;
       }
 
-      // Kalendář je ve výchozím stavu sbalený – rozbalí se šipkou u nadpisu
+      // Kalendář je ve výchozím stavu sbalený – rozbalí se šipkou u nadpisu.
+      // Obsah je v DOM pořád, sbalení/rozbalení jen přepíná třídu `open` (plynulý přechod v CSS).
+      box.classList.toggle('open', st.open);
       box.innerHTML = `
         <div class="sick-cal-head">
           <button type="button" class="sick-cal-toggle" onclick="toggleSickCal(${doctorId})"
             aria-expanded="${st.open}" aria-controls="sickCalBody-${doctorId}">
-            <span class="sick-cal-arrow ${st.open ? 'open' : ''}" aria-hidden="true">›</span> Nemoc
+            <span class="sick-cal-arrow" aria-hidden="true">›</span> Nemoc
           </button>
-          ${st.open ? `
-            <div class="sick-cal-nav">
-              <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, -1)" aria-label="Předchozí měsíc">‹</button>
-              <span class="sick-cal-month">${monthName(first)} ${first.getFullYear()}</span>
-              <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, 1)" aria-label="Další měsíc">›</button>
-            </div>` : ''}
+          <div class="sick-cal-nav">
+            <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, -1)" aria-label="Předchozí měsíc">‹</button>
+            <span class="sick-cal-month">${monthName(first)} ${first.getFullYear()}</span>
+            <button type="button" class="sc-nav" onclick="shiftSickMonth(${doctorId}, 1)" aria-label="Další měsíc">›</button>
+          </div>
         </div>
-        ${st.open ? `<div id="sickCalBody-${doctorId}" class="sick-cal-grid">${cells}</div>` : ''}`;
+        <div id="sickCalBody-${doctorId}" class="sick-cal-body">
+          <div class="sick-cal-inner">
+            <div class="sick-cal-grid">${cells}</div>
+          </div>
+        </div>`;
 
       const badge = document.getElementById(`sickNext-${doctorId}`);
       if (badge) {
@@ -5035,7 +5077,12 @@
       const st = sickCals[doctorId];
       if (!st) return;
       st.open = !st.open;
-      renderSickCal(doctorId);
+      // Bez překreslení – přepnutí třídy spustí CSS přechod
+      const box = document.getElementById(`sickCal-${doctorId}`);
+      if (!box) return;
+      box.classList.toggle('open', st.open);
+      const btn = box.querySelector('.sick-cal-toggle');
+      if (btn) btn.setAttribute('aria-expanded', String(st.open));
     }
 
     // Výběr dnů kliknutím / tažením (myš i dotyk přes Pointer Events)
