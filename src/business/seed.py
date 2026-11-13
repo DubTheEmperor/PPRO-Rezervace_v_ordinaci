@@ -477,3 +477,53 @@ def seed_demo_report_visits(db: Session) -> None:
 
     if created:
         logger.info(f"Seed: vytvořeny demo podklady pro výkaz za {previous.month:02d}/{previous.year}")
+
+
+# Demo nemoc (otevřený bod 5): MUDr. Veselá je příští středu a čtvrtek nemocná,
+# její středeční termíny tak hned čekají ve frontě K přeobjednání.
+# (RČ pacienta, začátek, konec, důvod)
+DEMO_SICK_APPOINTMENTS = [
+    ("9411203456", "14:00", "14:30", "Bolest kolene po běhu."),
+    ("6258092345", "16:00", "16:15", "Kontrola po očkování."),
+]
+
+
+def seed_demo_sickness(db: Session) -> None:
+    """Jednou na databázi: demo nemoc MUDr. Veselé (dny st–čt příštího týdne)."""
+    from src.business.dto.doctor_dto import SickDaysChange
+    from src.business.services.doctor_service import DoctorService
+
+    doctor_repo = DoctorRepository(db)
+    if doctor_repo.has_any_sick_day():
+        return
+    user_repo = UserRepository(db)
+    vesela = user_repo.get_by_username("vesela")
+    admin = db.query(UserModel).filter(UserModel.role == UserRole.ADMIN).first()
+    receptionist = user_repo.get_by_username("vera")
+    doctor = doctor_repo.get_by_user_id(vesela.id) if vesela else None
+    if doctor is None or admin is None:
+        return
+
+    today = local_now().date()
+    wednesday = today + timedelta(days=7 - today.weekday() + 2)
+    appointment_repo = AppointmentRepository(db)
+    patient_repo = PatientRepository(db)
+    for insurance_number, start, end, reason in DEMO_SICK_APPOINTMENTS:
+        patient = patient_repo.get_by_insurance_number(insurance_number)
+        start_at = datetime.combine(wednesday, _t(start))
+        end_at = datetime.combine(wednesday, _t(end))
+        slots = slot_starts(start_at, end_at)
+        if patient is None or appointment_repo.find_taken_slots(doctor.id, slots):
+            continue
+        appointment_repo.create_with_slots(
+            AppointmentModel(
+                doctor_id=doctor.id, patient_id=patient.id, start_at=start_at, end_at=end_at,
+                reason=reason, status=AppointmentStatus.PLANNED,
+                created_by_user_id=receptionist.id if receptionist else None,
+            ),
+            slots,
+        )
+    DoctorService(db).set_sick_days(
+        doctor.id, SickDaysChange(date_from=wednesday, date_to=wednesday + timedelta(days=1)), admin
+    )
+    logger.info("Seed: vytvořena demo nemoc MUDr. Veselé")

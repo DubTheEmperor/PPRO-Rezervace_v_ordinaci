@@ -1,5 +1,5 @@
 """Vstupní DTO pro správu lékařů a ordinačních hodin."""
-from datetime import time
+from datetime import date, time
 from typing import Optional, List, Literal
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
@@ -55,3 +55,10 @@ class DoctorUpdate(BaseModel):
     icp: Optional[str] = Field(None, pattern=ICP_PATTERN)
     specialty_code: Optional[str] = Field(None, pattern=SPECIALTY_CODE_PATTERN)
     is_active: Optional[bool] = None
+
+
+class SickDaysChange(BaseModel):
+    """Označení (sick=True) nebo odznačení (sick=False) celých dnů nemoci lékaře."""
+    date_from: date = Field(..., description="První den (včetně)")
+    date_to: date = Field(..., description="Poslední den (včetně)")
+    sick: bool = Field(True, description="True = lékař je nemocný, False = nemoc v těchto dnech zrušit")

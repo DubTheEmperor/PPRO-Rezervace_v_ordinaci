@@ -16,8 +16,17 @@ class AppointmentResponse(BaseModel):
     status: AppointmentStatus
     created_at: datetime
     cancelled_at: Optional[datetime] = None
+    rescheduled_to_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RescheduledToInfo(BaseModel):
+    """Nový termín, na který byla rezervace přeobjednána."""
+    id: int
+    start_at: datetime
+    end_at: datetime
+    doctor_name: str
 
 
 class AppointmentDetailResponse(AppointmentResponse):
@@ -26,6 +35,7 @@ class AppointmentDetailResponse(AppointmentResponse):
     created_by_name: Optional[str] = None
     cancelled_by_name: Optional[str] = None
     has_visit: bool = False
+    rescheduled_to_term: Optional[RescheduledToInfo] = None
 
 
 class PatientAppointmentItem(BaseModel):
@@ -42,3 +52,25 @@ class PatientAppointmentItem(BaseModel):
 class PatientAppointmentListResponse(BaseModel):
     items: List[PatientAppointmentItem]
     total: int
+
+
+class RescheduleQueueItem(BaseModel):
+    """Termín, který kvůli nemoci lékaře čeká na obvolání pacienta a přeobjednání."""
+    id: int
+    start_at: datetime
+    end_at: datetime
+    reason: str
+    status: AppointmentStatus
+    doctor: DoctorSummary
+    patient: PatientResponse
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RescheduleQueueResponse(BaseModel):
+    items: List[RescheduleQueueItem]
+    total: int
+
+
+class RescheduleQueueCount(BaseModel):
+    count: int

@@ -3,11 +3,14 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from src.business.domain import get_db, User, UserRole
-from src.business.dto import DoctorCreate, DoctorUpdate, OfficeHoursUpdate
+from src.business.dto import DoctorCreate, DoctorUpdate, OfficeHoursUpdate, SickDaysChange
 from src.presentation.schemas.doctor_schemas import (
     DoctorResponse,
     FreeSlotsResponse,
     NextFreeSlotResponse,
+    SickChangePreviewResponse,
+    SickChangeResultResponse,
+    SickDaysResponse,
     WeekCalendarResponse,
 )
 from src.business.services.doctor_service import DoctorService
@@ -136,3 +139,61 @@ def get_next_free_slot(
     current_user: User = Depends(get_current_user),
 ):
     return DoctorService(db).find_next_free_slot(doctor_id, minutes)
+
+
+# --- Nemoc lékaře (otevřený bod 5) ------------------------------------------------------------
+
+@router.get(
+    "/{doctor_id}/sick-days",
+    response_model=SickDaysResponse,
+    summary="Nemocné dny lékaře",
+    description="Dny nemoci v zadaném období (včetně) a aktuální či nejbližší období nemoci.",
+)
+def get_sick_days(
+    doctor_id: int,
+    date_from: date = Query(..., description="První den období (YYYY-MM-DD)"),
+    date_to: date = Query(..., description="Poslední den období (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = DoctorService(db)
+    result = service.get_sick_days(doctor_id, date_from, date_to)
+    result["can_edit"] = service.can_manage_hours(service.get_doctor(doctor_id), current_user)
+    return result
+
+
+@router.get(
+    "/{doctor_id}/sick-days/preview",
+    response_model=SickChangePreviewResponse,
+    summary="Náhled dopadu změny nemoci",
+    description="Kolika rezervací a pacientů se označení / zrušení nemoci dotkne. Nic neukládá.",
+)
+def preview_sick_days(
+    doctor_id: int,
+    date_from: date = Query(...),
+    date_to: date = Query(...),
+    sick: bool = Query(True),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    data = SickDaysChange(date_from=date_from, date_to=date_to, sick=sick)
+    return DoctorService(db).preview_sick_change(doctor_id, data)
+
+
+@router.put(
+    "/{doctor_id}/sick-days",
+    response_model=SickChangeResultResponse,
+    summary="Označení / zrušení nemoci lékaře",
+    description=(
+        "Smí administrátor nebo lékař, kterému profil patří. Označení celých dnů (sick=true) přesune "
+        "naplánované, ještě nezačaté rezervace do stavu TO_RESCHEDULE (fronta K přeobjednání, sloty "
+        "zůstávají obsazené); zrušení nemoci (sick=false) je vrátí do stavu PLANNED. Minulé dny nelze měnit."
+    ),
+)
+def set_sick_days(
+    doctor_id: int,
+    data: SickDaysChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return DoctorService(db).set_sick_days(doctor_id, data, current_user)

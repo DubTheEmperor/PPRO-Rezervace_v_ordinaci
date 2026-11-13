@@ -1,7 +1,8 @@
-from datetime import time
-from typing import Optional, List, Sequence, Tuple
+from datetime import date
+from typing import Optional, List, Iterable, Sequence, Set, Tuple
 from sqlalchemy.orm import Session, selectinload
 from src.infrastructure.models.doctor_model import DoctorModel
+from src.infrastructure.models.doctor_sick_day_model import DoctorSickDayModel
 from src.infrastructure.models.office_hours_model import OfficeHoursKind, OfficeHoursModel
 
 
@@ -57,3 +58,52 @@ class DoctorRepository:
         self.db.commit()
         self.db.refresh(doctor)
         return doctor
+
+    # --- Nemoc lékaře (otevřený bod 5) ------------------------------------------------------
+
+    def list_sick_days(self, doctor_id: int, date_from: date, date_to: date) -> Set[date]:
+        """Nemocné dny lékaře v uzavřeném intervalu [date_from, date_to]."""
+        rows = (
+            self.db.query(DoctorSickDayModel.day)
+            .filter(
+                DoctorSickDayModel.doctor_id == doctor_id,
+                DoctorSickDayModel.day >= date_from,
+                DoctorSickDayModel.day <= date_to,
+            )
+            .all()
+        )
+        return {row[0] for row in rows}
+
+    def is_sick_on(self, doctor_id: int, day: date) -> bool:
+        return (
+            self.db.query(DoctorSickDayModel.id)
+            .filter(DoctorSickDayModel.doctor_id == doctor_id, DoctorSickDayModel.day == day)
+            .first()
+            is not None
+        )
+
+    def has_any_sick_day(self) -> bool:
+        return self.db.query(DoctorSickDayModel.id).first() is not None
+
+    def add_sick_days(self, doctor_id: int, days: Iterable[date], user_id: Optional[int]) -> None:
+        """Přidá dny do session (bez commitu – commit dělá volající spolu se změnou rezervací)."""
+        for day in days:
+            self.db.add(DoctorSickDayModel(doctor_id=doctor_id, day=day, created_by_user_id=user_id))
+
+    def remove_sick_days(self, doctor_id: int, days: Iterable[date]) -> None:
+        """Odebere dny v session (bez commitu)."""
+        days = list(days)
+        if not days:
+            return
+        (
+            self.db.query(DoctorSickDayModel)
+            .filter(DoctorSickDayModel.doctor_id == doctor_id, DoctorSickDayModel.day.in_(days))
+            .delete(synchronize_session=False)
+        )
+
+    def commit(self) -> None:
+        try:
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise

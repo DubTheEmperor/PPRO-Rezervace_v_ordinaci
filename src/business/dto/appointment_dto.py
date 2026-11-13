@@ -37,3 +37,15 @@ class AppointmentCancel(BaseModel):
     cancelled_by: Literal["PATIENT", "OFFICE"] = Field(
         "PATIENT", description="Kdo termín ruší: pacient (počítá se do spolehlivosti) nebo ordinace"
     )
+
+
+class AppointmentReschedule(BaseModel):
+    """Přeobjednání termínu z fronty K přeobjednání na nový čas (i k jinému lékaři)."""
+    doctor_id: int = Field(..., description="Lékař nového termínu (kolega nebo tentýž lékař)")
+    start_at: datetime = Field(..., description="Začátek nového termínu (lokální čas, zarovnáno na 15 min)")
+    end_at: datetime = Field(..., description="Konec nového termínu (lokální čas, zarovnáno na 15 min)")
+
+    @field_validator("start_at", "end_at")
+    @classmethod
+    def normalize_tz(cls, v: datetime) -> datetime:
+        return _to_local_naive(v)

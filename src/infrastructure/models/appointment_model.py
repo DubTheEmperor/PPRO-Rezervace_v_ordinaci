@@ -13,6 +13,10 @@ class AppointmentStatus(str, enum.Enum):
     CANCELLED_BY_PATIENT = "CANCELLED_BY_PATIENT"
     CANCELLED_BY_OFFICE = "CANCELLED_BY_OFFICE"
     NO_SHOW = "NO_SHOW"
+    # Nemoc lékaře (otevřený bod 5): termín čeká na obvolání pacienta, sloty zůstávají obsazené
+    TO_RESCHEDULE = "TO_RESCHEDULE"
+    # Termín byl přesunut na novou rezervaci (`rescheduled_to_id`), sloty se uvolnily
+    RESCHEDULED = "RESCHEDULED"
 
 
 class AppointmentModel(Base):
@@ -40,6 +44,8 @@ class AppointmentModel(Base):
     # Zrušení / nedostavení (FP5) – kdy a kdo stav nastavil
     cancelled_at = Column(DateTime(timezone=True), nullable=True)
     cancelled_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    # Přeobjednání (otevřený bod 5) – nová rezervace, která tuto nahradila
+    rescheduled_to_id = Column(Integer, ForeignKey("appointments.id", ondelete="SET NULL"), nullable=True)
     updated_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -51,6 +57,7 @@ class AppointmentModel(Base):
     patient = relationship("PatientModel")
     created_by = relationship("UserModel", foreign_keys=[created_by_user_id])
     cancelled_by = relationship("UserModel", foreign_keys=[cancelled_by_user_id])
+    rescheduled_to = relationship("AppointmentModel", remote_side=[id], foreign_keys=[rescheduled_to_id])
     slots = relationship(
         "AppointmentSlotModel",
         back_populates="appointment",

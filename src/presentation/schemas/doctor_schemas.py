@@ -42,6 +42,7 @@ class AwayBlock(BaseModel):
 class CalendarDay(BaseModel):
     date: date
     weekday: int
+    sick: bool = Field(False, description="Lékař je v tento den nemocný – nelze rezervovat")
     blocks: List[CalendarBlock] = Field(..., description="Rezervovatelné bloky ordinačních hodin")
     free_intervals: List[FreeInterval] = Field(default_factory=list, description="Volné termíny dne (FP6)")
     away_blocks: List[AwayBlock] = Field(default_factory=list, description="Jiné pracoviště (nelze rezervovat)")
@@ -84,3 +85,43 @@ class NextFreeSlotResponse(BaseModel):
     start_at: Optional[datetime] = Field(None, description="Začátek nejbližšího volného termínu, jinak null")
     end_at: Optional[datetime] = None
     horizon_days: int
+
+
+# --- Nemoc lékaře (otevřený bod 5) ------------------------------------------------------------
+
+class SickPeriod(BaseModel):
+    date_from: date
+    date_to: date
+
+
+class SickDaysResponse(BaseModel):
+    """Nemocné dny lékaře ve zvoleném období (mini kalendář na kartě lékaře)."""
+    doctor_id: int
+    date_from: date
+    date_to: date
+    days: List[date]
+    next_period: Optional[SickPeriod] = Field(
+        None, description="Aktuální nebo nejbližší budoucí souvislé období nemoci"
+    )
+    can_edit: bool = Field(False, description="Smí přihlášený uživatel nemoc tohoto lékaře měnit?")
+
+
+class SickChangePreviewResponse(BaseModel):
+    """Náhled dopadu změny nemoci – kolik rezervací a pacientů se změna dotkne."""
+    doctor_id: int
+    date_from: date
+    date_to: date
+    sick: bool
+    days_changed: int
+    appointments: int
+    patients: int
+
+
+class SickChangeResultResponse(BaseModel):
+    doctor_id: int
+    date_from: date
+    date_to: date
+    sick: bool
+    days_changed: int
+    moved_to_queue: int = Field(..., description="Rezervace přesunuté do fronty K přeobjednání")
+    restored: int = Field(..., description="Rezervace vrácené do stavu Naplánováno")

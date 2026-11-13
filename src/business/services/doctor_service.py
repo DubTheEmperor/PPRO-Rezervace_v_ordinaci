@@ -2,7 +2,8 @@ from datetime import date, datetime, time, timedelta
 from typing import Optional, List, Dict, Tuple
 from sqlalchemy.orm import Session
 from src.business.exceptions import BusinessRuleError, ConflictError, NotFoundError, PermissionDeniedError
-from src.business import scheduling
+from src.business import scheduling, sick_days
+from src.infrastructure.models.appointment_model import AppointmentStatus
 from src.infrastructure.models.doctor_model import DoctorModel
 from src.infrastructure.models.user_model import UserModel, UserRole
 from src.infrastructure.repositories.doctor_repository import DoctorRepository
@@ -12,6 +13,7 @@ from src.business.dto.doctor_dto import (
     DoctorCreate,
     DoctorUpdate,
     OfficeHoursUpdate,
+    SickDaysChange,
 )
 
 
@@ -158,7 +160,12 @@ class DoctorService:
         taken = self.appointment_repo.list_taken_slot_starts(
             doctor.id, range_from, range_from + timedelta(days=day_count)
         )
-        return {day: scheduling.free_intervals(day, by_day[day.weekday()], taken, now) for day in days}
+        # V den nemoci lékař neordinuje – žádné volno
+        sick = self.repo.list_sick_days(doctor.id, days[0], days[-1])
+        return {
+            day: [] if day in sick else scheduling.free_intervals(day, by_day[day.weekday()], taken, now)
+            for day in days
+        }
 
     @staticmethod
     def _ensure_monday(week_start: date) -> None:
@@ -213,6 +220,7 @@ class DoctorService:
         away_by_day = away_blocks_by_weekday(doctor)
         now = scheduling.local_now()
         free = self._free_intervals_by_day(doctor, week_start, 7, now)
+        sick = self.repo.list_sick_days(doctor.id, week_start, week_start + timedelta(days=6))
 
         days = []
         for offset in range(7):
@@ -220,6 +228,7 @@ class DoctorService:
             days.append({
                 "date": day,
                 "weekday": offset,
+                "sick": day in sick,
                 "blocks": [{"start_time": s, "end_time": e} for s, e in sorted(by_day[offset])],
                 "free_intervals": [{"start_at": s, "end_at": e} for s, e in free[day]],
                 "away_blocks": [
@@ -249,4 +258,103 @@ class DoctorService:
                 }
                 for a in appointments
             ],
+        }
+
+    # --- Nemoc lékaře (otevřený bod 5) ------------------------------------------------------
+
+    def get_sick_days(self, doctor_id: int, date_from: date, date_to: date) -> dict:
+        """Nemocné dny v období a nejbližší aktuální či budoucí období nemoci (pro kartu lékaře)."""
+        if date_to < date_from:
+            raise BusinessRuleError("Konec období nesmí být před jeho začátkem.")
+        if (date_to - date_from).days > 366:
+            raise BusinessRuleError("Najednou lze načíst nejvýše jeden rok.")
+        doctor = self.get_doctor(doctor_id)
+        today = scheduling.local_now().date()
+        days = self.repo.list_sick_days(doctor.id, date_from, date_to)
+        upcoming = self.repo.list_sick_days(
+            doctor.id, today, today + timedelta(days=sick_days.MAX_RANGE_DAYS)
+        )
+        periods = sick_days.merge_periods(upcoming)
+        return {
+            "doctor_id": doctor.id,
+            "date_from": date_from,
+            "date_to": date_to,
+            "days": sorted(days),
+            "next_period": {"date_from": periods[0][0], "date_to": periods[0][1]} if periods else None,
+        }
+
+    def _check_sick_change(self, data: SickDaysChange) -> List[date]:
+        errors = sick_days.validate_range(data.date_from, data.date_to, scheduling.local_now().date())
+        if errors:
+            raise BusinessRuleError(" ".join(errors))
+        return sick_days.days_in_range(data.date_from, data.date_to)
+
+    def _affected_appointments(self, doctor: DoctorModel, data: SickDaysChange):
+        """Rezervace, kterých se změna týká.
+
+        Při označení naplánované termíny, které ještě nezačaly; při odznačení termíny,
+        které čekají na přeobjednání.
+        """
+        range_from = datetime.combine(data.date_from, time(0, 0))
+        range_to = datetime.combine(data.date_to + timedelta(days=1), time(0, 0))
+        if data.sick:
+            now = scheduling.local_now()
+            planned = self.appointment_repo.list_for_doctor_days(
+                doctor.id, range_from, range_to, (AppointmentStatus.PLANNED,)
+            )
+            return [a for a in planned if a.start_at > now]
+        return self.appointment_repo.list_for_doctor_days(
+            doctor.id, range_from, range_to, (AppointmentStatus.TO_RESCHEDULE,)
+        )
+
+    def _changed_days(self, doctor: DoctorModel, data: SickDaysChange) -> List[date]:
+        days = self._check_sick_change(data)
+        current = self.repo.list_sick_days(doctor.id, data.date_from, data.date_to)
+        return [d for d in days if (d in current) != data.sick]
+
+    def preview_sick_change(self, doctor_id: int, data: SickDaysChange) -> dict:
+        """Náhled dopadu změny nemoci pro potvrzovací dialog (nic neukládá)."""
+        doctor = self.get_doctor(doctor_id)
+        changed = self._changed_days(doctor, data)
+        affected = self._affected_appointments(doctor, data)
+        return {
+            "doctor_id": doctor.id,
+            "date_from": data.date_from,
+            "date_to": data.date_to,
+            "sick": data.sick,
+            "days_changed": len(changed),
+            "appointments": len(affected),
+            "patients": len({a.patient_id for a in affected}),
+        }
+
+    def set_sick_days(self, doctor_id: int, data: SickDaysChange, current_user: UserModel) -> dict:
+        """Označí / odznačí dny nemoci lékaře a podle toho přesune dotčené rezervace.
+
+        Označení: naplánované a ještě nezačaté termíny přejdou do stavu K přeobjednání
+        (sloty zůstávají obsazené, na původní čas se nikdo jiný neobjedná). Odznačení:
+        termíny čekající na přeobjednání se vrátí do stavu Naplánováno. Vše v jedné transakci.
+        """
+        doctor = self.get_doctor(doctor_id)
+        if not self.can_manage_hours(doctor, current_user):
+            raise PermissionDeniedError("Nemoc může zadat pouze administrátor nebo daný lékař.")
+        changed = self._changed_days(doctor, data)
+        affected = self._affected_appointments(doctor, data)
+
+        if data.sick:
+            self.repo.add_sick_days(doctor.id, changed, current_user.id)
+        else:
+            self.repo.remove_sick_days(doctor.id, changed)
+        new_status = AppointmentStatus.TO_RESCHEDULE if data.sick else AppointmentStatus.PLANNED
+        for appointment in affected:
+            appointment.status = new_status
+        self.repo.commit()
+
+        return {
+            "doctor_id": doctor.id,
+            "date_from": data.date_from,
+            "date_to": data.date_to,
+            "sick": data.sick,
+            "days_changed": len(changed),
+            "moved_to_queue": len(affected) if data.sick else 0,
+            "restored": 0 if data.sick else len(affected),
         }

@@ -10,9 +10,14 @@ from src.infrastructure.models.appointment_model import (
 from src.infrastructure.models.patient_model import PatientModel
 from src.infrastructure.models.visit_model import VisitModel, VisitProcedureModel, VisitStatus
 
-ACTIVE_STATUSES = (AppointmentStatus.PLANNED,)
-# Stavy, které v kalendáři obsazují termín (proběhlá návštěva slot neuvolňuje)
+# Nadcházející termíny pacienta / lékaře – i termín čekající na přeobjednání drží své sloty
+ACTIVE_STATUSES = (AppointmentStatus.PLANNED, AppointmentStatus.TO_RESCHEDULE)
+# Stavy, které obsazují termín ve frontě návštěv (proběhlá návštěva slot neuvolňuje)
 OCCUPYING_STATUSES = (AppointmentStatus.PLANNED, AppointmentStatus.COMPLETED)
+# Stavy zobrazené v týdenním kalendáři
+CALENDAR_STATUSES = (
+    AppointmentStatus.PLANNED, AppointmentStatus.COMPLETED, AppointmentStatus.TO_RESCHEDULE,
+)
 
 
 class AppointmentRepository:
@@ -65,6 +70,80 @@ class AppointmentRepository:
             raise
         self.db.refresh(appointment)
         return appointment
+
+    def save(self, appointment: AppointmentModel) -> AppointmentModel:
+        try:
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        self.db.refresh(appointment)
+        return appointment
+
+    def reschedule(
+        self,
+        old: AppointmentModel,
+        new: AppointmentModel,
+        slot_starts: Sequence[datetime],
+    ) -> AppointmentModel:
+        """Přeobjednání v jedné transakci: stará rezervace uvolní sloty, nová je obsadí.
+
+        Staré sloty se smažou dřív, než se vloží nové – přesun na jiný čas téhož lékaře
+        tak nenarazí na vlastní sloty. Při kolizi vyhodí DB IntegrityError a vše se odvolá.
+        """
+        try:
+            old.slots.clear()
+            self.db.flush()
+            for slot_start in slot_starts:
+                new.slots.append(AppointmentSlotModel(doctor_id=new.doctor_id, slot_start=slot_start))
+            self.db.add(new)
+            self.db.flush()
+            old.rescheduled_to_id = new.id
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        self.db.refresh(new)
+        return new
+
+    def list_for_doctor_days(
+        self,
+        doctor_id: int,
+        date_from: datetime,
+        date_to: datetime,
+        statuses: Sequence[AppointmentStatus],
+    ) -> List[AppointmentModel]:
+        """Rezervace lékaře v daných stavech se začátkem v [date_from, date_to)."""
+        return (
+            self.db.query(AppointmentModel)
+            .options(joinedload(AppointmentModel.patient))
+            .filter(
+                AppointmentModel.doctor_id == doctor_id,
+                AppointmentModel.start_at >= date_from,
+                AppointmentModel.start_at < date_to,
+                AppointmentModel.status.in_(statuses),
+            )
+            .order_by(AppointmentModel.start_at.asc())
+            .all()
+        )
+
+    def list_reschedule_queue(self, doctor_id: Optional[int] = None) -> List[AppointmentModel]:
+        """Termíny čekající na přeobjednání (nejbližší první)."""
+        query = (
+            self.db.query(AppointmentModel)
+            .options(joinedload(AppointmentModel.patient), joinedload(AppointmentModel.doctor))
+            .filter(AppointmentModel.status == AppointmentStatus.TO_RESCHEDULE)
+        )
+        if doctor_id is not None:
+            query = query.filter(AppointmentModel.doctor_id == doctor_id)
+        return query.order_by(AppointmentModel.start_at.asc(), AppointmentModel.id.asc()).all()
+
+    def count_reschedule_queue(self) -> int:
+        return (
+            self.db.query(func.count(AppointmentModel.id))
+            .filter(AppointmentModel.status == AppointmentStatus.TO_RESCHEDULE)
+            .scalar()
+        )
 
     def list_reliability_events(
         self,
@@ -127,7 +206,7 @@ class AppointmentRepository:
         doctor_id: int,
         date_from: datetime,
         date_to: datetime,
-        statuses: Sequence[AppointmentStatus] = OCCUPYING_STATUSES,
+        statuses: Sequence[AppointmentStatus] = CALENDAR_STATUSES,
     ) -> List[AppointmentModel]:
         return (
             self.db.query(AppointmentModel)
