@@ -98,6 +98,7 @@
     /* Čísla (časy, telefony, body) s číslicemi stejné šířky */
     .mono,
     .phone-link,
+    .ins-number,
     .ins-badge,
     .cal-appt-time,
     .chip-count,
@@ -430,18 +431,17 @@
     .nav-tab {
       width: 100%;
       min-height: 44px;
-      padding: 0 16px 0 13px;
+      padding: 0 16px;
       font: inherit;
       font-weight: 500;
       font-size: 16px;
       text-align: left;
       border: none;
-      border-left: 3px solid transparent;
       border-radius: var(--radius);
       background: transparent;
       color: var(--text-2);
       cursor: pointer;
-      transition: background-color 150ms var(--ease), color 150ms var(--ease), border-color 150ms var(--ease);
+      transition: background-color 150ms var(--ease), color 150ms var(--ease);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -452,10 +452,16 @@
       background: var(--raised);
     }
 
-    .nav-tab.active {
-      color: var(--ink);
-      background: var(--accent-soft);
-      border-left-color: var(--accent);
+    /* Aktivní položka – plná výplň akcentem */
+    .nav-tab.active,
+    .nav-tab.active:hover {
+      color: #fff;
+      background: var(--accent);
+    }
+
+    .nav-tab.active .tab-badge {
+      background: #fff;
+      color: var(--accent-ink);
     }
 
     .nav-tab .tab-badge {
@@ -505,13 +511,6 @@
 
       .side-nav .nav-tab {
         width: auto;
-        border-left: none;
-        border-bottom: 3px solid transparent;
-        padding: 0 16px;
-      }
-
-      .side-nav .nav-tab.active {
-        border-bottom-color: var(--accent);
       }
 
       .nav-group {
@@ -550,6 +549,13 @@
       background: var(--raised);
       color: var(--text-2);
       border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    /* Číslo pojištěnce – stejné písmo jako telefon */
+    .ins-number {
+      color: var(--text-main);
+      font-size: 13px;
       white-space: nowrap;
     }
 
@@ -4091,7 +4097,7 @@
                 <svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg> ${escapeHtml(formattedPhone)}
               </a>
             </td>
-            <td style="white-space: nowrap;"><code>${escapeHtml(p.insurance_number)}</code></td>
+            <td style="white-space: nowrap;"><span class="ins-number">${escapeHtml(p.insurance_number)}</span></td>
             <td style="text-align: center;"><span class="ins-badge">${escapeHtml(insDisplay)}</span></td>
             <td style="text-align: center;">
               ${p.upcoming_appointments_count > 0 ? `
@@ -5274,7 +5280,7 @@
             <dt>Telefon</dt>
             <dd><a href="tel:${escapeHtml(p.phone_number)}" class="phone-link"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg> ${escapeHtml(formatPhoneNumber(p.phone_number))}</a></dd>
             <dt>Číslo pojištěnce</dt>
-            <dd><code>${escapeHtml(p.insurance_number)}</code>
+            <dd><span class="ins-number">${escapeHtml(p.insurance_number)}</span>
               <span class="ins-badge">${escapeHtml(INS_NAMES[p.insurance_company_code] || p.insurance_company_code)}</span></dd>
             <dt>Lékař</dt>
             <dd><span class="doctor-dot" style="background: ${escapeHtml(a.doctor.color)}; width: 10px; height: 10px;"></span>
@@ -6402,7 +6408,7 @@
               <div class="panel-meta" style="margin-top: 0;">
                 ${reliabilityDot(p.reliability)}
                 <span>nar. ${p.birth_year}</span>
-                <code>${escapeHtml(p.insurance_number)}</code>
+                <span class="ins-number">${escapeHtml(p.insurance_number)}</span>
                 <span class="ins-badge">${escapeHtml(INS_NAMES[p.insurance_company_code] || p.insurance_company_code)}</span>
                 <a href="tel:${escapeHtml(p.phone_number)}" class="phone-link"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg> ${escapeHtml(formatPhoneNumber(p.phone_number))}</a>
               </div>
