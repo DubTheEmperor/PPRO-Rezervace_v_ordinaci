@@ -1,3 +1,4 @@
+import secrets
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,7 +16,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/ordinace_db"
     
     # Bezpečnost a JWT
-    SECRET_KEY: str = "dev_secret_key_ppro_ordinace_na_vyhlidce_change_in_production"
+    # Tajný klíč pro podpis JWT se do gitu neukládá: lze ho dodat proměnnou prostředí / .env,
+    # jinak se při startu vygeneruje náhodný (po restartu je nutné se znovu přihlásit).
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8 hodin pro pracovní směnu
     # Cena bcrypt hashování (v testech se snižuje kvůli rychlosti, min. 4)
@@ -36,3 +39,5 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+if not settings.SECRET_KEY:
+    settings.SECRET_KEY = secrets.token_urlsafe(48)

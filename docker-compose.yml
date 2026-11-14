@@ -25,7 +25,8 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://postgres:postgrespassword@db:5432/ordinace_db
-      SECRET_KEY: dev_secret_key_ppro_ordinace_na_vyhlidce_change_in_production
+      # Tajný klíč JWT není v gitu: převezme se z prostředí hostitele, jinak ho aplikace vygeneruje při startu
+      SECRET_KEY: ${SECRET_KEY:-}
     depends_on:
       db:
         condition: service_healthy

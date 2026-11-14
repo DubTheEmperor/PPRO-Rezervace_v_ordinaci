@@ -2,6 +2,10 @@ from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from src.infrastructure.models.user_model import UserModel, UserRole
+from src.infrastructure.models.appointment_model import AppointmentModel
+from src.infrastructure.models.visit_model import VisitModel
+from src.infrastructure.models.doctor_model import DoctorModel
+from src.infrastructure.models.doctor_sick_day_model import DoctorSickDayModel
 
 
 class UserRepository:
@@ -53,6 +57,23 @@ class UserRepository:
             .filter(UserModel.role == UserRole.ADMIN, UserModel.is_active.is_(True))
             .count()
         )
+
+    def has_history(self, user_id: int) -> bool:
+        """Je účet zapsaný v historii ordinace (kdo co založil / zrušil / uzavřel) nebo propojený s lékařem?"""
+        checks = [
+            self.db.query(AppointmentModel.id).filter(
+                or_(AppointmentModel.created_by_user_id == user_id,
+                    AppointmentModel.cancelled_by_user_id == user_id)
+            ),
+            self.db.query(VisitModel.id).filter(
+                or_(VisitModel.created_by_user_id == user_id,
+                    VisitModel.updated_by_user_id == user_id,
+                    VisitModel.closed_by_user_id == user_id)
+            ),
+            self.db.query(DoctorSickDayModel.id).filter(DoctorSickDayModel.created_by_user_id == user_id),
+            self.db.query(DoctorModel.id).filter(DoctorModel.user_id == user_id),
+        ]
+        return any(self.db.query(q.exists()).scalar() for q in checks)
 
     def create(self, user: UserModel) -> UserModel:
         self.db.add(user)

@@ -55,20 +55,6 @@ class PatientRepository:
         )
         return patients, total
 
-    def find_potential_duplicates(
-        self, first_name: str, last_name: str, birth_year: int
-    ) -> List[PatientModel]:
-        """Vyhledá pacienty se stejným jménem, příjmením a rokem narození pro kontrolu duplicit."""
-        return (
-            self.db.query(PatientModel)
-            .filter(
-                PatientModel.first_name.ilike(first_name.strip()),
-                PatientModel.last_name.ilike(last_name.strip()),
-                PatientModel.birth_year == birth_year,
-            )
-            .all()
-        )
-
     def create(self, patient: PatientModel) -> PatientModel:
         self.db.add(patient)
         self.db.commit()

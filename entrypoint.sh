@@ -4,7 +4,8 @@ set -e
 echo "=== Čekání na připravenost PostgreSQL databáze ==="
 # Spuštění migrací Alembic
 echo "=== Provádění databázových migrací (Alembic) ==="
-alembic upgrade head || echo "Upozornění: Migrace selhaly nebo tabulky již existují."
+# Při selhání migrace kontejner skončí s chybou (set -e) – aplikace nesmí běžet nad nekonzistentním schématem
+alembic upgrade head
 
 echo "=== Spouštění FastAPI aplikace přes Uvicorn ==="
-exec uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+exec uvicorn src.main:app --host 0.0.0.0 --port 8000

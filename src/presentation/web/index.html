@@ -1492,6 +1492,22 @@
       line-height: 1.45;
     }
 
+    .inline-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-2);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .inline-check input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+
     /* Výběr barvy lékaře – kolečka palety */
     .color-picker {
       display: flex;
@@ -3537,6 +3553,9 @@
               <input type="text" id="searchInput" class="form-control" placeholder="Hledat jméno, e-mail nebo login..."
                 oninput="handleSearch()">
             </div>
+            <label class="inline-check">
+              <input type="checkbox" id="showInactiveUsers" onchange="loadUsers()"> Zobrazit i neaktivní
+            </label>
             <div class="filter-tabs">
               <button class="filter-btn active" onclick="setFilterRole('', this)">Všichni</button>
               <button class="filter-btn" onclick="setFilterRole('ADMIN', this)">Administrátoři</button>
@@ -4041,6 +4060,8 @@
       try {
         let url = `/api/v1/users?limit=100`;
         if (currentRoleFilter) url += `&role=${currentRoleFilter}`;
+        // Výchozí jen aktivní účty – neaktivní (bývalý personál) zůstávají kvůli historii
+        if (!document.getElementById('showInactiveUsers').checked) url += '&is_active=true';
         const search = document.getElementById('searchInput').value.trim();
         if (search) url += `&search=${encodeURIComponent(search)}`;
 

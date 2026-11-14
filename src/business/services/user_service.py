@@ -91,4 +91,11 @@ class UserService:
             if active_admins <= 1:
                 raise BusinessRuleError("Nelze smazat posledního aktivního administrátora v systému.")
 
+        # Historie se nemaže: účet, který něco provedl, musí zůstat dohledatelný (kdo co kdy udělal)
+        if self.repo.has_history(user.id):
+            raise BusinessRuleError(
+                "Účet má záznamy v historii ordinace (rezervace, návštěvy, nemoc lékaře) nebo je propojen "
+                "s lékařem. Aby šlo doložit, kdo co provedl, nelze ho smazat – deaktivujte ho."
+            )
+
         self.repo.delete(user)

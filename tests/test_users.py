@@ -148,3 +148,36 @@ def test_only_admin_can_list_and_read_users(client, admin_token, receptionist_to
         assert client.get(f"/api/v1/users/{some_id}", headers=headers).status_code == 403
         # Vlastní profil zůstává dostupný
         assert client.get("/api/v1/auth/me", headers=headers).status_code == 200
+
+
+def test_cannot_delete_user_with_history_only_deactivate(client, admin_token, receptionist_token, doctors_by_username):
+    """Účet, který něco provedl (založil rezervaci), nejde smazat – historie musí zůstat doložitelná."""
+    from tests.helpers import auth, create_patient, book, next_week_monday
+
+    admin = auth(admin_token)
+    patient = create_patient(client, receptionist_token, insurance_number="8203151234", last_name="Historická")
+    booked = book(client, receptionist_token, doctors_by_username["hruba"]["id"], patient["id"],
+                  next_week_monday(), "08:00", "08:15")
+    assert booked.status_code == 201, booked.text
+
+    vera_id = next(u["id"] for u in client.get("/api/v1/users?search=vera", headers=admin).json()["items"]
+                   if u["username"] == "vera")
+    refused = client.delete(f"/api/v1/users/{vera_id}", headers=admin)
+    assert refused.status_code == 400
+    assert "deaktivujte" in refused.json()["detail"]
+    assert client.get(f"/api/v1/users/{vera_id}", headers=admin).status_code == 200
+
+    # Deaktivace funguje a deaktivovaná recepční se nepřihlásí
+    assert client.put(f"/api/v1/users/{vera_id}", json={"is_active": False}, headers=admin).status_code == 200
+    login = client.post("/api/v1/auth/login", json={"username": "vera", "password": "Vera123!"})
+    assert login.status_code in (401, 403)
+
+    # Výchozí seznam v UI filtruje aktivní účty – API filtr is_active
+    active = client.get("/api/v1/users?is_active=true", headers=admin).json()["items"]
+    assert all(u["username"] != "vera" for u in active)
+
+
+def test_cannot_delete_user_linked_to_doctor(client, admin_token, doctors_by_username):
+    admin = {"Authorization": f"Bearer {admin_token}"}
+    hruba_user_id = doctors_by_username["hruba"]["user_id"]
+    assert client.delete(f"/api/v1/users/{hruba_user_id}", headers=admin).status_code == 400
