@@ -19,6 +19,8 @@
       --accent: #167D8D;
       --accent-soft: #B9E4E8;
       --bg: #EEEEEE;
+      /* tečky pozadí stránky – inkoust s 9% krytím */
+      --dot: rgb(7 27 43 / 0.09);
       /* odvozené role */
       --accent-ink: #0F5F6B;
       --booked: #BE185D;
@@ -81,6 +83,9 @@
 
     body {
       background-color: var(--bg);
+      /* Jemná tečková mřížka (rozestup 20px), aby plocha nepůsobila prázdně */
+      background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
+      background-size: 20px 20px;
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
@@ -2785,23 +2790,22 @@
       }
     }
 
-    .report-toolbar {
+    /* Souhrn a stažení vpravo v kartě filtru */
+    .report-actions {
+      margin-left: auto;
       display: flex;
-      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+    }
+
+    .report-sum strong {
+      display: flex;
       align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      max-width: 1100px;
-      margin: 20px auto 12px;
-    }
-
-    .report-toolbar-info {
-      color: var(--text-muted);
+      min-height: 40px;
       font-size: 15px;
-    }
-
-    .report-toolbar-info strong {
+      font-weight: 600;
       color: var(--text-main);
+      white-space: nowrap;
     }
 
     .dropdown {
@@ -2866,7 +2870,7 @@
       box-shadow: var(--shadow-md);
       padding: 32px 36px;
       max-width: 1100px;
-      margin: 0 auto 32px;
+      margin: 16px auto 32px;
     }
 
     .report-paper h3 {
@@ -3372,6 +3376,21 @@
               <span>Pojišťovna</span>
               <select id="reportInsurance" class="form-control" onchange="onReportFilterChange()"></select>
             </label>
+            <!-- Souhrn a stažení načteného výkazu (skryté, dokud výkaz není načtený) -->
+            <div id="reportActions" class="report-actions" style="display: none;">
+              <div class="report-field report-sum">
+                <span>Celkem</span>
+                <strong id="reportTotal">—</strong>
+              </div>
+              <div class="dropdown" id="reportDownload">
+                <button type="button" class="btn btn-primary" aria-haspopup="menu" aria-expanded="false"
+                  onclick="toggleReportDownload(event)"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg> Stáhnout</button>
+                <div class="dropdown-menu" role="menu">
+                  <button type="button" role="menuitem" onclick="downloadReport('csv')"><svg class="icon" aria-hidden="true"><use href="#i-sheet"/></svg> CSV <span class="hint">pro Excel</span></button>
+                  <button type="button" role="menuitem" onclick="downloadReport('pdf')"><svg class="icon" aria-hidden="true"><use href="#i-file-text"/></svg> PDF <span class="hint">k tisku</span></button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -6720,11 +6739,13 @@
         return;
       }
       const seq = ++reportRequestSeq;
+      setReportActions(null);
       box.innerHTML = '<div class="report-empty">Načítání výkazu…</div>';
       try {
         const data = await apiFetch(`/api/v1/reports/monthly?${params}`);
         if (seq !== reportRequestSeq) return;  // mezitím se změnil filtr
         box.innerHTML = renderReport(data);
+        setReportActions(data);
       } catch (err) {
         if (seq !== reportRequestSeq) return;
         box.innerHTML = `<div class="report-empty">${escapeHtml(err.message)}</div>`;
@@ -6794,19 +6815,6 @@
         </div>` : '';
 
       return `
-        <div class="report-toolbar">
-          <div class="report-toolbar-info">
-            ${escapeHtml(d.full_name)} · ${r.period_label} · celkem <strong>${fmtPoints(r.total_points)} bodů</strong>
-          </div>
-          <div class="dropdown" id="reportDownload">
-            <button type="button" class="btn btn-primary" aria-haspopup="menu" aria-expanded="false"
-              onclick="toggleReportDownload(event)"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg> Stáhnout</button>
-            <div class="dropdown-menu" role="menu">
-              <button type="button" role="menuitem" onclick="downloadReport('csv')"><svg class="icon" aria-hidden="true"><use href="#i-sheet"/></svg> CSV <span class="hint">pro Excel</span></button>
-              <button type="button" role="menuitem" onclick="downloadReport('pdf')"><svg class="icon" aria-hidden="true"><use href="#i-file-text"/></svg> PDF <span class="hint">k tisku</span></button>
-            </div>
-          </div>
-        </div>
         <article class="report-paper">
           <h3>Měsíční výkaz provedených výkonů</h3>
           <div class="report-sub">Ambulantní péče · období ${r.period_label} · ${escapeHtml(r.insurance_label)}</div>
@@ -6834,6 +6842,13 @@
             <strong>CELKEM BODŮ: ${fmtPoints(r.total_points)}</strong>
           </div>
         </article>`;
+    }
+
+    // Souhrn bodů a tlačítko Stáhnout v kartě filtru – jen pro načtený výkaz
+    function setReportActions(report) {
+      closeReportDownload();
+      document.getElementById('reportActions').style.display = report ? 'flex' : 'none';
+      if (report) document.getElementById('reportTotal').textContent = `${fmtPoints(report.total_points)} bodů`;
     }
 
     function toggleReportDownload(event) {
