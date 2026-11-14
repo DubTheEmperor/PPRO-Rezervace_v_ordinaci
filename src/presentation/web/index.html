@@ -187,31 +187,10 @@
       gap: 16px;
     }
 
-    .api-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 0 8px;
-      height: 32px;
-      color: var(--text-2);
-      border-radius: var(--radius);
-      font-size: 13px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: color 150ms var(--ease), background-color 150ms var(--ease);
-    }
-
-    .api-badge:hover {
-      background: var(--raised);
-      color: var(--text-main);
-    }
-
     .user-pill {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding-left: 16px;
-      border-left: 1px solid var(--border);
       font-size: 14px;
       font-weight: 500;
     }
@@ -352,6 +331,97 @@
       background-position: right 12px center;
       background-size: 16px 16px;
       cursor: pointer;
+    }
+
+    /* Rozbalený seznam výběru ve stylu rozhraní (customizable select).
+       Prohlížeče bez podpory base-select zobrazí nativní seznam. */
+    @supports (appearance: base-select) {
+      select.form-control,
+      select.form-control::picker(select) {
+        appearance: base-select;
+      }
+
+      select.form-control {
+        display: flex;
+        align-items: center;
+      }
+
+      /* Šipku kreslí background-image výše */
+      select.form-control::picker-icon {
+        display: none;
+      }
+
+      select.form-control::picker(select) {
+        margin-top: 4px;
+        padding: 4px;
+        max-height: 320px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        opacity: 0;
+        translate: 0 -4px;
+        transition: opacity 150ms var(--ease), translate 150ms var(--ease),
+          display 150ms allow-discrete, overlay 150ms allow-discrete;
+      }
+
+      select.form-control:open::picker(select) {
+        opacity: 1;
+        translate: 0 0;
+      }
+
+      @starting-style {
+        select.form-control:open::picker(select) {
+          opacity: 0;
+          translate: 0 -4px;
+        }
+      }
+
+      select.form-control option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 36px;
+        padding: 0 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        color: var(--text-main);
+        cursor: pointer;
+      }
+
+      select.form-control option:hover,
+      select.form-control option:focus-visible {
+        background: var(--raised);
+        outline: none;
+      }
+
+      select.form-control option:checked {
+        background: var(--accent-tint);
+        color: var(--accent-ink);
+        font-weight: 500;
+      }
+
+      select.form-control option:disabled {
+        color: var(--text-muted);
+        cursor: default;
+      }
+
+      /* Vybraná položka: fajfka vpravo (ikona lucide check v barvě akcentu) */
+      select.form-control option::checkmark {
+        order: 1;
+        margin-left: auto;
+        content: '';
+        width: 16px;
+        height: 16px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23167D8D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / 16px no-repeat;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        select.form-control::picker(select) {
+          transition: none;
+        }
+      }
     }
 
     .form-control:focus {
@@ -2977,7 +3047,6 @@
       <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></symbol>
       <symbol id="i-sheet" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
-      <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10M7 17 17 7"/></symbol>
       <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol>
       <symbol id="i-pointer" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
     </defs>
@@ -2993,9 +3062,6 @@
       </div>
     </div>
     <div class="header-actions">
-      <a href="/docs" target="_blank" class="api-badge" title="Otevře Swagger OpenAPI dokumentaci">
-        <span>API dokumentace</span> <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"/></svg>
-      </a>
       <div id="userHeaderInfo" class="user-pill" style="display: none;">
         <span id="headerUserName">Uživatel</span>
         <span id="headerUserRole" class="role-badge">Administrátor</span>
