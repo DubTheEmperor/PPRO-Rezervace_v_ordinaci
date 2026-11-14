@@ -61,6 +61,8 @@
       --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
       --shadow-md: 0 1px 2px rgb(0 0 0 / 0.05);
       --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.08);
+      /* vysunuté panely (karty, boční panel, výkaz) – stejně jako přihlašovací karta */
+      --shadow-panel: var(--shadow-lg);
       --ease: cubic-bezier(0.22, 1, 0.36, 1);
       --font: 'Noto Sans', -apple-system, 'Segoe UI', sans-serif;
       /* čísla stejným písmem, zarovnání přes tabular-nums */
@@ -275,7 +277,7 @@
       background: var(--card-bg);
       border-radius: var(--radius-card);
       border: 1px solid var(--border);
-      box-shadow: var(--shadow-lg);
+      box-shadow: var(--shadow-panel);
       overflow: hidden;
       animation: fadeIn 400ms var(--ease);
     }
@@ -501,6 +503,7 @@
       background: white;
       border: 1px solid var(--border);
       border-radius: var(--radius-card);
+      box-shadow: var(--shadow-panel);
     }
 
     .nav-tab {
@@ -626,6 +629,7 @@
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: var(--radius-card);
+      box-shadow: var(--shadow-panel);
       overflow: hidden;
     }
 
@@ -1923,6 +1927,7 @@
       border: 1px solid var(--border);
       border-top: 3px solid var(--doc-color, var(--accent));
       border-radius: var(--radius-card);
+      box-shadow: var(--shadow-panel);
       display: flex;
       flex-direction: column;
     }
@@ -2867,7 +2872,7 @@
       background: white;
       border: 1px solid var(--border);
       border-radius: 4px;
-      box-shadow: var(--shadow-md);
+      box-shadow: var(--shadow-panel);
       padding: 32px 36px;
       max-width: 1100px;
       margin: 16px auto 32px;
