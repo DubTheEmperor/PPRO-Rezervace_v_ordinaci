@@ -105,7 +105,7 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
 | **1** | **Délka jednoho termínu** | Mřížka po 15 minutách vs. dynamická délka termínu podle typu vyšetření. | Pevná mřížka **15minutových slotů**. Rezervace zabírá 1 až N po sobě jdoucích slotů (max. 16 slotů = 4 h) a musí celá ležet v jednom bloku ordinačních hodin. Recepce délku volí přímo v kalendáři (kliknutí = 1 slot, tažení = více slotů). Žádná fragmentace mimo mřížku, překryv lze jednoznačně kontrolovat po slotech. | Schváleno a realizováno |
 | **2** | **Kdo zakládá rezervaci** | Výhradně recepce vs. pacienti přes web. | Rezervace zakládá **recepce a administrátor** (role `RECEPTIONIST`, `ADMIN`). Lékař kalendář a detaily rezervací vidí, ale termíny nezakládá. Veškerá pravidla jsou v servisní vrstvě za REST API `POST /api/v1/appointments`, takže budoucí pacientský portál lze napojit bez přepisování byznys logiky. | Schváleno a realizováno |
 | **3** | **Co se zrušenou rezervací** | Zmizení z diáře vs. zachování pro statistiku nespolehlivých pacientů. | Stavový model rezervace `PLANNED / COMPLETED / CANCELLED_BY_PATIENT / CANCELLED_BY_OFFICE / NO_SHOW`. Při zrušení i nedostavení se smažou obsazené sloty (termín se v kalendáři ihned uvolní), rezervace se nemaže a zůstává v historii pacienta (kdo a kdy stav nastavil). Do spolehlivosti pacienta se počítá zrušení pacientem a nedostavení, zrušení ordinací ne. | Schváleno a realizováno |
-| **4** | **Jednoznačná totožnost pacienta** | Duplicity v diáři, nejasný primární identifikátor. | Jednoznačným klíčem v evidenci bude kombinace čísla pojištěnce (rodného čísla) a pojišťovny. Při zakládání nového pacienta systém provede deduplikační kontrolu (shoda telefonu, jména a data narození) a upozorní recepční na případnou existenci karty. | Schváleno a realizováno |
+| **4** | **Jednoznačná totožnost pacienta** | Duplicity v diáři, nejasný primární identifikátor. | Jednoznačným klíčem v evidenci je **číslo pojištěnce (rodné číslo)** s unikátním indexem v databázi. Pojišťovna součástí klíče není, protože ji pacient může změnit a číslo zůstává. Pokus o založení pacienta se stejným číslem systém odmítne a uvede existující kartu (jméno a ID). Kontrola podobných karet (jméno + rok narození, telefon) se vědomě nedělá. Recepce před založením vyhledává pacienta podle příjmení nebo telefonu (FP1). *(Upřesněno 2026-11-15, původní text sliboval i deduplikační upozornění.)* | Schváleno a realizováno |
 | **5** | **Výpadek / nemoc lékaře** | Hromadné zrušení, přesun k jinému lékaři, nebo jen označení a obvolání. | Režim mimořádné nedostupnosti lékaře. Lékař (svou) nebo administrátor označí **celé dny nemoci** v mini kalendáři na kartě lékaře. Naplánované a ještě nezačaté rezervace v těch dnech přejdou do stavu `TO_RESCHEDULE` (K přeobjednání). Jejich **sloty zůstávají obsazené**, takže se na původní čas nikdo jiný neobjedná. Na nemocný den nelze rezervovat. Recepce má v záložce Rezervace podzáložku **K přeobjednání**: pracovní frontu s telefonem pacienta a akcemi *Přeobjednat* (rychlý přesun na volný slot kolegy či pozdější termín, původní rezervace → `RESCHEDULED` s odkazem na novou) a *Zrušit termín* (zrušeno ordinací). Při dřívějším uzdravení se po odznačení dne nevyřízené termíny **samy vrátí** do stavu `PLANNED`. | Schváleno a realizováno |
 
 ### 4.2 Průběžný protokol dohodnutých změn a rozhodnutí (Changelog rozhodnutí)
@@ -309,3 +309,64 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
     Formulář lékaře místo volného výběru barvy ukazuje 5 koleček. Barva, kterou už má jiný lékař, má bílou tečku a v tooltipu jméno lékaře. Výběr je dovolen, ale kolize je vidět. Nový lékař bez zvolené barvy dostane první volnou.
   - **Proč:** Rozhodnutí vývojáře. Původní syté barvy (#0284c7, #059669, #9333ea) neladily s paletou ordinace a zelená splývala s tyrkysovým akcentem. Barvy palety se od sebe snadno odliší, liší se od akcentu, růžové (obsazeno / nemoc) i jantarové (jiné pracoviště) a mají s bílými iniciálami kontrast alespoň 4.5 : 1.
   - **Dopad na architekturu:** Byznys vrstva: modul `src/business/doctor_colors.py` (paleta, `next_free_color`) je jediný zdroj pravdy. Validace v DTO `DoctorCreate/DoctorUpdate` (barva mimo paletu → 422), přidělení první volné barvy v `DoctorService.create_doctor`. Datová vrstva: migrace `013_doctor_color_palette` převede demo barvy na paletu a ostatním lékařům s barvou mimo paletu přidělí volné barvy palety. Změní se také výchozí hodnota sloupce. Downgrade vrací demo barvy. Seed používá nové barvy. UI: seznam barev zrcadlí byznys modul (stejně jako číselník pojišťoven). Testy: barva mimo paletu, normalizace, demo barvy, `next_free_color`. Celkem 212 testů.
+
+- **2026-11-15:** **Audit splnění zadání a doplnění mezer:**
+  - **Co bylo rozhodnuto:**
+    - **Totožnost pacienta (otevřený bod 4):** Text rozhodnutí v §4.1 je opravený podle skutečnosti. Klíčem je unikátní číslo pojištěnce, kontrola podobných karet se nedělá. Nepoužitá metoda `PatientRepository.find_potential_duplicates` byla odstraněna.
+    - **Účty personálu se nemažou, jen deaktivují.** Smazat lze jen účet, který v historii ordinace nic neprovedl (nezaložil ani nezrušil rezervaci, nepracoval s návštěvou, nezadal nemoc) a není propojen s lékařem, typicky účet založený omylem. Jinak API vrátí srozumitelnou chybu s pokynem k deaktivaci. Správa personálu zobrazuje ve výchozím stavu jen aktivní účty (přepínač „Zobrazit i neaktivní“).
+    - **Tajný klíč JWT není v gitu.** Bere se z proměnné prostředí `SECRET_KEY` (`.env` nebo prostředí hostitele, compose ho předá). Když chybí, aplikace si při startu vygeneruje náhodný klíč (po restartu je nutné se znovu přihlásit). **Demo účty** (admin, recepce, 3 lékaři) se syntetickými hesly vědomě zůstávají v seedu a na přihlašovací obrazovce. Slouží k předvedení na cvičení, nepatří k žádnému reálnému systému a v reálném nasazení by se nahradily přes `FIRST_ADMIN_*` a demo účty by se deaktivovaly. Heslo databáze v `docker-compose.yml` platí jen pro lokální kontejner.
+    - **Start kontejneru:** Když selže migrace, kontejner skončí s chybou místo běhu nad nekonzistentním schématem. Uvicorn běží bez `--reload`.
+    - **Dokumentace:** Přibyl oddíl 5 *Spuštění a technický přehled*.
+  - **Proč:** Kontrola zadání (README §2–3, PDF Zadání A a Společné minimum) ukázala tyto mezery. Rozhodnutí o bodu 4 sliboval kontrolu, která neexistovala. Mazání účtů odporovalo pravidlu „historie se nemaže“, protože se ztrácelo, kdo co provedl. Společné minimum zakazuje přihlašovací údaje v repozitáři a vyžaduje technickou dokumentaci. Ostatní funkční požadavky a obchodní pravidla splněné jsou.
+  - **Dopad na architekturu:** `UserRepository.has_history`, kontrola v `UserService.delete_user`, `src/config.py` (generování klíče), `docker-compose.yml`, `.env.example`, `entrypoint.sh`, UI Správy personálu. Nové testy: `test_cannot_delete_user_with_history_only_deactivate`, `test_cannot_delete_user_linked_to_doctor`. Migrace na čisté databázi ověřené. Celkem 214 testů.
+
+---
+
+## 5. Spuštění a technický přehled
+
+### 5.1 Spuštění
+```bash
+docker compose up --build
+```
+- Aplikace: <http://localhost:8000>, dokumentace API (Swagger): <http://localhost:8000/docs>.
+- Při startu se provedou migrace (Alembic) a doplní se syntetická demo data (idempotentně).
+- Konfigurace přes proměnné prostředí (vzor `.env.example`): `DATABASE_URL`, `SECRET_KEY` (prázdný = vygeneruje se při startu), `FIRST_ADMIN_*`, údaje ordinace pro výkaz (`PRACTICE_*`).
+
+**Demo účty** (syntetické, jen pro předvedení; na přihlašovací obrazovce jsou i tlačítka pro rychlé vyplnění):
+
+| Uživatel | Heslo | Role |
+|---|---|---|
+| `admin` | `Admin123!` | Administrátor |
+| `vera` | `Vera123!` | Recepce |
+| `hruba`, `maly`, `vesela` | `Hruba123!`, `Maly123!`, `Vesela123!` | Lékař |
+
+### 5.2 Testy
+```bash
+python -m venv .venv && .venv/Scripts/pip install -r requirements.txt   # Linux/macOS: .venv/bin/pip
+.venv/Scripts/python -m pytest
+```
+Testy běží nad SQLite v paměti (bez Dockeru). Pokrývají pravidla zadání (kolize termínů, ordinační hodiny, kauzalita výkonů, neměnnost historie), výpočty bodů a výkazu, oprávnění rolí i architekturu vrstev.
+
+### 5.3 Architektura
+Třívrstvá architektura se závislostmi jedním směrem **prezentace → byznys → infrastruktura**, vynucenými testem `tests/test_architecture.py`.
+
+| Vrstva | Adresář | Obsah |
+|---|---|---|
+| Prezentační | `src/presentation/` | REST API (`api/`, FastAPI routery), odpovědní schémata (`schemas/`), exporty výkazu CSV/PDF (`exports/`), webové rozhraní (`web/index.html`), převod doménových výjimek na HTTP (`error_handlers.py`) |
+| Aplikační / byznys | `src/business/` | servisy (`services/`), vstupní DTO s validací (`dto/`), čistá doménová logika (`scheduling.py`, `reliability.py`, `reports.py`, `sick_days.py`, `insurance.py`, `doctor_colors.py`), doménové výjimky, seed |
+| Datová / infrastruktura | `src/infrastructure/` | SQLAlchemy modely (`models/`), repozitáře (`repositories/`), připojení k DB |
+| Migrace | `migrations/versions/` | Alembic `001`–`013` |
+
+### 5.4 Datový model
+| Entita (tabulka) | Popis a vztahy |
+|---|---|
+| `users` | účty personálu (role ADMIN / RECEPTIONIST / DOCTOR), deaktivace místo mazání |
+| `doctors` | lékař, volitelně 1:1 s účtem `users`; barva z palety, IČP, odbornost |
+| `office_hours` | bloky týdenních hodin lékaře (N:1 `doctors`), typ Ordinace / Jiné pracoviště |
+| `doctor_sick_days` | celé dny nemoci lékaře (N:1 `doctors`, UNIQUE lékař + den) |
+| `patients` | pacient, unikátní číslo pojištěnce, kód pojišťovny, archivace |
+| `appointments` | rezervace (N:1 `patients`, N:1 `doctors`), stavový model, důvod, kdo založil / zrušil, odkaz na přeobjednaný termín |
+| `appointment_slots` | obsazené 15min sloty rezervace, **UNIQUE(lékař, začátek slotu)** = databázová pojistka proti kolizím |
+| `visits` | záznam návštěvy 1:1 k rezervaci, koncept → uzavřeno |
+| `procedures` | číselník výkonů (kód, název, body) |
+| `visit_procedures` | **asociační entita M:N** návštěva ↔ výkon s počtem a snapshotem bodů |
