@@ -296,29 +296,48 @@
       transform: translateX(2px);
     }
 
-    /* MAIN NAVIGATION TABS */
-    .nav-tabs {
+    /* HLAVNÍ NAVIGACE – BOČNÍ PANEL */
+    .dash-layout {
+      display: grid;
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .dash-main {
+      min-width: 0;
+    }
+
+    .side-nav {
+      position: sticky;
+      top: 1rem;
       display: flex;
-      gap: 0.5rem;
-      border-bottom: 2px solid var(--border);
-      margin-bottom: 1.5rem;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding: 0.5rem;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
     }
 
     .nav-tab {
-      padding: 0.75rem 1.25rem;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font: inherit;
       font-weight: 600;
       font-size: 0.95rem;
+      text-align: left;
       border: none;
+      border-left: 3px solid transparent;
+      border-radius: 8px;
       background: transparent;
       color: var(--text-muted);
       cursor: pointer;
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
-      transition: all 0.2s;
+      transition: background 0.15s, color 0.15s;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      border-radius: var(--radius) var(--radius) 0 0;
     }
 
     .nav-tab:hover {
@@ -327,12 +346,90 @@
     }
 
     .nav-tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-      background: white;
-      border-left: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      border-top: 1px solid var(--border);
+      color: var(--primary-hover);
+      background: var(--primary-light);
+      border-left-color: var(--primary);
+    }
+
+    .nav-tab .tab-badge {
+      margin-left: auto;
+    }
+
+    /* Podpoložky Rezervace – plynulé rozbalení pod položkou */
+    .nav-sub {
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.25s ease;
+    }
+
+    .nav-group.open .nav-sub {
+      grid-template-rows: 1fr;
+    }
+
+    .nav-sub-inner {
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      padding-left: 0.85rem;
+    }
+
+    .nav-group.open .nav-sub-inner {
+      padding-top: 0.2rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .nav-sub {
+        transition: none;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .dash-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1rem;
+      }
+
+      .side-nav {
+        position: static;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+
+      .side-nav .nav-tab {
+        width: auto;
+        border-left: none;
+        border-bottom: 3px solid transparent;
+      }
+
+      .side-nav .nav-tab.active {
+        border-bottom-color: var(--primary);
+      }
+
+      .nav-group {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .nav-group.open .nav-sub-inner {
+        flex-direction: row;
+        padding: 0 0 0 0.25rem;
+      }
+
+      .nav-sub {
+        grid-template-columns: 0fr;
+        grid-template-rows: 1fr;
+        transition: grid-template-columns 0.25s ease;
+      }
+
+      .nav-group.open .nav-sub {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-sub-inner {
+        min-width: 0;
+      }
     }
 
     .ins-badge {
@@ -379,27 +476,6 @@
     .dashboard-title p {
       font-size: 0.85rem;
       color: var(--text-muted);
-    }
-
-    .info-banner {
-      background: white;
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--primary);
-      padding: 1rem 1.25rem;
-      border-radius: var(--radius);
-      margin-bottom: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: var(--shadow-sm);
-    }
-
-    .info-banner-text {
-      font-size: 0.875rem;
-    }
-
-    .info-banner-text strong {
-      color: var(--primary-hover);
     }
 
     /* CARD & TABLE */
@@ -1170,38 +1246,35 @@
     }
 
     /* ===== REZERVACE – PODZÁLOŽKY A FRONTA K PŘEOBJEDNÁNÍ (otevřený bod 5) ===== */
-    .sub-tabs {
-      display: inline-flex;
-      gap: 0.25rem;
-      padding: 0.25rem;
-      background: #eef2f6;
-      border-radius: 12px;
-      flex-wrap: wrap;
-    }
-
     .sub-tab {
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 0.45rem;
-      padding: 0.5rem 1rem;
+      padding: 0.55rem 0.85rem;
       border: none;
-      border-radius: 9px;
+      border-radius: 8px;
       background: transparent;
       font: inherit;
       font-weight: 600;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
+      text-align: left;
       color: var(--text-muted);
       cursor: pointer;
+      white-space: nowrap;
     }
 
     .sub-tab:hover {
       color: var(--text-main);
+      background: #f1f5f9;
     }
 
     .sub-tab.active {
-      background: white;
       color: var(--text-main);
-      box-shadow: var(--shadow-sm);
+      background: #eef2f6;
+    }
+
+    .sub-tab .chip-count {
+      margin-left: auto;
     }
 
     .sub-tab .chip-count.has-items {
@@ -2770,53 +2843,46 @@
 
     <!-- DASHBOARD VIEW -->
     <div id="dashboardView" style="display: none;">
-      <!-- NAVIGATION TABS -->
-      <div class="nav-tabs">
-        <button id="tabBtnReservations" class="nav-tab active" onclick="switchDashboardTab('reservations')">
-          <span>📅</span> Rezervace <span id="rescheduleBadge" class="tab-badge sick" style="display: none;"
-            title="Termíny k přeobjednání">0</span>
-        </button>
+      <div class="dash-layout">
+      <!-- BOČNÍ NAVIGACE -->
+      <aside class="side-nav" aria-label="Hlavní navigace">
+        <div id="navGroupReservations" class="nav-group open">
+          <button id="tabBtnReservations" class="nav-tab active" onclick="switchDashboardTab('reservations')">
+            Rezervace <span id="rescheduleBadge" class="tab-badge sick" style="display: none;"
+              title="Termíny k přeobjednání">0</span>
+          </button>
+          <div id="resSubTabs" class="nav-sub" style="display: none;">
+            <div class="nav-sub-inner">
+              <button id="subTabCalendar" class="sub-tab active" onclick="switchResSubTab('calendar')">Kalendář</button>
+              <button id="subTabQueue" class="sub-tab" onclick="switchResSubTab('queue')">
+                K přeobjednání <span id="queueCountChip" class="chip-count">0</span>
+              </button>
+            </div>
+          </div>
+        </div>
         <button id="tabBtnClinic" class="nav-tab" onclick="switchDashboardTab('clinic')" style="display: none;">
-          <span>🏥</span> Návštěvy <span id="visitsBadge" class="tab-badge" style="display: none;">0</span>
+          Návštěvy <span id="visitsBadge" class="tab-badge" style="display: none;">0</span>
         </button>
         <button id="tabBtnPatients" class="nav-tab" onclick="switchDashboardTab('patients')">
-          <span>📋</span> Evidence pacientů
+          Evidence pacientů
         </button>
         <button id="tabBtnReports" class="nav-tab" onclick="switchDashboardTab('reports')">
-          <span>📊</span> Výkazy
+          Výkazy
         </button>
         <button id="tabBtnDoctors" class="nav-tab" onclick="switchDashboardTab('doctors')">
-          <span>🩺</span> Ordinační hodiny
+          Ordinační hodiny
         </button>
         <button id="tabBtnUsers" class="nav-tab" onclick="switchDashboardTab('users')">
-          <span>👥</span> Správa personálu
+          Správa personálu
         </button>
-      </div>
+      </aside>
 
-      <div class="info-banner">
-        <div class="info-banner-text">
-          Přihlášen: <strong id="bannerName">Administrátor</strong> | Role: <span id="bannerRoleBadge"
-            class="role-badge role-ADMIN">ADMIN</span>.
-          <span id="bannerPermissions" style="margin-left: 0.5rem; color: var(--text-muted);">
-            Vítejte v systému Ordinace Na Vyhlídce.
-          </span>
-        </div>
-        <div style="font-size: 0.8rem; color: var(--text-muted);">
-          Aktivní session: <strong>JWT Bearer</strong>
-        </div>
-      </div>
-
+      <div class="dash-main">
       <!-- SECTION: RESERVATIONS (Funkční požadavek 3) -->
       <div id="sectionReservations" style="display: none;">
         <div class="dashboard-header">
           <div class="dashboard-title">
             <h2>Rezervace termínů</h2>
-          </div>
-          <div id="resSubTabs" class="sub-tabs" style="display: none;">
-            <button id="subTabCalendar" class="sub-tab active" onclick="switchResSubTab('calendar')">📅 Kalendář</button>
-            <button id="subTabQueue" class="sub-tab" onclick="switchResSubTab('queue')">
-              📞 K přeobjednání <span id="queueCountChip" class="chip-count">0</span>
-            </button>
           </div>
         </div>
 
@@ -3049,6 +3115,8 @@
           </div>
         </div>
       </div>
+      </div><!-- /dash-main -->
+      </div><!-- /dash-layout -->
     </div>
   </main>
 
@@ -3472,21 +3540,7 @@
       roleBadge.textContent = currentUser.role;
       roleBadge.className = `role-badge role-${currentUser.role}`;
 
-      document.getElementById('bannerName').textContent = currentUser.full_name;
-      const bannerBadge = document.getElementById('bannerRoleBadge');
-      bannerBadge.textContent = currentUser.role;
-      bannerBadge.className = `role-badge role-${currentUser.role}`;
-
-      const permEl = document.getElementById('bannerPermissions');
-      const btnNew = document.getElementById('btnNewUser');
-
-      if (currentUser.role === 'ADMIN') {
-        permEl.textContent = 'Máte plná oprávnění ke správě ordinace, personálu i evidence pacientů.';
-        btnNew.style.display = 'inline-flex';
-      } else {
-        permEl.textContent = `Přihlášena ${currentUser.full_name}. Evidence pacientů je připravena pro vyhledávání a objednávky.`;
-        btnNew.style.display = 'none';
-      }
+      document.getElementById('btnNewUser').style.display = currentUser.role === 'ADMIN' ? 'inline-flex' : 'none';
 
       // Záložku Návštěvy vidí jen lékaři a administrátor (zdravotní záznamy)
       document.getElementById('tabBtnClinic').style.display = canSeeVisits() ? 'flex' : 'none';
@@ -3516,6 +3570,8 @@
         document.getElementById(cfg.btn).classList.toggle('active', key === tab);
         document.getElementById(cfg.section).style.display = key === tab ? 'block' : 'none';
       });
+      // Podpoložky Rezervace se v bočním panelu rozbalí jen u aktivní záložky
+      document.getElementById('navGroupReservations').classList.toggle('open', tab === 'reservations');
       DASHBOARD_TABS[tab].load();
     }
 
@@ -4422,7 +4478,7 @@
     async function initReservations() {
       setupCalendarListeners();
       const withQueue = canCancelAppointments();
-      document.getElementById('resSubTabs').style.display = withQueue ? 'inline-flex' : 'none';
+      document.getElementById('resSubTabs').style.display = withQueue ? 'grid' : 'none';
       if (!withQueue) resSubTab = 'calendar';
       try {
         await loadDoctors();
