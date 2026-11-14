@@ -468,35 +468,6 @@
       margin-left: auto;
     }
 
-    /* Podpoložky Rezervace – plynulé rozbalení pod položkou */
-    .nav-sub {
-      grid-template-rows: 0fr;
-      transition: grid-template-rows 300ms var(--ease);
-    }
-
-    .nav-group.open .nav-sub {
-      grid-template-rows: 1fr;
-    }
-
-    .nav-sub-inner {
-      min-height: 0;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding-left: 16px;
-    }
-
-    .nav-group.open .nav-sub-inner {
-      padding-top: 4px;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .nav-sub {
-        transition: none;
-      }
-    }
-
     @media (max-width: 900px) {
       .dash-layout {
         grid-template-columns: minmax(0, 1fr);
@@ -511,31 +482,6 @@
 
       .side-nav .nav-tab {
         width: auto;
-      }
-
-      .nav-group {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-
-      .nav-group.open .nav-sub-inner {
-        flex-direction: row;
-        padding: 0 0 0 4px;
-      }
-
-      .nav-sub {
-        grid-template-columns: 0fr;
-        grid-template-rows: 1fr;
-        transition: grid-template-columns 300ms var(--ease);
-      }
-
-      .nav-group.open .nav-sub {
-        grid-template-columns: 1fr;
-      }
-
-      .nav-sub-inner {
-        min-width: 0;
       }
     }
 
@@ -1453,37 +1399,17 @@
     }
 
     /* ===== REZERVACE – PODZÁLOŽKY A FRONTA K PŘEOBJEDNÁNÍ (otevřený bod 5) ===== */
-    .sub-tab {
-      display: flex;
+    /* Přepínač Kalendář / K přeobjednání v hlavičce stránky – větší segmentový ovladač */
+    .res-subtabs .filter-btn {
+      display: inline-flex;
       align-items: center;
       gap: 8px;
-      min-height: 40px;
-      padding: 0 12px;
-      border: none;
-      border-radius: var(--radius);
-      background: transparent;
-      font: inherit;
-      font-weight: 500;
-      font-size: 15px;
-      text-align: left;
-      color: var(--text-2);
-      transition: background-color 150ms var(--ease), color 150ms var(--ease);
-      cursor: pointer;
+      min-height: 36px;
+      font-size: 14px;
       white-space: nowrap;
     }
 
-    .sub-tab:hover {
-      color: var(--text-main);
-      background: var(--raised);
-    }
-
-    .sub-tab.active {
-      color: var(--accent-ink);
-      background: var(--accent-tint);
-    }
-
-    .sub-tab .chip-count {
-      margin-left: auto;
+    .res-subtabs .chip-count {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1495,7 +1421,7 @@
       font-weight: 500;
     }
 
-    .sub-tab .chip-count.has-items {
+    .res-subtabs .chip-count.has-items {
       background: var(--sick);
       color: white;
     }
@@ -3119,20 +3045,10 @@
       <div class="dash-layout">
       <!-- BOČNÍ NAVIGACE -->
       <aside class="side-nav" aria-label="Hlavní navigace">
-        <div id="navGroupReservations" class="nav-group open">
-          <button id="tabBtnReservations" class="nav-tab active" onclick="switchDashboardTab('reservations')">
-            Rezervace <span id="rescheduleBadge" class="tab-badge sick" style="display: none;"
-              title="Termíny k přeobjednání">0</span>
-          </button>
-          <div id="resSubTabs" class="nav-sub" style="display: none;">
-            <div class="nav-sub-inner">
-              <button id="subTabCalendar" class="sub-tab active" onclick="switchResSubTab('calendar')">Kalendář</button>
-              <button id="subTabQueue" class="sub-tab" onclick="switchResSubTab('queue')">
-                K přeobjednání <span id="queueCountChip" class="chip-count">0</span>
-              </button>
-            </div>
-          </div>
-        </div>
+        <button id="tabBtnReservations" class="nav-tab active" onclick="switchDashboardTab('reservations')">
+          Rezervace <span id="rescheduleBadge" class="tab-badge sick" style="display: none;"
+            title="Termíny k přeobjednání">0</span>
+        </button>
         <button id="tabBtnClinic" class="nav-tab" onclick="switchDashboardTab('clinic')" style="display: none;">
           Návštěvy <span id="visitsBadge" class="tab-badge" style="display: none;">0</span>
         </button>
@@ -3156,6 +3072,12 @@
         <div class="dashboard-header">
           <div class="dashboard-title">
             <h2>Rezervace termínů</h2>
+          </div>
+          <div id="resSubTabs" class="filter-tabs res-subtabs" role="tablist" aria-label="Pohled rezervací" style="display: none;">
+            <button id="subTabCalendar" class="filter-btn active" onclick="switchResSubTab('calendar')">Kalendář</button>
+            <button id="subTabQueue" class="filter-btn" onclick="switchResSubTab('queue')">
+              K přeobjednání <span id="queueCountChip" class="chip-count">0</span>
+            </button>
           </div>
         </div>
 
@@ -3845,8 +3767,6 @@
         document.getElementById(cfg.btn).classList.toggle('active', key === tab);
         document.getElementById(cfg.section).style.display = key === tab ? 'block' : 'none';
       });
-      // Podpoložky Rezervace se v bočním panelu rozbalí jen u aktivní záložky
-      document.getElementById('navGroupReservations').classList.toggle('open', tab === 'reservations');
       DASHBOARD_TABS[tab].load();
     }
 
@@ -3916,7 +3836,7 @@
 
     function setFilterRole(role, btn) {
       currentRoleFilter = role;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.parentElement.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       loadUsers();
     }
@@ -4753,7 +4673,7 @@
     async function initReservations() {
       setupCalendarListeners();
       const withQueue = canCancelAppointments();
-      document.getElementById('resSubTabs').style.display = withQueue ? 'grid' : 'none';
+      document.getElementById('resSubTabs').style.display = withQueue ? 'flex' : 'none';
       if (!withQueue) resSubTab = 'calendar';
       try {
         await loadDoctors();
