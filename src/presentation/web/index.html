@@ -1071,8 +1071,21 @@
       background: white;
     }
 
+    /* Šrafování: bezešvá čtvercová dlaždice (2 pruhy pod 45°). Pozici dlaždice
+       ukotvuje alignCalendarHatch() k levému hornímu rohu mřížky, takže pruhy
+       plynule navazují přes sousední buňky i dny. 17px dlaždice = rozteč ≈ 12px. */
+    .cal-cell.off,
+    .cal-cell.away,
+    .cal-cell.sick {
+      background-image: linear-gradient(135deg, var(--hatch-a) 0 25%, var(--hatch-b) 25% 50%, var(--hatch-a) 50% 75%, var(--hatch-b) 75% 100%);
+      background-size: 17px 17px;
+      background-origin: border-box;
+      background-position: var(--hx, 0) var(--hy, 0);
+    }
+
     .cal-cell.off {
-      background: repeating-linear-gradient(135deg, #E9ECED 0 6px, #D5DADD 6px 12px);
+      --hatch-a: #E9ECED;
+      --hatch-b: #D5DADD;
     }
 
     .cal-cell.past {
@@ -1081,13 +1094,15 @@
 
     /* Lékař v tuto dobu ordinuje na jiném pracovišti – objednat nelze */
     .cal-cell.away {
-      background: repeating-linear-gradient(135deg, #FBE6CC 0 6px, #F1C48F 6px 12px);
+      --hatch-a: #FBE6CC;
+      --hatch-b: #F1C48F;
       border-right-color: #F1C48F;
     }
 
     /* Lékař je v tento den nemocný (otevřený bod 5) – objednat nelze */
     .cal-cell.sick {
-      background: repeating-linear-gradient(135deg, #F9DDE8 0 6px, #EDB2CA 6px 12px);
+      --hatch-a: #F9DDE8;
+      --hatch-b: #EDB2CA;
       border-right-color: #EDB2CA;
     }
 
@@ -1753,7 +1768,7 @@
     }
 
     .sc-day.sick {
-      background: repeating-linear-gradient(135deg, #F4C7D9 0 5px, #E99BBB 5px 10px);
+      background: linear-gradient(135deg, #F4C7D9 0 25%, #E99BBB 25% 50%, #F4C7D9 50% 75%, #E99BBB 75% 100%) 0 0 / 14px 14px;
       color: var(--sick-dark);
     }
 
@@ -3108,10 +3123,10 @@
               <span class="legend-item"><span class="legend-swatch" style="background: white;"></span> Volno</span>
               <span class="legend-item"><span class="legend-swatch" style="background: var(--accent); border-color: var(--accent);"></span> Vybráno</span>
               <span class="legend-item"><span class="legend-swatch" style="background: var(--booked); border-color: var(--booked);"></span> Obsazeno</span>
-              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #FBE6CC 0 4px, #F1C48F 4px 8px); border-color: #F1C48F;"></span> Jiné pracoviště</span>
-              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #F9DDE8 0 4px, #EDB2CA 4px 8px); border-color: #EDB2CA;"></span> Nemoc lékaře</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: linear-gradient(135deg, #FBE6CC 0 25%, #F1C48F 25% 50%, #FBE6CC 50% 75%, #F1C48F 75% 100%) 0 0 / 11px 11px; border-color: #F1C48F;"></span> Jiné pracoviště</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: linear-gradient(135deg, #F9DDE8 0 25%, #EDB2CA 25% 50%, #F9DDE8 50% 75%, #EDB2CA 75% 100%) 0 0 / 11px 11px; border-color: #EDB2CA;"></span> Nemoc lékaře</span>
               <span class="legend-item"><span class="legend-swatch" style="background: white; border: 2px dashed var(--sick);"></span> K přeobjednání</span>
-              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #E9ECED 0 4px, #D5DADD 4px 8px); border-color: #D5DADD;"></span> Lékař neordinuje</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: linear-gradient(135deg, #E9ECED 0 25%, #D5DADD 25% 50%, #E9ECED 50% 75%, #D5DADD 75% 100%) 0 0 / 11px 11px; border-color: #D5DADD;"></span> Lékař neordinuje</span>
               <span class="legend-item"><span class="legend-swatch" style="background: var(--raised);"></span> Minulost</span>
             </div>
           </div>
@@ -3515,10 +3530,6 @@
             <label for="doctorFullName">Celé jméno a titul *</label>
             <input type="text" id="doctorFullName" class="form-control" required minlength="2"
               placeholder="např. MUDr. Karel Novotný">
-          </div>
-          <div class="form-group">
-            <label for="doctorSpecialization">Specializace</label>
-            <input type="text" id="doctorSpecialization" class="form-control" placeholder="např. Praktický lékař">
           </div>
           <div style="display: grid; grid-template-columns: 110px 1fr; gap: 16px;">
             <div class="form-group">
@@ -4473,7 +4484,6 @@
               <div class="doctor-avatar">${escapeHtml(doctorInitials(d.full_name))}</div>
               <div>
                 <h3>${escapeHtml(d.full_name)}</h3>
-                <p>${escapeHtml(d.specialization || 'Bez specializace')}</p>
                 <div id="sickNext-${d.id}" class="sick-next"></div>
               </div>
               ${!d.is_active ? `<span class="status-badge status-inactive"><span class="status-dot"></span>Neaktivní</span>`
@@ -4615,7 +4625,6 @@
       document.getElementById('doctorModalTitle').textContent = d ? `Úprava lékaře: ${d.full_name}` : 'Nový lékař';
       document.getElementById('doctorId').value = d ? d.id : '';
       document.getElementById('doctorFullName').value = d ? d.full_name : '';
-      document.getElementById('doctorSpecialization').value = d ? (d.specialization || '') : '';
       document.getElementById('doctorColor').value = d ? d.color : 'var(--accent)';
       document.getElementById('doctorIsActive').checked = d ? d.is_active : true;
 
@@ -4640,7 +4649,6 @@
       const userId = document.getElementById('doctorUserId').value;
       const payload = {
         full_name: document.getElementById('doctorFullName').value.trim(),
-        specialization: document.getElementById('doctorSpecialization').value.trim() || null,
         color: document.getElementById('doctorColor').value,
         user_id: userId ? Number(userId) : null,
         is_active: document.getElementById('doctorIsActive').checked,
@@ -4680,7 +4688,7 @@
         const active = doctorsList.filter(d => d.is_active);
         const select = document.getElementById('calDoctorSelect');
         select.innerHTML = active.map(d =>
-          `<option value="${d.id}">${escapeHtml(d.full_name)}${d.specialization ? ' – ' + escapeHtml(d.specialization) : ''}</option>`
+          `<option value="${d.id}">${escapeHtml(d.full_name)}</option>`
         ).join('');
         if (!active.some(d => d.id === calDoctorId)) {
           const own = currentUser.role === 'DOCTOR' ? active.find(d => d.user_id === currentUser.id) : null;
@@ -4897,6 +4905,7 @@
       grid.style.setProperty('--cols', calCols);
       grid.classList.toggle('readonly', !canBook());
       grid.innerHTML = html;
+      alignCalendarHatch();
 
       calCells = days.map(() => []);
       grid.querySelectorAll('.cal-cell').forEach(el => {
@@ -4914,6 +4923,20 @@
       document.addEventListener('pointermove', calPointerMove);
       document.addEventListener('pointerup', calPointerUp);
       document.addEventListener('pointercancel', () => { calDrag = null; clearSelection(); });
+      // Sloupce mají šířku 1fr – při změně šířky mřížky je potřeba znovu ukotvit šrafování
+      if (window.ResizeObserver) new ResizeObserver(alignCalendarHatch).observe(document.getElementById('calGrid'));
+    }
+
+    // Ukotví dlaždici šrafování každé buňky k levému hornímu rohu mřížky (navazující pruhy)
+    function alignCalendarHatch() {
+      const grid = document.getElementById('calGrid');
+      const g = grid.getBoundingClientRect();
+      if (!g.width) return; // skrytá mřížka – srovná se při zobrazení (ResizeObserver)
+      grid.querySelectorAll('.cal-cell.off, .cal-cell.away, .cal-cell.sick').forEach(el => {
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--hx', `${g.left - r.left}px`);
+        el.style.setProperty('--hy', `${g.top - r.top}px`);
+      });
     }
 
     function calPointerDown(e) {
@@ -5815,7 +5838,7 @@
           pickerBox.style.display = 'flex';
           const select = document.getElementById('clinicDoctorSelect');
           select.innerHTML = active.map(d =>
-            `<option value="${d.id}">${escapeHtml(d.full_name)}${d.specialization ? ' – ' + escapeHtml(d.specialization) : ''}</option>`
+            `<option value="${d.id}">${escapeHtml(d.full_name)}</option>`
           ).join('');
           if (!active.some(d => d.id === clinicDoctorId)) {
             clinicDoctorId = (active.find(d => d.id === calDoctorId) || active[0] || {}).id || null;
@@ -6414,7 +6437,7 @@
         }
         const previous = select.value;
         select.innerHTML = doctors.map(d =>
-          `<option value="${d.id}">${escapeHtml(d.full_name)}${d.specialization ? ' – ' + escapeHtml(d.specialization) : ''}</option>`
+          `<option value="${d.id}">${escapeHtml(d.full_name)}</option>`
         ).join('');
         if (doctors.some(d => String(d.id) === previous)) select.value = previous;
         else if (doctors.some(d => d.id === calDoctorId)) select.value = calDoctorId;
@@ -6467,7 +6490,7 @@
 
     function renderReport(r) {
       const d = r.doctor;
-      const specialty = [d.specialty_code, d.specialization].filter(Boolean).join(' – ') || '—';
+      const specialty = d.specialty_code || '—';
       const sections = r.sections.map(s => {
         const rows = s.visits.map(v => v.items.map((it, i) => `
           <tr>

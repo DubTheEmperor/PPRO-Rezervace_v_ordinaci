@@ -76,7 +76,7 @@ def _header(pdf: _ReportPDF, r: MonthlyReport) -> None:
     ]
     right = [
         ("Lékař", doctor.full_name),
-        ("Odbornost", " – ".join(x for x in (doctor.specialty_code, doctor.specialization) if x) or "—"),
+        ("Odbornost", doctor.specialty_code or "—"),
         ("IČP", doctor.icp or "—"),
     ]
     y0 = pdf.get_y()

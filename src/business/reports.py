@@ -108,7 +108,6 @@ class PracticeInfo:
 class DoctorInfo:
     id: int
     full_name: str
-    specialization: Optional[str]
     icp: Optional[str]
     specialty_code: Optional[str]
 

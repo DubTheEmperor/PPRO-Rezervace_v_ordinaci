@@ -63,7 +63,6 @@ class PracticeInfoResponse(_FromAttributes):
 class ReportDoctorResponse(_FromAttributes):
     id: int
     full_name: str
-    specialization: Optional[str]
     icp: Optional[str]
     specialty_code: Optional[str]
 

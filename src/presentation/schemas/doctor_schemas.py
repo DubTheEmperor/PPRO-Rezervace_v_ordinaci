@@ -8,7 +8,6 @@ from src.business.dto.doctor_dto import OfficeHoursBlock
 class DoctorSummary(BaseModel):
     id: int
     full_name: str
-    specialization: Optional[str]
     color: str
 
     model_config = ConfigDict(from_attributes=True)

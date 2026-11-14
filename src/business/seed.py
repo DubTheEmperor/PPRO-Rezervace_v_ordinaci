@@ -151,7 +151,6 @@ DEFAULT_DOCTORS = [
     {
         "username": "hruba",
         "full_name": "MUDr. Jana Hrubá",
-        "specialization": "Praktický lékař pro dospělé",
         "color": "#0284c7",
         "icp": "52999101",
         "specialty_code": "001",
@@ -160,10 +159,9 @@ DEFAULT_DOCTORS = [
     {
         "username": "maly",
         "full_name": "MUDr. Tomáš Malý",
-        "specialization": "Interna",
         "color": "#059669",
         "icp": "52999102",
-        "specialty_code": "101",
+        "specialty_code": "001",
         "hours": [(1, "07:30", "12:00"), (3, "07:30", "12:00"), (4, "08:00", "12:00")],
         # Úterní odpoledne ordinuje na jiné adrese – v kalendáři vidět, objednat nelze
         "away": [(1, "13:00", "17:00", DEMO_AWAY_LOCATION)],
@@ -171,7 +169,6 @@ DEFAULT_DOCTORS = [
     {
         "username": "vesela",
         "full_name": "MUDr. Lucie Veselá",
-        "specialization": "Praktický lékař, preventivní péče",
         "color": "#9333ea",
         "icp": "52999103",
         "specialty_code": "001",
@@ -200,7 +197,6 @@ def seed_doctors(db: Session) -> None:
         doctor = doctor_repo.create(DoctorModel(
             user_id=user.id,
             full_name=d["full_name"],
-            specialization=d["specialization"],
             color=d["color"],
             icp=d["icp"],
             specialty_code=d["specialty_code"],

@@ -39,7 +39,6 @@ class OfficeHoursUpdate(BaseModel):
 
 class DoctorCreate(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=100, description="Celé jméno včetně titulu")
-    specialization: Optional[str] = Field(None, max_length=100)
     color: str = Field("#0284c7", pattern=COLOR_PATTERN, description="Barva lékaře v kalendáři")
     user_id: Optional[int] = Field(None, description="Propojený uživatelský účet s rolí DOCTOR")
     icp: Optional[str] = Field(None, pattern=ICP_PATTERN, description="IČP – identifikační číslo pracoviště (8 číslic)")
@@ -49,7 +48,6 @@ class DoctorCreate(BaseModel):
 
 class DoctorUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=100)
-    specialization: Optional[str] = Field(None, max_length=100)
     color: Optional[str] = Field(None, pattern=COLOR_PATTERN)
     user_id: Optional[int] = None
     icp: Optional[str] = Field(None, pattern=ICP_PATTERN)

@@ -74,7 +74,6 @@ class DoctorService:
             self._validate_user_link(data.user_id)
         doctor = DoctorModel(
             full_name=data.full_name.strip(),
-            specialization=data.specialization.strip() if data.specialization else None,
             color=data.color,
             user_id=data.user_id,
             icp=data.icp,
@@ -92,8 +91,6 @@ class DoctorService:
             doctor.user_id = data.user_id
         if data.full_name is not None:
             doctor.full_name = data.full_name.strip()
-        if "specialization" in fields:
-            doctor.specialization = data.specialization.strip() if data.specialization else None
         if data.color is not None:
             doctor.color = data.color
         if "icp" in fields:

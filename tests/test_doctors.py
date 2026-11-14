@@ -127,8 +127,10 @@ def test_week_calendar_requires_monday(client, receptionist_token, doctors_by_us
 
 
 def test_only_admin_can_create_doctor(client, admin_token, receptionist_token):
-    payload = {"full_name": "MUDr. Nový Lékař", "specialization": "Dermatologie", "color": "#f59e0b"}
+    payload = {"full_name": "MUDr. Nový Lékař", "color": "#f59e0b"}
     assert client.post("/api/v1/doctors", json=payload, headers=auth(receptionist_token)).status_code == 403
     response = client.post("/api/v1/doctors", json=payload, headers=auth(admin_token))
     assert response.status_code == 201
     assert response.json()["office_hours"] == []
+    # Specializace se neeviduje – lékaři ordinace mají stejné zaměření
+    assert "specialization" not in response.json()

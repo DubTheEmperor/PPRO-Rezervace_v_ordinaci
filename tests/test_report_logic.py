@@ -22,7 +22,7 @@ def visit(visit_id, day, insurance, patient_id, items):
 def build(visits, unfinished=(), now=datetime(2026, 11, 12, 10, 0)):
     return reports.build_monthly_report(
         practice=reports.PracticeInfo("Ordinace", "Adresa", "52999000"),
-        doctor=reports.DoctorInfo(1, "MUDr. Jana Hrubá", None, "52999101", "001"),
+        doctor=reports.DoctorInfo(1, "MUDr. Jana Hrubá", "52999101", "001"),
         year=2026, month=10, insurance_code=None, visits=visits, unfinished=unfinished,
         now=now, generated_by="Recepce",
     )

@@ -98,7 +98,6 @@ class ReportService:
             doctor=reports.DoctorInfo(
                 id=doctor.id,
                 full_name=doctor.full_name,
-                specialization=doctor.specialization,
                 icp=doctor.icp,
                 specialty_code=doctor.specialty_code,
             ),
