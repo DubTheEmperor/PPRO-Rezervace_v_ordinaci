@@ -151,7 +151,7 @@ DEFAULT_DOCTORS = [
     {
         "username": "hruba",
         "full_name": "MUDr. Jana Hrubá",
-        "color": "#0284c7",
+        "color": "#3E5C9A",
         "icp": "52999101",
         "specialty_code": "001",
         "hours": [(0, "08:00", "12:00"), (0, "13:00", "16:00"), (2, "08:00", "12:00"), (3, "12:00", "18:00")],
@@ -159,7 +159,7 @@ DEFAULT_DOCTORS = [
     {
         "username": "maly",
         "full_name": "MUDr. Tomáš Malý",
-        "color": "#059669",
+        "color": "#5F7F3B",
         "icp": "52999102",
         "specialty_code": "001",
         "hours": [(1, "07:30", "12:00"), (3, "07:30", "12:00"), (4, "08:00", "12:00")],
@@ -169,7 +169,7 @@ DEFAULT_DOCTORS = [
     {
         "username": "vesela",
         "full_name": "MUDr. Lucie Veselá",
-        "color": "#9333ea",
+        "color": "#7A4E8C",
         "icp": "52999103",
         "specialty_code": "001",
         "hours": [(0, "13:00", "18:00"), (2, "13:00", "18:00"), (4, "08:00", "11:00")],

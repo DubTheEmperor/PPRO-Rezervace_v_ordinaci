@@ -1,7 +1,8 @@
 """Vstupní DTO pro správu lékařů a ordinačních hodin."""
 from datetime import date, time
 from typing import Optional, List, Literal
-from pydantic import BaseModel, Field, ConfigDict, model_validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
+from src.business.doctor_colors import DOCTOR_COLORS, is_palette_color, normalize_color
 
 COLOR_PATTERN = r"^#[0-9a-fA-F]{6}$"
 ICP_PATTERN = r"^\d{8}$"
@@ -37,13 +38,31 @@ class OfficeHoursUpdate(BaseModel):
     blocks: List[OfficeHoursBlock] = Field(default_factory=list, description="Kompletní týdenní rozvrh")
 
 
+def _palette_color(value: Optional[str]) -> Optional[str]:
+    """Barva lékaře musí být z palety (tlumené barvy ladící s rozhraním)."""
+    if value is None:
+        return None
+    if not is_palette_color(value):
+        names = ", ".join(f"{hex_} ({name})" for hex_, name in DOCTOR_COLORS)
+        raise ValueError(f"Barva lékaře musí být jedna z barev palety: {names}.")
+    return normalize_color(value)
+
+
 class DoctorCreate(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=100, description="Celé jméno včetně titulu")
-    color: str = Field("#0284c7", pattern=COLOR_PATTERN, description="Barva lékaře v kalendáři")
+    color: Optional[str] = Field(
+        None, pattern=COLOR_PATTERN,
+        description="Barva lékaře z palety; bez uvedení se přidělí první volná barva",
+    )
     user_id: Optional[int] = Field(None, description="Propojený uživatelský účet s rolí DOCTOR")
     icp: Optional[str] = Field(None, pattern=ICP_PATTERN, description="IČP – identifikační číslo pracoviště (8 číslic)")
     specialty_code: Optional[str] = Field(None, pattern=SPECIALTY_CODE_PATTERN, description="Kód odbornosti (3 číslice)")
     is_active: bool = True
+
+    @field_validator("color")
+    @classmethod
+    def check_palette_color(cls, value: Optional[str]) -> Optional[str]:
+        return _palette_color(value)
 
 
 class DoctorUpdate(BaseModel):
@@ -53,6 +72,11 @@ class DoctorUpdate(BaseModel):
     icp: Optional[str] = Field(None, pattern=ICP_PATTERN)
     specialty_code: Optional[str] = Field(None, pattern=SPECIALTY_CODE_PATTERN)
     is_active: Optional[bool] = None
+
+    @field_validator("color")
+    @classmethod
+    def check_palette_color(cls, value: Optional[str]) -> Optional[str]:
+        return _palette_color(value)
 
 
 class SickDaysChange(BaseModel):

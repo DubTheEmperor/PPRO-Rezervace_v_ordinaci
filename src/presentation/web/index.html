@@ -1492,6 +1492,51 @@
       line-height: 1.45;
     }
 
+    /* Výběr barvy lékaře – kolečka palety */
+    .color-picker {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 4px 0;
+    }
+
+    .color-swatch {
+      position: relative;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: var(--swatch);
+      cursor: pointer;
+      transition: box-shadow 150ms var(--ease), transform 150ms var(--ease);
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.08);
+    }
+
+    .color-swatch[aria-checked="true"] {
+      box-shadow: 0 0 0 2px white, 0 0 0 4px var(--ink);
+    }
+
+    .color-swatch:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+    }
+
+    /* Barvu už má jiný lékař – malá bílá tečka uprostřed (výběr je dovolen) */
+    .color-swatch.taken::after {
+      content: '';
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: 6px;
+      height: 6px;
+      margin: -3px 0 0 -3px;
+      border-radius: 50%;
+      background: white;
+      opacity: 0.85;
+    }
+
     /* ===== REZERVACE – PODZÁLOŽKY A FRONTA K PŘEOBJEDNÁNÍ (otevřený bod 5) ===== */
     /* Přepínač Kalendář / K přeobjednání v hlavičce stránky – větší segmentový ovladač */
     .res-subtabs .filter-btn {
@@ -3728,15 +3773,14 @@
             <input type="text" id="doctorFullName" class="form-control" required minlength="2"
               placeholder="např. MUDr. Karel Novotný">
           </div>
-          <div style="display: grid; grid-template-columns: 110px 1fr; gap: 16px;">
-            <div class="form-group">
-              <label for="doctorColor">Barva</label>
-              <input type="color" id="doctorColor" class="form-control" value="var(--accent)" style="height: 42px; padding: 4px;">
-            </div>
-            <div class="form-group">
-              <label for="doctorUserId">Přihlašovací účet lékaře</label>
-              <select id="doctorUserId" class="form-control"></select>
-            </div>
+          <div class="form-group">
+            <label id="doctorColorLabel">Barva v kalendáři</label>
+            <div id="doctorColorPicker" class="color-picker" role="radiogroup" aria-labelledby="doctorColorLabel"></div>
+            <input type="hidden" id="doctorColor">
+          </div>
+          <div class="form-group">
+            <label for="doctorUserId">Přihlašovací účet lékaře</label>
+            <select id="doctorUserId" class="form-control"></select>
           </div>
           <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 0;">
             <input type="checkbox" id="doctorIsActive" checked style="width: 16px; height: 16px;">
@@ -4833,13 +4877,41 @@
     }
 
     // --- Správa lékařů (ADMIN) ---
+    /* Paleta barev lékařů – stejný seznam jako src/business/doctor_colors.py (API jiné barvy odmítne) */
+    const DOCTOR_COLORS = [
+      ['#3E5C9A', 'břidlicově modrá'],
+      ['#5F7F3B', 'mechově zelená'],
+      ['#7A4E8C', 'švestková'],
+      ['#8A6D3B', 'oříšková'],
+      ['#4F5B66', 'grafitová'],
+    ];
+
+    function nextFreeDoctorColor() {
+      const used = doctorsList.map(d => (d.color || '').toUpperCase());
+      const free = DOCTOR_COLORS.find(([hex]) => !used.includes(hex));
+      return (free || DOCTOR_COLORS[used.length % DOCTOR_COLORS.length])[0];
+    }
+
+    function renderDoctorColorPicker(selected, doctorId) {
+      selected = (selected || '').toUpperCase();
+      document.getElementById('doctorColor').value = selected;
+      document.getElementById('doctorColorPicker').innerHTML = DOCTOR_COLORS.map(([hex, name]) => {
+        const owners = doctorsList.filter(d => d.id !== doctorId && (d.color || '').toUpperCase() === hex);
+        const tip = owners.length ? `${name} · používá ${owners.map(d => d.full_name).join(', ')}` : name;
+        return `<button type="button" role="radio" class="color-swatch ${owners.length ? 'taken' : ''}"
+          style="--swatch: ${hex};" aria-checked="${hex === selected}" aria-label="${escapeHtml(tip)}" title="${escapeHtml(tip)}"
+          onclick="renderDoctorColorPicker('${hex}', ${doctorId === null ? 'null' : doctorId})"></button>`;
+      }).join('');
+    }
+
     async function openDoctorModal(doctorId = null) {
       const d = doctorId ? doctorsList.find(x => x.id === doctorId) : null;
       document.getElementById('doctorForm').reset();
       document.getElementById('doctorModalTitle').textContent = d ? `Úprava lékaře: ${d.full_name}` : 'Nový lékař';
       document.getElementById('doctorId').value = d ? d.id : '';
       document.getElementById('doctorFullName').value = d ? d.full_name : '';
-      document.getElementById('doctorColor').value = d ? d.color : 'var(--accent)';
+      // Nový lékař: předvybrat první barvu palety, kterou zatím nikdo nemá
+      renderDoctorColorPicker(d ? d.color : nextFreeDoctorColor(), d ? d.id : null);
       document.getElementById('doctorIsActive').checked = d ? d.is_active : true;
 
       const select = document.getElementById('doctorUserId');

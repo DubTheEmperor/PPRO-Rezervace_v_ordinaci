@@ -3,6 +3,7 @@ from typing import Optional, List, Dict, Tuple
 from sqlalchemy.orm import Session
 from src.business.exceptions import BusinessRuleError, ConflictError, NotFoundError, PermissionDeniedError
 from src.business import scheduling, sick_days
+from src.business.doctor_colors import next_free_color
 from src.infrastructure.models.appointment_model import AppointmentStatus
 from src.infrastructure.models.doctor_model import DoctorModel
 from src.infrastructure.models.user_model import UserModel, UserRole
@@ -74,7 +75,8 @@ class DoctorService:
             self._validate_user_link(data.user_id)
         doctor = DoctorModel(
             full_name=data.full_name.strip(),
-            color=data.color,
+            # Bez zvolené barvy dostane lékař první volnou barvu palety
+            color=data.color or next_free_color(d.color for d in self.repo.get_all()),
             user_id=data.user_id,
             icp=data.icp,
             specialty_code=data.specialty_code,
