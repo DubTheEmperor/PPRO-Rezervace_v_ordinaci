@@ -41,7 +41,7 @@ def seed_initial_users(db: Session) -> None:
         {
             "username": "vera",
             "email": "vera@ordinacenavyhlidce.cz",
-            "full_name": "Věra Nováková (Recepce)",
+            "full_name": "Věra Nováková",
             "password": "Vera123!",
             "role": UserRole.RECEPTIONIST,
         },

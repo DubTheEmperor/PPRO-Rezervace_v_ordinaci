@@ -157,7 +157,7 @@ def test_appointment_detail(client, receptionist_token, doctor_token, hruba_id, 
     data = response.json()
     assert data["patient"]["last_name"] == "Testovací"
     assert data["doctor"]["full_name"] == "MUDr. Jana Hrubá"
-    assert data["created_by_name"] == "Věra Nováková (Recepce)"
+    assert data["created_by_name"] == "Věra Nováková"
 
 
 def test_patient_upcoming_appointments(client, receptionist_token, hruba_id, patient):

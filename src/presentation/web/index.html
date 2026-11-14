@@ -8,7 +8,7 @@
   <title>Ordinace Na Vyhlídce</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     /* Paleta ordinace – pouze světlý režim (žádná pravidla pro tmavý režim) */
     :root {
@@ -20,6 +20,8 @@
       --bg: #EEEEEE;
       /* odvozené role */
       --accent-ink: #0F5F6B;
+      --booked: #8E1B2E;
+      --booked-hover: #A3243A;
       --accent-tint: #E3F3F5;
       --card-bg: #FFFFFF;
       --raised-soft: #F7F8F8;
@@ -57,8 +59,9 @@
       --shadow-md: 0 1px 2px rgb(0 0 0 / 0.05);
       --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.08);
       --ease: cubic-bezier(0.22, 1, 0.36, 1);
-      --font: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
-      --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+      --font: 'Noto Sans', -apple-system, 'Segoe UI', sans-serif;
+      /* čísla stejným písmem, zarovnání přes tabular-nums */
+      --mono: var(--font);
     }
 
     * {
@@ -91,7 +94,7 @@
       font-weight: 600;
     }
 
-    /* Signatura: čísla jako na kartotéčním lístku */
+    /* Čísla (časy, telefony, body) s číslicemi stejné šířky */
     .mono,
     .phone-link,
     .ins-badge,
@@ -335,6 +338,17 @@
       border-radius: var(--radius);
       outline: none;
       transition: border-color 150ms var(--ease), box-shadow 150ms var(--ease);
+    }
+
+    select.form-control {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 36px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2356666F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px 16px;
+      cursor: pointer;
     }
 
     .form-control:focus {
@@ -883,7 +897,7 @@
       min-height: 40px;
       font-size: 15px;
       font-weight: 500;
-      padding: 8px 12px;
+      padding: 8px 36px 8px 12px;
       cursor: pointer;
     }
 
@@ -1100,7 +1114,7 @@
     }
 
     .cal-cell.off {
-      background: repeating-linear-gradient(135deg, var(--raised) 0 6px, var(--raised-strong) 6px 12px);
+      background: repeating-linear-gradient(135deg, #E9ECED 0 6px, #D5DADD 6px 12px);
     }
 
     .cal-cell.past {
@@ -1109,14 +1123,14 @@
 
     /* Lékař v tuto dobu ordinuje na jiném pracovišti – objednat nelze */
     .cal-cell.away {
-      background: repeating-linear-gradient(135deg, #FDF3E7 0 6px, #F8E0C4 6px 12px);
-      border-right-color: #F6E3CD;
+      background: repeating-linear-gradient(135deg, #FBE6CC 0 6px, #F1C48F 6px 12px);
+      border-right-color: #F1C48F;
     }
 
     /* Lékař je v tento den nemocný (otevřený bod 5) – objednat nelze */
     .cal-cell.sick {
-      background: repeating-linear-gradient(135deg, #FCF1F6 0 6px, #F8E1EB 6px 12px);
-      border-right-color: #F6E2EB;
+      background: repeating-linear-gradient(135deg, #F9DDE8 0 6px, #EDB2CA 6px 12px);
+      border-right-color: #EDB2CA;
     }
 
     .cal-day.sick .cal-day-name,
@@ -1156,7 +1170,7 @@
       justify-self: start;
       margin-left: 16px;
       font-size: 12px;
-      color: var(--text-faint);
+      color: var(--text-muted);
       pointer-events: none;
       z-index: 1;
     }
@@ -1175,12 +1189,12 @@
       white-space: nowrap;
     }
 
-    /* Obsazený termín – plný inkoust, jako zapsaný řádek v diáři */
+    /* Obsazený termín – vínová */
     .cal-appt {
       margin: 4px 1px;
       border-radius: 6px;
-      background: var(--ink);
-      border-left: 3px solid var(--accent-soft);
+      background: var(--booked);
+      border-left: 3px solid #E7A9B3;
       color: white;
       padding: 2px 6px;
       overflow: hidden;
@@ -1194,12 +1208,12 @@
     }
 
     .cal-appt:hover {
-      background: #17344B;
+      background: var(--booked-hover);
     }
 
     .cal-appt.is-past {
-      background: #6A7882;
-      border-left-color: #A9B4BA;
+      background: #B07A83;
+      border-left-color: #D9B7BC;
     }
 
     /* Termín čeká na přeobjednání (nemoc lékaře) – slot drží, ale pacienta je třeba obvolat */
@@ -1427,6 +1441,15 @@
 
     .sub-tab .chip-count {
       margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
     }
 
     .sub-tab .chip-count.has-items {
@@ -1756,7 +1779,7 @@
     }
 
     .sc-day.sick {
-      background: repeating-linear-gradient(135deg, #F8DCE8 0 5px, #F2C3D7 5px 10px);
+      background: repeating-linear-gradient(135deg, #F4C7D9 0 5px, #E99BBB 5px 10px);
       color: var(--sick-dark);
     }
 
@@ -2005,7 +2028,8 @@
 
     .hours-edit-block .hours-kind {
       width: auto;
-      padding: 8px 8px;
+      padding: 8px 32px 8px 8px;
+      background-position: right 8px center;
       font-size: 13px;
     }
 
@@ -2566,6 +2590,7 @@
     }
 
     /* ===== Měsíční výkaz pro pojišťovny (FP7) ===== */
+    #sectionReports > .dashboard-header,
     .report-filter-card {
       max-width: 1100px;
       margin-left: auto;
@@ -2596,6 +2621,10 @@
       min-height: 40px;
       padding: 8px 12px;
       min-width: 180px;
+    }
+
+    .report-field select.form-control {
+      padding-right: 36px;
     }
 
     .report-field .cal-doctor-select select {
@@ -3108,11 +3137,11 @@
             <div class="legend-items">
               <span class="legend-item"><span class="legend-swatch" style="background: white;"></span> Volno</span>
               <span class="legend-item"><span class="legend-swatch" style="background: var(--accent); border-color: var(--accent);"></span> Vybráno</span>
-              <span class="legend-item"><span class="legend-swatch" style="background: var(--ink); border-color: var(--ink);"></span> Obsazeno</span>
-              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #FDF3E7 0 4px, #F2CFA6 4px 8px); border-color: #EBC08F;"></span> Jiné pracoviště</span>
-              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #FCF1F6 0 4px, #F2C3D7 4px 8px); border-color: #F2C3D7;"></span> Nemoc lékaře</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: var(--booked); border-color: var(--booked);"></span> Obsazeno</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #FBE6CC 0 4px, #F1C48F 4px 8px); border-color: #F1C48F;"></span> Jiné pracoviště</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #F9DDE8 0 4px, #EDB2CA 4px 8px); border-color: #EDB2CA;"></span> Nemoc lékaře</span>
               <span class="legend-item"><span class="legend-swatch" style="background: white; border: 2px dashed var(--sick);"></span> K přeobjednání</span>
-              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, var(--raised) 0 4px, var(--raised-strong) 4px 8px);"></span> Lékař neordinuje</span>
+              <span class="legend-item"><span class="legend-swatch" style="background: repeating-linear-gradient(135deg, #E9ECED 0 4px, #D5DADD 4px 8px); border-color: #D5DADD;"></span> Lékař neordinuje</span>
               <span class="legend-item"><span class="legend-swatch" style="background: var(--raised);"></span> Minulost</span>
             </div>
             <span id="calSelectionInfo" class="cal-selection-info"></span>
