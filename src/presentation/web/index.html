@@ -299,7 +299,7 @@
     /* HLAVNÍ NAVIGACE – BOČNÍ PANEL */
     .dash-layout {
       display: grid;
-      grid-template-columns: 220px minmax(0, 1fr);
+      grid-template-columns: 260px minmax(0, 1fr);
       gap: 1.5rem;
       align-items: start;
     }
@@ -313,8 +313,8 @@
       top: 1rem;
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
-      padding: 0.5rem;
+      gap: 0.35rem;
+      padding: 0.65rem;
       background: white;
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -323,10 +323,10 @@
 
     .nav-tab {
       width: 100%;
-      padding: 0.75rem 1rem;
+      padding: 0.95rem 1.15rem;
       font: inherit;
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 1.05rem;
       text-align: left;
       border: none;
       border-left: 3px solid transparent;
@@ -1250,13 +1250,13 @@
       display: flex;
       align-items: center;
       gap: 0.45rem;
-      padding: 0.55rem 0.85rem;
+      padding: 0.7rem 1rem;
       border: none;
       border-radius: 8px;
       background: transparent;
       font: inherit;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 1rem;
       text-align: left;
       color: var(--text-muted);
       cursor: pointer;
@@ -2397,6 +2397,12 @@
     }
 
     /* ===== Měsíční výkaz pro pojišťovny (FP7) ===== */
+    .report-filter-card {
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
     .report-filter {
       display: flex;
       align-items: flex-end;
@@ -2972,7 +2978,7 @@
           </div>
         </div>
 
-        <div class="card" style="overflow: visible;">
+        <div class="card report-filter-card" style="overflow: visible;">
           <div class="report-filter">
             <label class="report-field">
               <span>Lékař</span>
