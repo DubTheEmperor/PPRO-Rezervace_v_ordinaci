@@ -148,7 +148,7 @@
     }
 
     .brand-icon {
-      background: var(--ink);
+      background: linear-gradient(135deg, #071B2B 0%, #167D8D 100%);
       color: white;
       width: 32px;
       height: 32px;
@@ -1138,11 +1138,34 @@
       color: var(--sick-dark);
     }
 
+    /* Výběr vypadá jako budoucí termín: odsazení 4px nahoře a dole, zaoblené konce */
     .cal-cell.selected,
     .cal-cell.selected:hover {
+      position: relative;
+      background: white;
+    }
+
+    .cal-cell.selected::before {
+      content: '';
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      left: -1px;
+      right: -1px;
+      z-index: 1;
       background: var(--accent);
-      border-right-color: var(--accent);
-      box-shadow: inset 0 2px 0 var(--accent-ink), inset 0 -2px 0 var(--accent-ink);
+    }
+
+    .cal-cell.selected.sel-start::before {
+      left: 2px;
+      border-top-left-radius: 6px;
+      border-bottom-left-radius: 6px;
+    }
+
+    .cal-cell.selected.sel-end::before {
+      right: 2px;
+      border-top-right-radius: 6px;
+      border-bottom-right-radius: 6px;
     }
 
     /* Nejbližší volný termín (FP6) – krátké zvýraznění, kam kalendář přeskočil */
@@ -1191,10 +1214,9 @@
 
     /* Obsazený termín – vínová */
     .cal-appt {
-      margin: 4px 1px;
+      margin: 4px 2px;
       border-radius: 6px;
       background: var(--booked);
-      border-left: 3px solid #E7A9B3;
       color: white;
       padding: 2px 6px;
       overflow: hidden;
@@ -1213,7 +1235,6 @@
 
     .cal-appt.is-past {
       background: #B07A83;
-      border-left-color: #D9B7BC;
     }
 
     /* Termín čeká na přeobjednání (nemoc lékaře) – slot drží, ale pacienta je třeba obvolat */
@@ -4876,7 +4897,11 @@
           const state = bookedMap[i][c] ? 'booked' : slotDate < now ? 'past' : day.sick ? 'sick'
             : isFree ? 'free' : awayBlock ? 'away' : 'off';
           calState[i][c] = state;
-          if (state === 'booked') continue;
+          if (state === 'booked') {
+            // Podklad pod blokem termínu: linky mřížky, v minulosti šedé pozadí
+            html += `<div class="cal-cell booked ${slotDate < now ? 'past' : ''} ${c % 4 === 0 ? 'hour-start' : ''}" data-day="${i}" data-col="${c}" style="grid-row: ${row}; grid-column: ${c + 2};"></div>`;
+            continue;
+          }
           const label = `${DAY_SHORT[i]} ${date.getDate()}. ${date.getMonth() + 1}. ${minToTime(m)}–${minToTime(m + SLOT_MIN)}`;
           const tip = state === 'free' ? `${label} · volno`
             : state === 'past' ? `${label} · již proběhlo`
@@ -4988,6 +5013,8 @@
       clearSelection(false);
       calSelection = { day, from, to };
       for (let c = from; c <= to; c++) calCells[day][c].classList.add('selected');
+      calCells[day][from].classList.add('sel-start');
+      calCells[day][to].classList.add('sel-end');
       updateSelectionInfo();
     }
 
@@ -4995,7 +5022,7 @@
       if (calSelection) {
         const { day, from, to } = calSelection;
         for (let c = from; c <= to; c++) {
-          if (calCells[day] && calCells[day][c]) calCells[day][c].classList.remove('selected');
+          if (calCells[day] && calCells[day][c]) calCells[day][c].classList.remove('selected', 'sel-start', 'sel-end');
         }
       }
       calSelection = null;
