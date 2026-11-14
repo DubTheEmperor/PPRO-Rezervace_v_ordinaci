@@ -141,13 +141,13 @@ def get_patient_history(
     response_model=PatientResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Zaevidování nového pacienta",
-    description="Přístupné pro recepční, lékaře i administrátory.",
+    description="Pacienty eviduje recepce a administrátor, lékař evidenci jen čte.",
 )
 def create_patient(
     patient_data: PatientCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_roles(UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.ADMIN)
+        require_roles(UserRole.RECEPTIONIST, UserRole.ADMIN)
     ),
 ):
     patient_service = PatientService(db)
@@ -165,7 +165,7 @@ def update_patient(
     patient_data: PatientUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(
-        require_roles(UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.ADMIN)
+        require_roles(UserRole.RECEPTIONIST, UserRole.ADMIN)
     ),
 ):
     patient_service = PatientService(db)
@@ -177,13 +177,13 @@ def update_patient(
     "/{patient_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Deaktivace nebo smazání pacienta",
-    description="Standardně provede měkkou deaktivaci (is_active=False) z důvodu zachování zdravotní historie. Trvalé smazání vyžaduje roli ADMIN.",
+    description="Standardně provede měkkou deaktivaci (is_active=False) z důvodu zachování zdravotní historie. Archivaci provádí recepce nebo administrátor, trvalé smazání jen ADMIN.",
 )
 def delete_patient(
     patient_id: int,
     permanent: bool = Query(False, description="Při true provede trvalé smazání (pouze ADMIN)"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(UserRole.RECEPTIONIST, UserRole.ADMIN)),
 ):
     patient_service = PatientService(db)
     if permanent:

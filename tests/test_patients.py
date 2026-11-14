@@ -152,8 +152,8 @@ def test_search_patient_by_last_name_and_phone(client, receptionist_token):
     assert items_spaces[0]["last_name"] == "Kopecký"
 
 
-def test_get_patient_detail(client, doctor_token):
-    """Lékař může načíst detail pacienta."""
+def test_get_patient_detail(client, receptionist_token, doctor_token):
+    """Lékař může načíst detail pacienta (založí ho recepce)."""
     create_res = client.post(
         "/api/v1/patients",
         json={
@@ -164,7 +164,7 @@ def test_get_patient_detail(client, doctor_token):
             "insurance_number": "8812241234",
             "insurance_company_code": "111",
         },
-        headers={"Authorization": f"Bearer {doctor_token}"},
+        headers={"Authorization": f"Bearer {receptionist_token}"},
     )
     patient_id = create_res.json()["id"]
 
@@ -270,3 +270,31 @@ def test_unauthorized_access(client):
     """Neautorizovaný uživatel bez tokenu nemá přístup k evidenci pacientů."""
     res = client.get("/api/v1/patients")
     assert res.status_code == 401
+
+
+def test_doctor_reads_but_cannot_manage_patients(client, receptionist_token, doctor_token):
+    """Pacienty eviduje recepce (a administrátor), lékař evidenci jen čte."""
+    doctor = {"Authorization": f"Bearer {doctor_token}"}
+    reception = {"Authorization": f"Bearer {receptionist_token}"}
+    payload = {
+        "first_name": "Ivana",
+        "last_name": "Pokusná",
+        "birth_year": 1975,
+        "phone_number": "+420731222333",
+        "insurance_number": "7552101234",
+        "insurance_company_code": "111",
+    }
+    assert client.post("/api/v1/patients", json=payload, headers=doctor).status_code == 403
+
+    created = client.post("/api/v1/patients", json=payload, headers=reception)
+    assert created.status_code == 201
+    patient_id = created.json()["id"]
+
+    assert client.get(f"/api/v1/patients/{patient_id}", headers=doctor).status_code == 200
+    assert client.get("/api/v1/patients", headers=doctor).status_code == 200
+    assert client.put(f"/api/v1/patients/{patient_id}", json={"phone_number": "+420731999888"}, headers=doctor).status_code == 403
+    assert client.delete(f"/api/v1/patients/{patient_id}", headers=doctor).status_code == 403
+
+    # Recepce archivuje i obnoví
+    assert client.delete(f"/api/v1/patients/{patient_id}", headers=reception).status_code == 204
+    assert client.put(f"/api/v1/patients/{patient_id}", json={"is_active": True}, headers=reception).status_code == 200

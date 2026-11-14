@@ -276,3 +276,26 @@ Následující tabulka a záznamy slouží jako **živý architektonický deník
   - **Dopad na architekturu:** Jen prezentační vrstva (`index.html`). API ani logika výkazu se nemění.
 - **2026-11-14:** **Vysunuté panely:** Karty (`.card`), boční panel, karty lékařů a papír výkazu mají stejný měkký stín jako přihlašovací karta (token `--shadow-panel` = `0 8px 24px` s 8% krytím). Na tečkovaném pozadí tak vystupují nad plochu. Vnořené prvky, prázdné stavy s přerušovaným rámečkem a hlavička zůstávají ploché. Rozhodnutí vývojáře. Jen prezentační vrstva.
 - **2026-11-14:** **Tučné nadpisy stránek a oprava rohu fronty Návštěv:** Nadpisy záložek (Rezervace termínů, Návštěvy, …) jsou tučné (řez 700 Noto Sans je doplněný do načítaných písem). Šedý sloupec fronty v Návštěvách má zaoblený levý dolní roh podle karty. Karta má kvůli rozbalovacímu výběru `overflow: visible`, takže šedé pozadí dřív vyčnívalo do hranatého rohu. Rozhodnutí vývojáře. Jen prezentační vrstva.
+- **2026-11-15:** **Revize oprávnění rolí:**
+  - **Co bylo rozhodnuto:** Kdo co vidí a smí (✔ smí, ✘ nesmí):
+
+    | Oblast | Administrátor | Recepce | Lékař |
+    |---|---|---|---|
+    | Kalendář rezervací (zobrazení) | ✔ | ✔ | ✔ |
+    | Založení a zrušení rezervace | ✔ | ✔ | ✘ |
+    | Označení „Nedostavil se“ | ✔ | ✔ | ✔ vlastní |
+    | Fronta K přeobjednání, přeobjednání | ✔ | ✔ | ✘ |
+    | Návštěvy (fronta, zápis výkonů, uzavření) | ✔ | ✘ | ✔ vlastní |
+    | Karta pacienta (historie) | ✔ | ✔ bez klinických poznámek | ✔ |
+    | Evidence pacientů (čtení) | ✔ | ✔ | ✔ |
+    | Evidence: založení, úprava, archivace | ✔ | ✔ | ✘ **(změna)** |
+    | Trvalé smazání pacienta | ✔ | ✘ | ✘ |
+    | Výkazy | ✔ | ✔ | ✔ vlastní |
+    | Ordinační hodiny (zobrazení) | ✔ | ✔ | ✔ |
+    | Úprava hodin, nemoc | ✔ | ✘ | ✔ vlastní |
+    | Založení a údaje lékaře | ✔ | ✘ | ✘ |
+    | Správa personálu (zobrazení i úpravy) | ✔ | ✘ **(změna)** | ✘ **(změna)** |
+
+    Po přihlášení se lékaři otevře záložka **Návštěvy**, recepci a administrátorovi **Rezervace** (změna).
+  - **Proč:** Zadání výslovně určuje jen, že rezervaci „založí recepce“. Ostatní je rozhodnutí vývojáře podle tří zásad. Recepce (paní Věra) je primární uživatel a má mít vše pro telefonát a provoz: rezervace, rušení, obvolávání při nemoci, evidenci a výkaz. Zdravotní záznamy (Návštěvy) vidí jen lékaři a administrátor. Platí zásada nejmenších oprávnění: seznam účtů personálu s e-maily dřív viděl každý přihlášený, teď jen administrátor. Registrace a údaje pacientů jsou agenda recepce, lékař je jen čte. Fronta K přeobjednání zůstává recepci, protože lékař termíny k přeobjednání vidí v kalendáři a dopad nemoci v náhledu při jejím zadání. Úvodní záložka odpovídá hlavní práci role.
+  - **Dopad na architekturu:** API: `GET /users` a `GET /users/{id}` jen pro roli ADMIN (vlastní profil zůstává na `GET /auth/me`). `POST /patients`, `PUT /patients/{id}` a `DELETE /patients/{id}` (archivace) jen pro recepci a administrátora (trvalé smazání dál jen admin v `PatientService`). UI: záložka Správa personálu jen pro admina, lékař v Evidenci nevidí tlačítka Nový pacient / Upravit / Archivovat / Obnovit, výchozí záložka podle role (`defaultDashboardTab`). Testy: `test_only_admin_can_list_and_read_users`, `test_doctor_reads_but_cannot_manage_patients`. Celkem 209 testů.

@@ -5,7 +5,7 @@ from src.business.domain import get_db, User, UserRole
 from src.business.dto import UserCreate, UserUpdate
 from src.presentation.schemas.user_schemas import UserResponse, UserListResponse
 from src.business.services.user_service import UserService
-from src.presentation.dependencies import get_current_user, require_roles
+from src.presentation.dependencies import require_roles
 
 router = APIRouter(prefix="/users", tags=["Správa uživatelů"])
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/users", tags=["Správa uživatelů"])
     "",
     response_model=UserListResponse,
     summary="Seznam uživatelů",
-    description="Vrátí stránkovaný seznam uživatelů s možností filtrace podle role, stavu a fulltextového vyhledávání.",
+    description="Vrátí stránkovaný seznam uživatelů s možností filtrace podle role, stavu a fulltextového vyhledávání. Pouze ADMIN (účty personálu s e-maily – zásada nejmenších oprávnění).",
 )
 def list_users(
     skip: int = Query(0, ge=0, description="Počet přeskočených záznamů"),
@@ -23,7 +23,7 @@ def list_users(
     role: Optional[UserRole] = Query(None, description="Filtrovat podle role"),
     is_active: Optional[bool] = Query(None, description="Filtrovat podle stavu aktivity"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     user_service = UserService(db)
     users, total = user_service.get_users(
@@ -41,11 +41,12 @@ def list_users(
     "/{user_id}",
     response_model=UserResponse,
     summary="Detail uživatele podle ID",
+    description="Pouze ADMIN. Vlastní profil přihlášeného uživatele vrací GET /auth/me.",
 )
 def get_user_detail(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_roles(UserRole.ADMIN)),
 ):
     user_service = UserService(db)
     user = user_service.get_user_by_id(user_id)

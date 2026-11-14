@@ -133,3 +133,18 @@ def test_cannot_delete_last_admin(client, admin_token):
     )
     assert response.status_code == 400
     assert "posledního aktivního administrátora" in response.json()["detail"]
+
+
+def test_only_admin_can_list_and_read_users(client, admin_token, receptionist_token, doctor_token):
+    """Účty personálu (včetně e-mailů) vidí jen administrátor – zásada nejmenších oprávnění."""
+    admin_list = client.get("/api/v1/users", headers={"Authorization": f"Bearer {admin_token}"})
+    assert admin_list.status_code == 200
+    some_id = admin_list.json()["items"][0]["id"]
+    assert client.get(f"/api/v1/users/{some_id}", headers={"Authorization": f"Bearer {admin_token}"}).status_code == 200
+
+    for token in (receptionist_token, doctor_token):
+        headers = {"Authorization": f"Bearer {token}"}
+        assert client.get("/api/v1/users", headers=headers).status_code == 403
+        assert client.get(f"/api/v1/users/{some_id}", headers=headers).status_code == 403
+        # Vlastní profil zůstává dostupný
+        assert client.get("/api/v1/auth/me", headers=headers).status_code == 200
