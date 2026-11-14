@@ -9,7 +9,7 @@
   <title>Ordinace Na Vyhlídce</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     /* Paleta ordinace – pouze světlý režim (žádná pravidla pro tmavý režim) */
     :root {
@@ -616,7 +616,7 @@
     .dashboard-title h2 {
       font-size: 28px;
       line-height: 1.15;
-      font-weight: 500;
+      font-weight: 700;
     }
 
     .dashboard-title p {
@@ -2298,6 +2298,8 @@
     .clinic-queue {
       border-right: 1px solid var(--border);
       background: var(--raised-soft);
+      /* Karta má overflow: visible (rozbalovací výběr) – roh zaoblíme přímo, aby šedá nevyčnívala */
+      border-bottom-left-radius: calc(var(--radius-card) - 1px);
       overflow-y: auto;
       max-height: 75vh;
     }
@@ -2623,6 +2625,7 @@
       .clinic-queue {
         border-right: none;
         border-bottom: 1px solid var(--border);
+        border-radius: 0;
         max-height: 300px;
       }
     }
