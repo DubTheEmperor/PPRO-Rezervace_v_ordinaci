@@ -1588,6 +1588,17 @@
       overflow-y: auto;
     }
 
+    /* Nápověda místo výsledků: obyčejný text těsně pod polem, ne rámeček připomínající pole */
+    #bookingPatientResults:has(> .search-hint:only-child) {
+      margin-top: 4px;
+      border: none;
+      border-radius: 0;
+    }
+
+    #bookingPatientResults > .search-hint:only-child {
+      padding: 0 2px;
+    }
+
     .patient-result {
       display: flex;
       justify-content: space-between;
