@@ -546,7 +546,10 @@
       margin-left: auto;
     }
 
-    @media (max-width: 900px) {
+    /* Tablet (na výšku i na šířku) a užší: boční panel se změní na řádek záložek nad obsahem,
+       aby kalendář a tabulky dostaly celou šířku. Záložky zůstávají v jednom řádku a při
+       nedostatku místa se posouvají do strany (swipe). */
+    @media (max-width: 1199px) {
       .dash-layout {
         grid-template-columns: minmax(0, 1fr);
         gap: 16px;
@@ -555,11 +558,20 @@
       .side-nav {
         position: static;
         flex-direction: row;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .side-nav::-webkit-scrollbar {
+        display: none;
       }
 
       .side-nav .nav-tab {
         width: auto;
+        flex: 0 0 auto;
+        white-space: nowrap;
       }
     }
 
@@ -685,6 +697,45 @@
 
     .table-responsive {
       overflow-x: auto;
+    }
+
+    .data-table .col-phone {
+      min-width: 165px;
+    }
+
+    /* Tablet: tabulky pacientů a uživatelů – bez sloupce ID, s užším odsazením buněk
+       a bez pevné šířky telefonu. Sloupec akcí je připnutý vpravo, takže je vidět vždy,
+       i když se zbytek tabulky na výšku posouvá do strany. */
+    @media (max-width: 1199px), (pointer: coarse) {
+      .data-table .col-id {
+        display: none;
+      }
+
+      .data-table .col-phone {
+        min-width: 0;
+      }
+
+      .data-table th,
+      .data-table td {
+        padding-left: 6px;
+        padding-right: 6px;
+      }
+
+      .data-table th:last-child,
+      .data-table td:last-child:not([colspan]) {
+        position: sticky;
+        right: 0;
+        z-index: 1;
+        box-shadow: inset 1px 0 0 var(--border);
+      }
+
+      .data-table td:last-child:not([colspan]) {
+        background: var(--card-bg);
+      }
+
+      .data-table tbody tr:hover td:last-child:not([colspan]) {
+        background: var(--raised-soft);
+      }
     }
 
     table {
@@ -1043,6 +1094,36 @@
       user-select: none;
       -webkit-user-select: none;
       transition: opacity 150ms var(--ease);
+    }
+
+    /* Tablet: týden se má vejít na šířku bez vodorovného posunu. Volné buňky mají
+       touch-action: none (výběr tažením), takže swipem by kalendář posouvat nešel.
+       Užší sloupec dnů (den nad číslem) a menší minimální šířka 15min slotu.
+       Platí i pro velké dotykové tablety na šířku (iPad Pro 1366 px) s bočním panelem. */
+    @media (max-width: 1199px), (pointer: coarse) {
+      .cal-grid {
+        grid-template-columns: 56px repeat(var(--cols, 40), minmax(16px, 1fr));
+        min-width: calc(56px + var(--cols, 40) * 16px);
+      }
+
+      .cal-day {
+        flex-direction: column;
+        justify-content: center;
+        gap: 0;
+        padding: 0 4px;
+      }
+
+      .cal-day-name {
+        width: auto;
+        font-size: 11px;
+        line-height: 1.2;
+      }
+
+      .cal-day-num {
+        font-size: 14px;
+        min-width: 28px;
+        height: 28px;
+      }
     }
 
     .cal-grid.loading {
@@ -3194,6 +3275,77 @@
       gap: 8px;
       margin-top: 20px;
     }
+
+    .form-checkbox {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ===== Dotykové ovládání (tablet) =====
+       Jen pro zařízení s hrubým ukazatelem (prst) – desktop s myší zůstává beze změny.
+       Cílové plochy min. 44 px; písmo polí 16 px, jinak iPad při fokusu stránku přiblíží. */
+    @media (pointer: coarse) {
+      .btn,
+      .chip-btn,
+      .queue-chip,
+      .filter-btn,
+      .res-subtabs .filter-btn,
+      .form-control,
+      .cal-doctor-select select,
+      .report-field .form-control,
+      .dropdown > .btn {
+        min-height: 44px;
+      }
+
+      .btn-sm,
+      .appt-count-btn,
+      .sick-cal-toggle {
+        min-height: 40px;
+      }
+
+      .btn-sm {
+        padding: 0 12px;
+      }
+
+      .form-control,
+      .cal-doctor-select select,
+      .report-field .form-control,
+      .hours-edit-block .hours-kind {
+        font-size: 16px;
+      }
+
+      /* Čas při 16px písmu (a 12h formátu v anglickém prostředí) se do 120 px nevejde */
+      .hours-edit-block input.form-control {
+        width: 140px;
+      }
+
+      .close-btn,
+      .icon-btn,
+      .cal-nav-btn {
+        width: 44px;
+        height: 44px;
+      }
+
+      .color-swatch {
+        width: 40px;
+        height: 40px;
+      }
+
+      input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+      }
+
+      /* Textové odkazy v tabulkách a seznamech: větší plocha pro prst bez změny rozvržení */
+      .link-btn,
+      .phone-link,
+      .rq-name {
+        padding-top: 12px;
+        padding-bottom: 12px;
+        margin-top: -12px;
+        margin-bottom: -12px;
+      }
+    }
   </style>
 </head>
 
@@ -3508,13 +3660,13 @@
           </div>
 
           <div class="table-responsive">
-            <table>
+            <table class="data-table">
               <thead>
                 <tr>
-                  <th style="width: 45px; text-align: center;">ID</th>
+                  <th class="col-id" style="width: 45px; text-align: center;">ID</th>
                   <th style="white-space: nowrap;">Příjmení a jméno</th>
                   <th style="width: 75px; text-align: center; white-space: nowrap;">Rok nar.</th>
-                  <th style="min-width: 165px; white-space: nowrap;">Telefon</th>
+                  <th class="col-phone" style="white-space: nowrap;">Telefon</th>
                   <th style="white-space: nowrap;">Číslo pojištěnce</th>
                   <th style="width: 95px; text-align: center;">Pojišťovna</th>
                   <th style="width: 90px; text-align: center;">Rezervace</th>
@@ -3565,10 +3717,10 @@
           </div>
 
           <div class="table-responsive">
-            <table>
+            <table class="data-table">
               <thead>
                 <tr>
-                  <th style="width: 50px;">ID</th>
+                  <th class="col-id" style="width: 50px;">ID</th>
                   <th>Celé jméno</th>
                   <th>Uživatelské jméno</th>
                   <th>E-mail</th>
@@ -3696,7 +3848,7 @@
             </div>
           </div>
           <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 0;">
-            <input type="checkbox" id="patientIsActive" checked style="width: 16px; height: 16px;">
+            <input type="checkbox" id="patientIsActive" class="form-checkbox" checked>
             <label for="patientIsActive" style="margin-bottom: 0; cursor: pointer;">Pacient je aktivní</label>
           </div>
         </div>
@@ -3802,7 +3954,7 @@
             <select id="doctorUserId" class="form-control"></select>
           </div>
           <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 0;">
-            <input type="checkbox" id="doctorIsActive" checked style="width: 16px; height: 16px;">
+            <input type="checkbox" id="doctorIsActive" class="form-checkbox" checked>
             <label for="doctorIsActive" style="margin-bottom: 0; cursor: pointer;">Lékař je aktivní (lze k němu objednávat)</label>
           </div>
         </div>
@@ -4097,7 +4249,7 @@
 
         return `
           <tr>
-            <td><strong style="color: var(--text-muted);">#${u.id}</strong></td>
+            <td class="col-id"><strong style="color: var(--text-muted);">#${u.id}</strong></td>
             <td><strong>${escapeHtml(u.full_name)}</strong></td>
             <td><code>${escapeHtml(u.username)}</code></td>
             <td>${escapeHtml(u.email)}</td>
@@ -4294,7 +4446,7 @@
 
         return `
           <tr>
-            <td style="white-space: nowrap; text-align: center;"><strong style="color: var(--text-muted);">#${p.id}</strong></td>
+            <td class="col-id" style="white-space: nowrap; text-align: center;"><strong style="color: var(--text-muted);">#${p.id}</strong></td>
             <td style="white-space: nowrap;">
               ${reliabilityDot(p.reliability)}
               <button type="button" class="link-btn" onclick="openPatientCard(${p.id})" title="Otevřít kartu pacienta">
